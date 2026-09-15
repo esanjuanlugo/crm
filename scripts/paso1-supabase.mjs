@@ -17,7 +17,6 @@
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { execFileSync } from "node:child_process";
 import {
   ROOT, CRM_DIR, C, ok, fail, warn, info, encabezado, titulo, progreso, morir, salir,
   leerEnv, escribirEnv, leerEstado, guardarEstado, preguntar, elegir, confirmar,
@@ -25,7 +24,6 @@ import {
 } from "./lib/ui.mjs";
 import { SupabaseAdmin, generarDbPass } from "./lib/supabase.mjs";
 
-const UPSTREAM = "https://github.com/ArnasDon/wacrm.git";
 const CREDS = rutaCredenciales();
 const ENV_CRM = resolve(CRM_DIR, ".env.local");
 
@@ -41,26 +39,19 @@ encabezado("Paso 1 — Supabase", "proyecto, llaves, migraciones y auth");
 titulo("1. Código del CRM");
 
 if (!existsSync(CRM_DIR)) {
-  const origen = creds.CRM_REPO_URL || UPSTREAM;
-  info(`Clonando ${origen} …`);
-  try {
-    execFileSync("git", ["clone", "--depth", "1", origen, CRM_DIR], { stdio: "pipe" });
-    ok("Clonado en ./crm");
-  } catch (e) {
-    morir(
-      `No pude clonar el repo: ${String(e.stderr || e.message).slice(0, 300)}`,
-      "¿Tenés git instalado? Probá:  git --version",
-    );
-  }
-} else {
-  ok("./crm ya existe", "no lo toco (si querés actualizarlo: cd crm && git pull)");
+  morir(
+    "./crm no existe.",
+    "El CRM debe estar incluido en este repositorio. Verificá que la carpeta ./crm exista.",
+  );
 }
+
+ok("./crm encontrado", "usando el CRM incluido en este repositorio");
 
 const DIR_MIGRACIONES = resolve(CRM_DIR, "supabase", "migrations");
 if (!existsSync(DIR_MIGRACIONES)) {
   morir(
-    "El clon no tiene supabase/migrations.",
-    "¿Clonaste el repo correcto? Borrá ./crm y volvé a correr el paso 1.",
+    "El CRM no tiene supabase/migrations.",
+    "Verificá que la carpeta ./crm contenga el código completo del CRM.",
   );
 }
 

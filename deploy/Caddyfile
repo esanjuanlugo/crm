@@ -5,7 +5,7 @@
 # y lo renueva solo. No hay nada que configurar ni que renovar a mano.
 
 {$DOMINIO} {
-	reverse_proxy app:3000
+	reverse_proxy app-es:3000
 
 	# El webhook de WhatsApp puede traer audios y fotos.
 	request_body {

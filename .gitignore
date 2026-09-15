@@ -9,9 +9,6 @@ credenciales.ruta
 .env.*
 !credenciales.env.example
 
-# El CRM se clona fresco del upstream: no vive en este repo
-/crm/
-
 # Estado local del instalador (no tiene secretos, pero es de cada máquina)
 .instalador.json
 
