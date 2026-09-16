@@ -1726,5 +1726,12 @@
       "reindexTooltip": "Re-embed all documents (e.g. after adding an embeddings key)",
       "loading": "Cargando…"
     }
+  },
+  "stages": {
+    "newLead": "Nuevo prospecto",
+    "qualified": "Calificado",
+    "proposalSent": "Propuesta enviada",
+    "negotiation": "Negociación",
+    "won": "Ganada"
   }
 }
