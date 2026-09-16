@@ -70,13 +70,13 @@
   "Dashboard": {
     "page": {
       "title": "Panel",
-      "description": "Live analytics across conversations, contacts, deals, broadcasts, and automations.",
+      "description": "Analítica en tiempo real de conversaciones, contactos, oportunidades, difusiones y automatizaciones.",
       "activeConversations": "Conversaciones activas",
       "newContactsToday": "Nuevos contactos hoy",
       "openDealsValue": "Valor de oportunidades abiertas",
       "messagesSentToday": "Mensajes enviados hoy",
-      "newTodayVsYesterday": "new today vs yesterday",
-      "vsYesterday": "vs yesterday",
+      "newTodayVsYesterday": "Nuevos hoy frente a ayer",
+      "vsYesterday": "frente a ayer",
       "openDeals": "{count} open {count, plural, =1 {deal} other {deals}}",
       "noChange": "No change {suffix}"
     },
@@ -84,13 +84,13 @@
       "newContact": "Nuevo contacto",
       "newDeal": "Nueva oportunidad",
       "newBroadcast": "Nuevo envío masivo",
-      "newAutomation": "Nuevo Automation"
+      "newAutomation": "Nueva automatización"
     },
     "activityFeed": {
       "title": "Actividad reciente",
       "viewAll": "Ver todo →",
       "noActivity": "Aún no hay actividad",
-      "noActivityHint": "Activity from messages, deals, broadcasts, and automations will appear here.",
+      "noActivityHint": "La actividad de mensajes, oportunidades, envíos masivos y automatizaciones aparecerá aquí.",
       "showingOf": "Mostraring {visible} of {totalLoaded}{plus}",
       "show": "Mostrar",
       "timeS": "{sec}s ago",
@@ -102,13 +102,13 @@
       "title": "Conversaciones a lo largo del tiempo",
       "description": "Volumen diario de mensajes por dirección",
       "days": "{count} days",
-      "noActivity": "No message activity in this range",
-      "noActivityHint": "Enviar or receive messages to start populating this chart.",
+      "noActivity": "No hay actividad de mensajes en este período",
+      "noActivityHint": "Envía o recibe mensajes para comenzar a completar este gráfico.",
       "incoming": "Entrantes",
       "outgoing": "Salientes",
       "tooltipIncoming": "{count} incoming",
       "tooltipOutgoing": "{count} outgoing",
-      "ariaLabel": "Conversacións per day"
+      "ariaLabel": "Conversaciones por día"
     },
     "pipelineDonut": {
       "title": "Valor del embudo",
@@ -117,7 +117,7 @@
       "noOpenDealsHint": "Crear deals in Pipelines to see stage breakdowns here.",
       "dealCount": "{count} {count, plural, =1 {deal} other {deals}}",
       "total": "Total",
-      "ariaLabel": "Pipeline value by stage"
+      "ariaLabel": "Valor del embudo por etapa"
     },
     "responseTimeChart": {
       "title": "Tiempo promedio de primera respuesta",
