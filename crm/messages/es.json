@@ -523,11 +523,11 @@
       "toastNotLinkedToAccount": "Your profile is not linked to an account."
     },
     "board": {
-      "dropDealHere": "Drop a deal here",
+      "dropDealHere": "Coloque una oportunidad aquí",
       "addDeal": "Agregar oportunidad"
     },
     "card": {
-      "noContact": "No contact",
+      "noContact": "Sin contacto",
       "won": "Ganada",
       "lost": "Perdida"
     },
