@@ -219,7 +219,17 @@ function StageColumn({
       />
       <div className="flex items-center justify-between pt-3">
         <h3 className="truncate text-sm font-semibold text-foreground">
-          {t(`stages.${stage.name === "New Lead" ? "newLead" : stage.name === "Qualified" ? "qualified" : stage.name === "Proposal Sent" ? "proposalSent" : stage.name === "Negotiation" ? "negotiation" : stage.name === "Won" ? "won" : stage.name}`)}
+            {stage.name === "New Lead"
+    ? t("stages.newLead")
+    : stage.name === "Qualified"
+      ? t("stages.qualified")
+      : stage.name === "Proposal Sent"
+        ? t("stages.proposalSent")
+        : stage.name === "Negotiation"
+          ? t("stages.negotiation")
+          : stage.name === "Won"
+            ? t("stages.won")
+            : stage.name}
         </h3>
         <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
           {deals.length}
