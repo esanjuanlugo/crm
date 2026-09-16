@@ -78,7 +78,7 @@
       "newTodayVsYesterday": "Nuevos hoy frente a ayer",
       "vsYesterday": "frente a ayer",
       "openDeals": "{count} open {count, plural, =1 {deal} other {deals}}",
-      "noChange": "No change {suffix}"
+      "noChange": "No cambios {suffix}"
     },
     "quickActions": {
       "newContact": "Nuevo contacto",
