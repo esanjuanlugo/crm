@@ -77,7 +77,7 @@
       "messagesSentToday": "Mensajes enviados hoy",
       "newTodayVsYesterday": "nuevos hoy en comparación con ayer",
       "vsYesterday": "frente a ayer",
-      "openDeals": "{count} open {count, plural, =1 {deal} other {deals}}",
+      "openDeals": "{count} {count, plural, =1 {oportunidad abierta} other {oportunidades abiertas}}",
       "noChange": "Sin cambios {suffix}"
     },
     "quickActions": {
