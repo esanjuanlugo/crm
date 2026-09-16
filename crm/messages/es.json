@@ -75,7 +75,7 @@
       "newContactsToday": "Nuevos contactos hoy",
       "openDealsValue": "Valor de oportunidades abiertas",
       "messagesSentToday": "Mensajes enviados hoy",
-      "newTodayVsYesterday": "Nuevos hoy frente a ayer",
+      "newTodayVsYesterday": "nuevos hoy en comparación con ayer",
       "vsYesterday": "frente a ayer",
       "openDeals": "{count} open {count, plural, =1 {deal} other {deals}}",
       "noChange": "No cambios {suffix}"
