@@ -482,22 +482,22 @@
       "toastError": "Importar failed"
     },
     "customFields": {
-      "title": "Custom fields",
-      "desc": "Define extra contact fields (e.g. ZIP code, lead source). They appear on every contact and in the “Actualizar Contacto Campo” automation action.",
-      "addField": "Agregar",
-      "fieldName": "Nuevo field name…",
+      "title": "Campos personalizados",
+      "desc": "Defina campos adicionales para los contactos (por ejemplo, código postal o fuente del prospecto). Estos campos aparecerán en todos los contactos y en la acción de automatización «Actualizar campo del contacto».",
+      "addField": "Agregar campo",
+      "fieldName": "Nombre del nuevo campo…",
       "loading": "Cargando…",
-      "empty": "No custom fields yet.",
-      "renameAria": "Rename {name}",
-      "deleteTitle": "Eliminar field",
-      "deleteConfirm": "Eliminar \"{name}\"? This also removes its stored value on every contact. This cannot be undone.",
-      "toastNoAccount": "Your profile is not linked to an account.",
-      "toastDuplicate": "A field named \"{name}\" already exists.",
-      "toastCreateFailed": "No se pudo create field. You may not have permission.",
-      "toastCreated": "Creard \"{name}\".",
-      "toastRenameFailed": "No se pudo rename field.",
-      "toastDeleteFailed": "No se pudo delete field.",
-      "toastDeleted": "Eliminard \"{name}\"."
+      "empty": "Aún no hay campos personalizados.",
+      "renameAria": "Cambiar el nombre de {name}",
+      "deleteTitle": "Eliminar campo",
+      "deleteConfirm": "¿Eliminar «{name}»? Esto también eliminará el valor almacenado de este campo en todos los contactos. Esta acción no se puede deshacer.",
+      "toastNoAccount": "Su perfil no está vinculado a una cuenta.",
+      "toastDuplicate": "Ya existe un campo con el nombre «{name}».",
+      "toastCreateFailed": "No se pudo crear el campo. Es posible que no tenga los permisos necesarios.",
+      "toastCreated": "Se creó «{name}».",
+      "toastRenameFailed": "No se pudo cambiar el nombre del campo.",
+      "toastDeleteFailed": "No se pudo eliminar el campo.",
+      "toastDeleted": "Se eliminó «{name}»."
     }
   },
   "Pipelines": {
