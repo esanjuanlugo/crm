@@ -1,0 +1,90 @@
+pipeline {
+    agent any
+
+    environment {
+        APP_DIR = '/home/ubuntu/crm/crm'
+    }
+
+    stages {
+        stage('Verificar entorno') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "=== Usuario ==="
+                    whoami
+
+                    echo "=== Docker ==="
+                    docker --version
+                    docker compose version
+
+                    echo "=== Proyecto ==="
+                    cd "$APP_DIR"
+                    pwd
+                    git branch --show-current
+                '''
+            }
+        }
+
+        stage('Actualizar código') {
+            steps {
+                sh '''
+                    set -e
+
+                    cd "$APP_DIR"
+
+                    echo "=== Estado actual ==="
+                    git status --short
+
+                    echo "=== Actualizando referencias ==="
+                    git fetch origin main
+
+                    echo "=== Commit remoto ==="
+                    git rev-parse origin/main
+
+                    echo "=== Commit local ==="
+                    git rev-parse HEAD
+                '''
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh '''
+                    set -e
+
+                    cd "$APP_DIR"
+
+                    echo "=== Construyendo imagen ==="
+                    docker compose build app
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                    set -e
+
+                    cd "$APP_DIR"
+
+                    echo "=== Levantando aplicación ==="
+                    docker compose up -d app
+
+                    echo "=== Estado ==="
+                    docker compose ps
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Despliegue terminado correctamente.'
+        }
+
+        failure {
+            echo 'El despliegue falló. La aplicación existente no se modifica mediante git reset/clean.'
+        }
+    }
+}
