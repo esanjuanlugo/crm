@@ -79,10 +79,7 @@ const WELCOME_MENU: FlowTemplate = {
     "Saluda a los clientes que escriban una palabra clave y dirígelos al agente adecuado según sean clientes nuevos o existentes.",
   icon: "MessageSquare",
   trigger_type: "keyword",
-  trigger_config: {
-    keywords: ["support", "help", "hi"],
-    match_type: "contains",
-  },
+  trigger_config: { keywords: ["support", "help", "hi"], match_type: "contains" },
   entry_node_id: "start",
   nodes: [
     {
