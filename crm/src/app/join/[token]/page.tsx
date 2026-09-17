@@ -1,25 +1,25 @@
 'use client';
 
 // ============================================================
-// /join/[token] — invitation redemption landing page.
+// /join/[token] — página de destino para canjear una invitación.
 //
-// Four UI states driven by:
-//   - the peek result (server-validated invite payload), and
-//   - whether the visitor is currently authenticated.
+// Cuatro estados de UI determinados por:
+//   - el resultado de peek (datos de invitación validados por el servidor), y
+//   - si el visitante está autenticado actualmente.
 //
 //   ┌──────────────────────┬───────────────┬─────────────────────────┐
 //   │ peek                 │ auth          │ render                   │
 //   ├──────────────────────┼───────────────┼─────────────────────────┤
 //   │ loading              │ —             │ spinner                  │
-//   │ ok:false (any reason)│ —             │ friendly error + signup  │
-//   │ ok:true              │ signed out    │ "Sign up" + "Sign in"    │
-//   │ ok:true              │ signed in     │ "Accept" button → redeem │
+//   │ ok:false (any reason)│ —             │ error amigable + registro │
+//   │ ok:true              │ signed out    │ "Registrarse" + "Iniciar sesión" │
+//   │ ok:true              │ signed in     │ botón "Aceptar" → redeem │
 //   └──────────────────────┴───────────────┴─────────────────────────┘
 //
-// We deliberately do NOT redeem automatically on page load — the
-// invitee should confirm what account/role they're accepting.
-// Auto-redeem would also race with the signup flow returning to
-// this page after email verification.
+// Deliberadamente NO canjeamos la invitación automáticamente al cargar
+// la página: la persona invitada debe confirmar qué cuenta/rol está aceptando.
+// El canje automático también podría entrar en conflicto con el flujo de
+// registro al volver a esta página después de verificar el correo electrónico.
 // ============================================================
 
 import { useCallback, useEffect, useState } from 'react';
@@ -66,27 +66,30 @@ interface PeekFail {
 type PeekResult = PeekOk | PeekFail;
 
 const ROLE_LABEL: Record<PeekOk['role'], string> = {
-  admin: 'Admin',
-  agent: 'Agent',
-  viewer: 'Viewer',
+  admin: 'Administrador',
+  agent: 'Agente',
+  viewer: 'Visualizador',
 };
 
-const FAIL_COPY: Record<PeekFail['reason'], { title: string; body: string }> = {
+const FAIL_COPY: Record<
+  PeekFail['reason'],
+  { title: string; body: string }
+> = {
   not_found: {
-    title: 'Invite not found',
-    body: 'This link doesn’t match a valid invitation. Double-check the URL or ask the person who invited you to send a new one.',
+    title: 'Invitación no encontrada',
+    body: 'Este enlace no corresponde a una invitación válida. Comprueba la URL o pide a la persona que te invitó que te envíe una nueva.',
   },
   used: {
-    title: 'Invite already used',
-    body: 'This invitation has already been accepted. If that wasn’t you, ask the account admin to send a fresh link.',
+    title: 'Invitación ya utilizada',
+    body: 'Esta invitación ya ha sido aceptada. Si no fuiste tú, pide al administrador de la cuenta que envíe un enlace nuevo.',
   },
   expired: {
-    title: 'Invite expired',
-    body: 'This invitation has expired. Ask the account admin to send a new one — they take a few seconds to generate.',
+    title: 'Invitación caducada',
+    body: 'Esta invitación ha caducado. Pide al administrador de la cuenta que envíe una nueva; tardará solo unos segundos en generarla.',
   },
   server_error: {
-    title: 'Something went wrong',
-    body: 'We couldn’t verify this invitation right now. Try refreshing the page in a moment.',
+    title: 'Algo salió mal',
+    body: 'No pudimos verificar esta invitación en este momento. Intenta actualizar la página dentro de unos instantes.',
   },
 };
 
@@ -95,22 +98,28 @@ export default function JoinPage() {
   const token = params?.token;
 
   const [peek, setPeek] = useState<PeekResult | null>(null);
-  // Local auth probe — the AuthProvider lives inside the (dashboard)
-  // route group, so it doesn't reach this page. We hit Supabase
-  // directly the same way `/login` and `/signup` do.
-  const [authedUserId, setAuthedUserId] = useState<string | null | undefined>(
-    undefined, // undefined = unknown / still loading; null = signed out
+
+  // Comprobación de autenticación local: el AuthProvider vive dentro
+  // del grupo de rutas (dashboard), por lo que no llega a esta página.
+  // Consultamos Supabase directamente, igual que hacen `/login` y `/signup`.
+  const [authedUserId, setAuthedUserId] = useState<
+    string | null | undefined
+  >(
+    undefined, // undefined = desconocido / cargando; null = sesión cerrada
   );
   const [accepting, setAccepting] = useState(false);
-  // `redeem_invitation` returns 409 when the caller's current account
-  // has domain data, or they're already a member of a shared account.
-  // A transient toast wasn't enough — the user has no actionable next
-  // step. Surface a blocking modal that walks them through it.
+
+  // `redeem_invitation` devuelve 409 cuando la cuenta actual de quien
+  // realiza la solicitud ya contiene datos de dominio o cuando ya es
+  // miembro de una cuenta compartida.
+  // Un toast temporal no era suficiente: el usuario no tenía un siguiente
+  // paso claro. Mostramos un modal bloqueante que le indica cómo proceder.
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
 
-  // Extracted so the "Try again" button on the server_error card
-  // can re-run the same logic without remounting the component.
+  // Extraído para que el botón "Intentar de nuevo" de la tarjeta
+  // server_error pueda ejecutar la misma lógica sin volver a montar
+  // el componente.
   const loadPeekAndAuth = useCallback(async () => {
     if (!token) return;
     setPeek(null);
@@ -132,10 +141,12 @@ export default function JoinPage() {
     }
   }, [token]);
 
-  // Fetch peek + auth state on mount. The peek endpoint is
-  // rate-limited per-IP (30/min) so double-mounting in React 19
-  // strict mode dev is harmless. We also use the `cancelled` flag
-  // to drop setState calls if the component unmounts mid-fetch.
+  // Obtener el estado de la invitación y la autenticación al montar.
+  // El endpoint peek tiene un límite de solicitudes por IP (30/min),
+  // por lo que un montaje doble en el modo estricto de React 19 durante
+  // el desarrollo no supone un problema. También usamos la bandera
+  // `cancelled` para evitar llamadas a setState si el componente se
+  // desmonta mientras la solicitud sigue en curso.
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
@@ -175,29 +186,32 @@ export default function JoinPage() {
         const payload = (await res.json().catch(() => ({}))) as {
           error?: string;
         };
-        // 409 = caller already has data / is in another shared
-        // account. The redeem RPC's error message is descriptive
-        // enough to show directly; we open a modal so the user has
-        // a clear next-action (sign out → use different email)
-        // rather than a 3-second toast.
+
+        // 409 = la persona ya tiene datos / pertenece a otra
+        // cuenta compartida. El mensaje de error del RPC redeem
+        // es suficientemente descriptivo para mostrarlo directamente;
+        // abrimos un modal para ofrecer una acción clara (cerrar sesión
+        // → usar otro correo electrónico), en lugar de un toast de 3 segundos.
         if (res.status === 409) {
           setConflictMessage(
             payload.error ||
-              'You are already in another account. Sign in with a different email to join this one.',
+              'Ya perteneces a otra cuenta. Inicia sesión con un correo electrónico diferente para unirte a esta.',
           );
         } else {
-          toast.error(payload.error || 'Failed to accept invitation');
+          toast.error(
+            payload.error || 'No se pudo aceptar la invitación',
+          );
         }
         setAccepting(false);
         return;
       }
-      toast.success('Welcome to the team');
-      // Full reload (not router.push) so AuthProvider re-fetches
-      // the profile with the new account_id and account_role.
+      toast.success('Bienvenido al equipo');
+      // Recarga completa (no router.push) para que AuthProvider vuelva
+      // a obtener el perfil con el nuevo account_id y account_role.
       window.location.href = '/dashboard';
     } catch (err) {
       console.error('[join] redeem error:', err);
-      toast.error('Could not reach the server');
+      toast.error('No se pudo conectar con el servidor');
       setAccepting(false);
     }
   }, [token]);
@@ -206,30 +220,35 @@ export default function JoinPage() {
     setSigningOut(true);
     try {
       await createClient().auth.signOut();
-      // Hard reload so the new auth state propagates everywhere
-      // (middleware, AuthProvider). Preserves the invite token in
-      // the URL so the rebuilt page renders the signed-out CTA path.
+      // Recarga completa para que el nuevo estado de autenticación
+      // se propague por todas partes (middleware, AuthProvider).
+      // Conserva el token de invitación en la URL para que la página
+      // reconstruida muestre el flujo correspondiente a una sesión cerrada.
       window.location.reload();
     } catch (err) {
       console.error('[join] sign-out error:', err);
-      toast.error('Could not sign out. Try refreshing the page.');
+      toast.error(
+        'No se pudo cerrar la sesión. Intenta actualizar la página.',
+      );
       setSigningOut(false);
     }
   }, []);
 
-  // ----- Loading state (peek pending OR auth not yet resolved) -----
+  // ----- Estado de carga (peek pendiente O autenticación aún no resuelta) -----
   if (peek === null || authedUserId === undefined) {
     return (
       <Card className="w-full max-w-md border-border bg-card">
         <CardContent className="flex flex-col items-center gap-3 py-12">
           <Loader2 className="size-6 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Verifying invitation…</p>
+          <p className="text-sm text-muted-foreground">
+            Verificando la invitación…
+          </p>
         </CardContent>
       </Card>
     );
   }
 
-  // ----- Peek failed -----
+  // ----- Peek falló -----
   if (!peek.ok) {
     const copy = FAIL_COPY[peek.reason];
     return (
@@ -238,33 +257,37 @@ export default function JoinPage() {
           <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10">
             <MailX className="h-6 w-6 text-red-400" />
           </div>
-          <CardTitle className="text-xl text-foreground">{copy.title}</CardTitle>
+          <CardTitle className="text-xl text-foreground">
+            {copy.title}
+          </CardTitle>
           <CardDescription className="text-muted-foreground">
             {copy.body}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
-          {/* For server_error the failure is transient — the network
-              flapped or the peek endpoint hiccupped. Try-again is
-              the right primary action; the "create account" /
-              "sign in" links stay as secondary options. Other
-              failure reasons (not_found / used / expired) are
-              terminal for this token, so no retry — just the
-              signup/sign-in escape hatches. */}
+          {/* Para server_error, el fallo es temporal: puede que la red
+              haya tenido una interrupción o que el endpoint peek haya
+              fallado momentáneamente. Intentar de nuevo es la acción
+              principal adecuada; los enlaces para "crear una cuenta" /
+              "iniciar sesión" permanecen como opciones secundarias.
+              Los demás motivos (not_found / used / expired) son
+              definitivos para este token, por lo que no mostramos
+              una opción para reintentar, solo las alternativas
+              de registro/inicio de sesión. */}
           {peek.reason === 'server_error' ? (
             <>
               <Button
                 onClick={loadPeekAndAuth}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                Try again
+                Intentar de nuevo
               </Button>
               <Link href="/signup">
                 <Button
                   variant="outline"
                   className="w-full border-border text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
-                  Create a new account instead
+                  Crear una cuenta nueva
                 </Button>
               </Link>
             </>
@@ -272,7 +295,7 @@ export default function JoinPage() {
             <>
               <Link href="/signup">
                 <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                  Create a new account instead
+                  Crear una cuenta nueva
                 </Button>
               </Link>
               <Link href="/login">
@@ -280,7 +303,7 @@ export default function JoinPage() {
                   variant="outline"
                   className="w-full border-border text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
-                  Sign in
+                  Iniciar sesión
                 </Button>
               </Link>
             </>
@@ -290,23 +313,23 @@ export default function JoinPage() {
     );
   }
 
-  // ----- Peek OK -----
+  // ----- Peek correcto -----
   const inviteHeader = (
     <CardHeader className="items-center text-center">
       <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
         <UsersRound className="h-6 w-6 text-primary" />
       </div>
       <CardTitle className="text-xl text-foreground">
-        You&apos;re invited to{' '}
+        Has sido invitado a{' '}
         <span className="text-primary">{peek.account_name}</span>
       </CardTitle>
       <CardDescription className="text-muted-foreground">
-        You&apos;ll join as{' '}
+        Te unirás como{' '}
         <span className="inline-flex items-center gap-1 text-foreground">
           <ShieldCheck className="size-3.5 text-primary" />
           {ROLE_LABEL[peek.role]}
         </span>
-        . Link valid until{' '}
+        . Enlace válido hasta el{' '}
         {new Date(peek.expires_at).toLocaleDateString(undefined, {
           year: 'numeric',
           month: 'short',
@@ -317,7 +340,7 @@ export default function JoinPage() {
     </CardHeader>
   );
 
-  // ----- Authed: show Accept button -----
+  // ----- Autenticado: mostrar botón Aceptar -----
   if (authedUserId) {
     return (
       <>
@@ -332,27 +355,31 @@ export default function JoinPage() {
               {accepting ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Accepting…
+                  Aceptando…
                 </>
               ) : (
                 <>
                   <CheckCircle className="size-4" />
-                  Accept invitation
+                  Aceptar invitación
                 </>
               )}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              Accepting moves your login into{' '}
-              <span className="text-muted-foreground">{peek.account_name}</span>. Your
-              empty personal account from signup will be cleaned up.
+              Al aceptar, tu inicio de sesión pasará a formar parte de{' '}
+              <span className="text-muted-foreground">
+                {peek.account_name}
+              </span>
+              . Tu cuenta personal vacía creada durante el registro se
+              eliminará.
             </p>
           </CardContent>
         </Card>
 
-        {/* Conflict modal — opens when the redeem endpoint returns 409
-            (caller already in a shared account or has domain data).
-            Blocks the flow until the user picks a recovery action so
-            they aren't stuck retrying an inevitable failure. */}
+        {/* Modal de conflicto: se abre cuando el endpoint redeem devuelve
+            409 (la persona ya pertenece a una cuenta compartida o tiene
+            datos de dominio). Bloquea el flujo hasta que el usuario elija
+            una acción de recuperación para evitar que quede atrapado
+            reintentando un proceso que seguirá fallando. */}
         <Dialog
           open={conflictMessage !== null}
           onOpenChange={(open) => {
@@ -363,7 +390,7 @@ export default function JoinPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-popover-foreground">
                 <AlertTriangle className="size-4 text-amber-400" />
-                Can&apos;t join {peek.account_name} with this account
+                No puedes unirte a {peek.account_name} con esta cuenta
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
                 {conflictMessage}
@@ -371,20 +398,23 @@ export default function JoinPage() {
             </DialogHeader>
             <div className="space-y-2 py-2 text-xs text-muted-foreground">
               <p>
-                To join{' '}
-                <span className="text-popover-foreground">{peek.account_name}</span>,
-                sign out and sign up again with a different email address.
-                The invite link stays valid as long as it hasn&apos;t
-                expired.
+                Para unirte a{' '}
+                <span className="text-popover-foreground">
+                  {peek.account_name}
+                </span>
+                , cierra sesión y vuelve a registrarte con una dirección de
+                correo electrónico diferente. El enlace de invitación seguirá
+                siendo válido mientras no haya caducado.
               </p>
             </div>
+
             <DialogFooter className="bg-popover border-border">
               <Button
                 variant="outline"
                 onClick={() => setConflictMessage(null)}
                 className="border-border text-popover-foreground hover:bg-muted"
               >
-                Stay signed in
+                Mantener sesión iniciada
               </Button>
               <Button
                 onClick={handleSignOutAndRetry}
@@ -394,10 +424,10 @@ export default function JoinPage() {
                 {signingOut ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    Signing out…
+                    Cerrando sesión…
                   </>
                 ) : (
-                  'Sign out & use a different email'
+                  'Cerrar sesión y usar otro correo'
                 )}
               </Button>
             </DialogFooter>
@@ -407,14 +437,14 @@ export default function JoinPage() {
     );
   }
 
-  // ----- Not authed: prompt to sign up or sign in -----
+  // ----- No autenticado: solicitar registro o inicio de sesión -----
   return (
     <Card className="w-full max-w-md border-border bg-card">
       {inviteHeader}
       <CardContent className="flex flex-col gap-2">
         <Link href={`/signup?invite=${encodeURIComponent(token!)}`}>
           <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-            Create account &amp; join
+            Crear cuenta y unirme
           </Button>
         </Link>
         <Link href={`/login?invite=${encodeURIComponent(token!)}`}>
@@ -422,7 +452,7 @@ export default function JoinPage() {
             variant="outline"
             className="w-full border-border text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            I already have an account
+            Ya tengo una cuenta
           </Button>
         </Link>
       </CardContent>
