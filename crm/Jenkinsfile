@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        APP_DIR = '/home/ubuntu/crm/crm'
-    }
-
     stages {
         stage('Verificar entorno') {
             steps {
@@ -19,9 +15,11 @@ pipeline {
                     docker compose version
 
                     echo "=== Proyecto ==="
-                    cd "$APP_DIR"
+                    cd /home/ubuntu/crm/crm
                     pwd
-                    git branch --show-current
+
+                    echo "=== Estado Docker ==="
+                    docker compose ps
                 '''
             }
         }
@@ -31,47 +29,35 @@ pipeline {
                 sh '''
                     set -e
 
-                    cd "$APP_DIR"
+                    cd /home/ubuntu/crm/crm
 
-                    echo "=== Estado actual ==="
-                    git status --short
-
-                    echo "=== Actualizando referencias ==="
-                    git fetch origin main
-
-                    echo "=== Commit remoto ==="
-                    git rev-parse origin/main
-
-                    echo "=== Commit local ==="
-                    git rev-parse HEAD
+                    echo "=== Actualizando código ==="
+                    git pull origin main
                 '''
             }
         }
 
-        stage('Build') {
+        stage('Build y Deploy') {
             steps {
                 sh '''
                     set -e
 
-                    cd "$APP_DIR"
+                    cd /home/ubuntu/crm/crm
 
-                    echo "=== Construyendo imagen ==="
-                    docker compose build app
+                    echo "=== Construyendo y desplegando ==="
+                    docker compose up -d --build
                 '''
             }
         }
 
-        stage('Deploy') {
+        stage('Verificar aplicación') {
             steps {
                 sh '''
                     set -e
 
-                    cd "$APP_DIR"
+                    cd /home/ubuntu/crm/crm
 
-                    echo "=== Levantando aplicación ==="
-                    docker compose up -d app
-
-                    echo "=== Estado ==="
+                    echo "=== Estado final ==="
                     docker compose ps
                 '''
             }
@@ -80,11 +66,11 @@ pipeline {
 
     post {
         success {
-            echo 'Despliegue terminado correctamente.'
+            echo 'Despliegue completado correctamente.'
         }
 
         failure {
-            echo 'El despliegue falló. La aplicación existente no se modifica mediante git reset/clean.'
+            echo 'El despliegue falló.'
         }
     }
 }
