@@ -674,11 +674,11 @@
       },
       "stats": {
         "totalRecipients": "Total de destinatarios",
-        "sent": "Enviados",
-        "delivered": "Entregados",
-        "read": "Leídos",
-        "replied": "Respondidos",
-        "failed": "Fallidos"
+        "sent": "Enviado",
+        "delivered": "Entregado",
+        "read": "Leído",
+        "replied": "Respondido",
+        "failed": "Fallido"
       },
       "toastFailedDelete": "No se pudo eliminar: {error}",
       "toastDeleted": "Envío masivo eliminado.",
