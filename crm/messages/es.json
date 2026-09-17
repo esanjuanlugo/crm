@@ -91,7 +91,7 @@
       "viewAll": "Ver todo →",
       "noActivity": "Aún no hay actividad",
       "noActivityHint": "La actividad de mensajes, oportunidades, envíos masivos y automatizaciones aparecerá aquí.",
-      "showingOf": "Mostraring {visible} of {totalLoaded}{plus}",
+      "showingOf": "Mostrando {visible} de {totalLoaded}{plus}",
       "show": "Mostrar",
       "timeS": "{sec}s ago",
       "timeM": "{min}m ago",
