@@ -806,15 +806,15 @@
   "Automations": {
     "list": {
       "title": "Automatizaciones",
-      "subtitle": "Build workflows that react to WhatsApp® events automatically.",
+      "subtitle": "Crea flujos de trabajo que respondan automáticamente a los eventos de WhatsApp®.",
       "create": "Crear automatización",
       "retry": "Reintentar",
-      "templatesTitle": "Quick-start templates",
-      "emptyTitle": "No automations yet",
-      "emptyDesc": "Pick a template above or create one from scratch.",
-      "runs": "{count} run",
-      "runsPlural": "{count} runs",
-      "lastRun": "last {time}",
+      "templatesTitle": "Plantillas de inicio rápido",
+      "emptyTitle": "Aún no hay automatizaciones",
+      "emptyDesc": "Elige una plantilla de arriba o crea una desde cero.",
+      "runs": "{count} ejecución",
+      "runsPlural": "{count} ejecuciones",
+      "lastRun": "última {time}",
       "activate": "Activar",
       "deactivate": "Desactivar",
       "edit": "Editar",
@@ -822,36 +822,36 @@
       "viewLogs": "Ver registros",
       "delete": "Eliminar",
       "cancel": "Cancelar",
-      "deleteTitle": "Eliminar automation",
-      "deleteDesc": "This permanently removes {name} and its execution history. This cannot be undone.",
+      "deleteTitle": "Eliminar automatización",
+      "deleteDesc": "Esto eliminará permanentemente {name} y su historial de ejecuciones. Esta acción no se puede deshacer.",
       "toasts": {
         "activated": "Automatización activada",
         "paused": "Automatización pausada",
         "duplicated": "Automatización duplicada",
         "deleted": "Automatización eliminada",
-        "updateError": "No se pudo update",
-        "duplicateError": "No se pudo duplicate",
-        "deleteError": "No se pudo delete"
+        "updateError": "No se pudo actualizar",
+        "duplicateError": "No se pudo duplicar",
+        "deleteError": "No se pudo eliminar"
       }
     },
     "edit": {
       "loading": "Cargando...",
-      "loadError": "No se pudo load ({status})",
-      "back": "Atrás to Automations"
+      "loadError": "No se pudo cargar ({status})",
+      "back": "Atrás a Automatizaciones"
     },
     "logs": {
       "title": "Registros de ejecución",
-      "loadError": "No se pudo load logs",
+      "loadError": "No se pudieron cargar los registros",
       "emptyTitle": "Aún no hay ejecuciones",
-      "emptyDesc": "Trigger this automation to see runs here.",
-      "unknownContact": "Desconocido contact",
-      "step": "{count} step",
-      "stepPlural": "{count} steps",
-      "noSteps": "No steps recorded.",
+      "emptyDesc": "Ejecuta esta automatización para ver las ejecuciones aquí.",
+      "unknownContact": "Contacto desconocido",
+      "step": "{count} paso",
+      "stepPlural": "{count} pasos",
+      "noSteps": "No hay pasos registrados.",
       "status": {
-        "success": "success",
-        "partial": "partial",
-        "failed": "failed"
+        "success": "éxito",
+        "partial": "parcial",
+        "failed": "fallido"
       },
       "back": "Atrás",
       "backAria": "Atrás"
@@ -865,10 +865,10 @@
         "add_tag": "Agregar etiqueta",
         "remove_tag": "Quitar etiqueta",
         "assign_conversation": "Asignar conversación",
-        "update_contact_field": "Actualizar Contacto Campo",
-        "create_deal": "Crear Deal",
+        "update_contact_field": "Actualizar campo del contacto",
+        "create_deal": "Crear oportunidad",
         "wait": "Esperar",
-        "condition": "Condición (Si/No)",
+        "condition": "Condición (Sí/No)",
         "send_webhook": "Enviar webhook",
         "close_conversation": "Cerrar conversación"
       },
@@ -879,88 +879,88 @@
         },
         "first_inbound_message": {
           "label": "Primer mensaje del contacto",
-          "hint": "First time this contact ever messages you (works for manually-added contacts too)"
+          "hint": "La primera vez que este contacto te envía un mensaje (también funciona con contactos agregados manualmente)"
         },
         "keyword_match": {
           "label": "Coincidencia de palabra clave",
           "hint": "El mensaje contiene palabras clave específicas"
         },
         "interactive_reply": {
-          "label": "Button / List Reply",
-          "hint": "Cliente taps a button or list row whose id matches — chain menus across automations"
+          "label": "Respuesta de botón / lista",
+          "hint": "El cliente toca un botón o una fila de lista cuyo ID coincide; permite encadenar menús entre automatizaciones"
         },
         "new_contact_created": {
           "label": "Nuevo contacto creado",
-          "hint": "When a contact is auto-created from an incoming message"
+          "hint": "Cuando se crea automáticamente un contacto a partir de un mensaje entrante"
         },
         "conversation_assigned": {
           "label": "Conversación asignada",
-          "hint": "When assigned to an agent"
+          "hint": "Cuando se asigna a un agente"
         },
         "tag_added": {
           "label": "Etiqueta agregada",
-          "hint": "When a tag is added to a contact"
+          "hint": "Cuando se agrega una etiqueta a un contacto"
         },
         "time_based": {
           "label": "Basado en tiempo",
-          "hint": "On a recurring schedule"
+          "hint": "Según una programación recurrente"
         }
       },
       "trigger": "Disparador",
       "triggerType": "Tipo de disparador",
-      "keywords": "Keywords",
-      "keywordsHint": "Comma-separated list (e.g. hello, help, buy)",
-      "replyIds": "Reply IDs",
-      "replyIdsHint": "yes, no, more_info",
-      "replyIdsHelp": "Comma-separated button/list-row ids to match, exact. Use the same ids you set on a Enviar Buttons / Enviar List step.",
+      "keywords": "Palabras clave",
+      "keywordsHint": "Lista separada por comas (por ejemplo, hola, ayuda, comprar)",
+      "replyIds": "IDs de respuesta",
+      "replyIdsHint": "sí, no, más_información",
+      "replyIdsHelp": "IDs de botones o filas de lista separados por comas que deben coincidir exactamente. Usa los mismos IDs que establezcas en un paso de Enviar botones / Enviar lista.",
       "schedule": "Programación",
-      "scheduleHint": "Cron expression (e.g. 0 9 * * 1-5)",
+      "scheduleHint": "Expresión Cron (por ejemplo, 0 9 * * 1-5)",
       "active": "Activo",
       "activeAria": "Activo",
       "save": "Guardar",
       "saveDraft": "Guardar borrador",
-      "untitled": "Untitled automation",
-      "backToAutomations": "Atrás to automations",
+      "untitled": "Automatización sin título",
+      "backToAutomations": "Atrás a automatizaciones",
       "toasts": {
         "saved": "Automatización guardada",
         "created": "Automatización creada",
-        "saveFailed": "Guardar failed"
+        "saveFailed": "No se pudo guardar"
       },
       "tags": {
         "select": "Selecciona una etiqueta…",
-        "placeholder": "Etiqueta id",
-        "unknown": "{id} (unknown tag)"
+        "placeholder": "ID de etiqueta",
+        "unknown": "{id} (etiqueta desconocida)"
       },
       "fields": {
         "name": "Nombre",
         "email": "Correo electrónico",
         "company": "Empresa",
-        "customFields": "Custom fields",
-        "unknown": "{id} (unknown field)"
+        "customFields": "Campos personalizados",
+        "unknown": "{id} (campo desconocido)"
       },
       "agents": {
         "select": "Selecciona un agente…",
-        "placeholder": "Agent id",
-        "unknown": "{id} (unknown agent)"
+        "placeholder": "ID del agente",
+        "unknown": "{id} (agente desconocido)"
       },
       "pipelines": {
         "pipelineLabel": "Pipeline",
-        "pipelineIdLabel": "Pipeline id",
-        "stageLabel": "Stage",
-        "stageIdLabel": "Stage id",
-        "selectPipeline": "Seleccionar a pipeline…",
-        "selectStage": "Seleccionar a stage…",
-        "selectPipelineFirst": "Seleccionar a pipeline first…",
-        "unknownPipeline": "{id} (unknown pipeline)",
-        "unknownStage": "{id} (unknown stage)"
+        "pipelineIdLabel": "ID del pipeline",
+        "stageLabel": "Etapa",
+        "stageIdLabel": "ID de la etapa",
+        "selectPipeline": "Seleccionar pipeline…",
+        "selectStage": "Seleccionar etapa…",
+        "selectPipelineFirst": "Selecciona primero un pipeline…",
+        "unknownPipeline": "{id} (pipeline desconocido)",
+        "unknownStage": "{id} (etapa desconocida)"
       },
       "templates": {
         "templateLabel": "Plantilla",
         "templateNameLabel": "Nombre de plantilla",
         "languageLabel": "Idioma",
         "select": "Selecciona una plantilla…",
-        "unknown": "{name} ({lang}) — not in approved list",
-        "unknownLang": "unknown"
+        "unknown": "{name} ({lang}) — no está en la lista aprobada",
+        "unknownLang": "desconocido"
       },
       "branches": {
         "yes": "Sí",
@@ -969,10 +969,10 @@
       "addStep": "Agregar paso",
       "delete": "Eliminar",
       "config": {
-        "messageText": "Mensaje text",
-        "placeholderMessageText": "Hi! Thanks for reaching out…",
+        "messageText": "Texto del mensaje",
+        "placeholderMessageText": "¡Hola! Gracias por comunicarte…",
         "tagLabel": "Etiqueta",
-        "modeLabel": "Mode",
+        "modeLabel": "Modo",
         "modes": {
           "round_robin": "Rotación automática",
           "specific": "Agente específico"
@@ -980,10 +980,10 @@
         "agentLabel": "Agente",
         "fieldLabel": "Campo",
         "valueLabel": "Valor",
-        "placeholderValue": "Texto or {{ vars.x }} / {{ message.text }}",
+        "placeholderValue": "Texto o {{ vars.x }} / {{ message.text }}",
         "titleLabel": "Título",
         "amountLabel": "Monto",
-        "unitLabel": "Unit",
+        "unitLabel": "Unidad",
         "units": {
           "minutes": "Minutos",
           "hours": "Horas",
@@ -991,26 +991,26 @@
         },
         "subjectLabel": "Asunto",
         "subjects": {
-          "tag_presence": "Etiqueta presence",
-          "contact_field": "Contacto field",
-          "message_content": "Mensaje content",
-          "time_of_day": "Hora of day"
+          "tag_presence": "Presencia de etiqueta",
+          "contact_field": "Campo del contacto",
+          "message_content": "Contenido del mensaje",
+          "time_of_day": "Hora del día"
         },
-        "operandLabel": "Operand",
+        "operandLabel": "Operando",
         "placeholderTime": "HH:mm-HH:mm",
-        "placeholderContact": "name / email / company",
-        "placeholderTag": "tag id",
+        "placeholderContact": "nombre / correo / empresa",
+        "placeholderTag": "ID de etiqueta",
         "urlLabel": "URL",
-        "headersLabel": "Headers",
+        "headersLabel": "Encabezados",
         "placeholderHeaders": "{\"Authorization\": \"Bearer ...\"}",
-        "bodyTemplateLabel": "Body template",
+        "bodyTemplateLabel": "Plantilla del cuerpo",
         "placeholderBody": "{\"id\": \"{{ contact.id }}\"}",
-        "matchType": "Match type",
+        "matchType": "Tipo de coincidencia",
         "matchContains": "Contiene",
         "matchWord": "Palabra completa",
-        "matchWordHint": "Matches the keyword only as a standalone word, so \"k\" no longer fires on \"thanks\". Best for short keywords in space-separated languages; use Contains for languages written without spaces.",
+        "matchWordHint": "Coincide con la palabra clave únicamente cuando aparece como una palabra independiente, por lo que \"k\" ya no se activará con \"gracias\". Es ideal para palabras clave cortas en idiomas escritos con espacios; utiliza Contiene para idiomas que se escriben sin espacios.",
         "matchExact": "Exacto",
-        "closeConversationHint": "Sets the conversation status to \"closed\". No configuration needed."
+        "closeConversationHint": "Establece el estado de la conversación como \"closed\". No requiere configuración."
       }
     }
   },
