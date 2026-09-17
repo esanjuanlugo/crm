@@ -99,8 +99,11 @@ export function AiUsageCard() {
   if (profileLoading || !canView) return null;
 
   const chartData =
-    data?.daily.map((d) => ({ day: format(parseISO(d.date), 'MMM d'), Tokens: d.tokens })) ??
-    [];
+    data?.daily.map((d) => ({
+      day: format(parseISO(d.date), 'MMM d'),
+      Tokens: d.tokens,
+    })) ?? [];
+
   const hasSpend = (data?.totals.total_tokens ?? 0) > 0;
 
   return (
@@ -109,7 +112,8 @@ export function AiUsageCard() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="h-4 w-4 text-primary" /> Consumo de tokens
+              <BarChart3 className="h-4 w-4 text-primary" />
+              Consumo de tokens
             </CardTitle>
             <CardDescription>
               Tokens utilizados con la clave de tu proveedor por los
@@ -154,8 +158,16 @@ export function AiUsageCard() {
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="Total tokens" value={formatCompactNumber(data.totals.total_tokens)} />
-              <Stat label="LLM calls" value={String(data.totals.calls)} />
+              <Stat
+                label="Total de tokens"
+                value={formatCompactNumber(
+                  data.totals.total_tokens,
+                )}
+              />
+              <Stat
+                label="Llamadas al modelo"
+                value={String(data.totals.calls)}
+              />
               <Stat
                 label="Respuesta automática"
                 value={formatCompactNumber(
@@ -257,4 +269,3 @@ function Stat({
     </div>
   );
 }
-```
