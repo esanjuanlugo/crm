@@ -370,7 +370,7 @@ export default function JoinPage() {
             </Button>
 
             <p className="text-center text-xs text-muted-foreground">
-              Al unirte, tendrás acceso a {peek.account_name} como{' '}
+              Al unirte, tendrás acceso al CRM como{' '}
               {ROLE_LABEL[peek.role].toLowerCase()}.
             </p>
 
