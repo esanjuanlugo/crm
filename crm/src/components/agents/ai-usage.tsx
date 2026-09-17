@@ -185,7 +185,10 @@ export function AiUsageCard() {
                       className="flex items-center justify-between px-3 py-2 text-sm"
                     >
                       <span className="min-w-0 truncate">
-                        <span className="text-foreground">{m.model}</span>{' '}
+                        <span className="text-foreground">
+                          {m.model}
+                        </span>{' '}
+
                         <span className="text-xs text-muted-foreground">
                           ({m.provider})
                         </span>
