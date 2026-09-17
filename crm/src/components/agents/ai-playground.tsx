@@ -1,16 +1,8 @@
-```tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  Bot,
-  RotateCcw,
-  Send,
-  Loader2,
-  UserCircle2,
-  ArrowRight,
-} from 'lucide-react';
+import { Bot, RotateCcw, Send, Loader2, UserCircle2, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -21,63 +13,38 @@ interface Turn {
   handoff?: boolean;
 }
 
-export function AiPlayground({
-  onGoToSetup,
-}: {
-  onGoToSetup?: () => void;
-}) {
+export function AiPlayground({ onGoToSetup }: { onGoToSetup?: () => void }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-    });
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [turns, sending]);
 
   const send = async () => {
     const text = input.trim();
-
     if (!text || sending) return;
 
-    const next: Turn[] = [
-      ...turns,
-      {
-        role: 'user',
-        content: text,
-      },
-    ];
-
+    const next: Turn[] = [...turns, { role: 'user', content: text }];
     setTurns(next);
     setInput('');
     setSending(true);
-
     try {
       const res = await fetch('/api/ai/playground', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-
+        headers: { 'Content-Type': 'application/json' },
         // Solo enviamos role + content.
         // El servidor ignora cualquier otro dato.
         body: JSON.stringify({
-          messages: next.map((t) => ({
-            role: t.role,
-            content: t.content,
-          })),
+          messages: next.map((t) => ({ role: t.role, content: t.content })),
         }),
       });
-
       const data = await res.json().catch(() => ({}));
-
       if (!res.ok) {
         if (data.code === 'ai_not_configured') {
-          toast.error(
-            'Todavía no hay ningún agente configurado. Completa primero la configuración.',
-          );
+          toast.error('Todavía no hay ningún agente configurado. Completa primero la configuración.');
         } else {
           toast.error(data.error ?? 'No se pudo obtener una respuesta.');
         }
@@ -86,10 +53,8 @@ export function AiPlayground({
         // para mantener limpia la conversación.
         setTurns(turns);
         setInput(text);
-
         return;
       }
-
       setTurns([
         ...next,
         {
@@ -103,7 +68,6 @@ export function AiPlayground({
       ]);
     } catch {
       toast.error('No se pudo conectar con el agente.');
-
       setTurns(turns);
       setInput(text);
     } finally {
@@ -111,9 +75,7 @@ export function AiPlayground({
     }
   };
 
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLTextAreaElement>,
-  ) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       void send();
@@ -122,20 +84,15 @@ export function AiPlayground({
 
   return (
     <div className="flex h-[60vh] min-h-[420px] flex-col rounded-xl border border-border bg-card">
-      {/* Encabezado */}
+      {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-primary" />
-
-          <span className="text-sm font-medium text-foreground">
-            Área de pruebas
-          </span>
-
+          <span className="text-sm font-medium text-foreground">Área de pruebas</span>
           <span className="text-xs text-muted-foreground">
             — prueba las respuestas como si fueras un cliente
           </span>
         </div>
-
         <Button
           variant="ghost"
           size="sm"
@@ -143,30 +100,21 @@ export function AiPlayground({
           disabled={turns.length === 0 || sending}
           className="text-muted-foreground"
         >
-          <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-          Reiniciar
+          <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reiniciar
         </Button>
       </div>
 
-      {/* Conversación */}
-      <div
-        ref={scrollRef}
-        className="flex-1 space-y-4 overflow-y-auto p-4"
-      >
+      {/* Transcript */}
+      <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
         {turns.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center text-sm text-muted-foreground">
             <Bot className="mb-2 h-8 w-8 text-muted-foreground/60" />
-
-            <p>
-              Envía un mensaje para ver cómo respondería tu agente.
-            </p>
-
+            <p>Envía un mensaje para ver cómo respondería tu agente.</p>
             <p className="mt-1 text-xs">
               Utiliza tu base de conocimientos y se comporta exactamente
               como el bot de respuesta automática, incluida la transferencia
               a una persona.
             </p>
-
             {onGoToSetup && (
               <Button
                 variant="link"
@@ -186,15 +134,12 @@ export function AiPlayground({
             key={i}
             className={cn(
               'flex gap-2',
-              t.role === 'user'
-                ? 'justify-end'
-                : 'justify-start',
+              t.role === 'user' ? 'justify-end' : 'justify-start',
             )}
           >
             {t.role === 'assistant' && (
               <Bot className="mt-1 h-5 w-5 shrink-0 text-primary" />
             )}
-
             <div
               className={cn(
                 'max-w-[80%] rounded-2xl px-3.5 py-2 text-sm',
@@ -203,12 +148,7 @@ export function AiPlayground({
                   : 'rounded-bl-sm bg-muted text-foreground',
               )}
             >
-              {t.content && (
-                <p className="whitespace-pre-wrap">
-                  {t.content}
-                </p>
-              )}
-
+              {t.content && <p className="whitespace-pre-wrap">{t.content}</p>}
               {t.role === 'assistant' && t.handoff && (
                 <p
                   className={cn(
@@ -218,12 +158,10 @@ export function AiPlayground({
                   )}
                 >
                   <UserCircle2 className="h-3.5 w-3.5" />
-
                   La conversación se transferiría a una persona en este punto.
                 </p>
               )}
             </div>
-
             {t.role === 'user' && (
               <UserCircle2 className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" />
             )}
@@ -233,10 +171,7 @@ export function AiPlayground({
         {sending && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Bot className="h-5 w-5 text-primary" />
-
-            <Loader2 className="h-4 w-4 animate-spin" />
-
-            Pensando…
+            <Loader2 className="h-4 w-4 animate-spin" /> Pensando…
           </div>
         )}
       </div>
@@ -251,7 +186,6 @@ export function AiPlayground({
           rows={1}
           className="flex-1 resize-none rounded-xl border border-border bg-muted px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/50"
         />
-
         <Button
           size="sm"
           onClick={send}
@@ -268,4 +202,3 @@ export function AiPlayground({
     </div>
   );
 }
-```
