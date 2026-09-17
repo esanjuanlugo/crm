@@ -49,9 +49,11 @@ interface UsageResponse {
 const WINDOWS = [7, 30, 90] as const;
 
 /**
- * Token-spend dashboard for the account's BYO key. Admin-only (spend is
- * billing-class), mirroring the `ai_usage_log` SELECT policy and the
- * `GET /api/ai/usage` route. Renders nothing for non-admins.
+ * Panel de consumo de tokens para la clave propia del proveedor de la cuenta.
+ * Solo los administradores pueden verlo, ya que el consumo está relacionado
+ * con la facturación. Esto coincide con la política SELECT de `ai_usage_log`
+ * y con la ruta `GET /api/ai/usage`.
+ * No muestra nada para usuarios que no sean administradores.
  */
 export function AiUsageCard() {
   const { accountId, accountRole, profileLoading } = useAuth();
@@ -70,13 +72,15 @@ export function AiUsageCard() {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok) {
-        toast.error(json?.error ?? 'Failed to load usage');
+        toast.error(
+          json?.error ?? 'No se pudo cargar el consumo de IA',
+        );
         setData(null);
         return;
       }
       setData(json as UsageResponse);
     } catch {
-      toast.error('Failed to load usage');
+      toast.error('No se pudo cargar el consumo de IA');
       setData(null);
     } finally {
       setLoading(false);
@@ -85,7 +89,7 @@ export function AiUsageCard() {
 
   useEffect(() => {
     if (!canView || !accountId) return;
-    // Refetch on account switch or window change.
+    // Volver a cargar cuando cambia la cuenta o el período seleccionado.
     const key = `${accountId}:${days}`;
     if (loadedRef.current === key) return;
     loadedRef.current = key;
@@ -105,11 +109,12 @@ export function AiUsageCard() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="h-4 w-4 text-primary" /> Token usage
+              <BarChart3 className="h-4 w-4 text-primary" /> Consumo de tokens
             </CardTitle>
             <CardDescription>
-              Tokens spent on your provider key by drafts and the auto-reply
-              bot. Counts only — no message content is stored here.
+              Tokens utilizados con la clave de tu proveedor por los
+              borradores y el bot de respuesta automática. Solo se muestran
+              cantidades; aquí no se almacena el contenido de los mensajes.
             </CardDescription>
           </div>
           <Select
@@ -122,7 +127,7 @@ export function AiUsageCard() {
             <SelectContent>
               {WINDOWS.map((w) => (
                 <SelectItem key={w} value={String(w)}>
-                  Last {w} days
+                  Últimos {w} días
                 </SelectItem>
               ))}
             </SelectContent>
@@ -135,9 +140,15 @@ export function AiUsageCard() {
         ) : !hasSpend ? (
           <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-sm text-muted-foreground">
             <BarChart3 className="h-8 w-8 opacity-40" />
-            <p>No AI usage in the last {data.window_days} days yet.</p>
+
+            <p>
+              Todavía no hay consumo de IA en los últimos{' '}
+              {data.window_days} días.
+            </p>
+
             <p className="text-xs">
-              This fills in as the assistant drafts and auto-replies.
+              Los datos aparecerán a medida que el asistente genere
+              borradores y respuestas automáticas.
             </p>
           </div>
         ) : (
@@ -146,20 +157,24 @@ export function AiUsageCard() {
               <Stat label="Total tokens" value={formatCompactNumber(data.totals.total_tokens)} />
               <Stat label="LLM calls" value={String(data.totals.calls)} />
               <Stat
-                label="Auto-reply"
-                value={formatCompactNumber(data.by_mode.auto_reply.tokens)}
+                label="Respuesta automática"
+                value={formatCompactNumber(
+                  data.by_mode.auto_reply.tokens,
+                )}
                 icon={Bot}
               />
               <Stat
-                label="Drafts"
-                value={formatCompactNumber(data.by_mode.draft.tokens)}
+                label="Borradores"
+                value={formatCompactNumber(
+                  data.by_mode.draft.tokens,
+                )}
                 icon={PencilLine}
               />
             </div>
 
             <div>
               <p className="mb-2 text-xs font-medium text-muted-foreground">
-                Tokens per day
+                Tokens por día
               </p>
               <BarChart
                 data={chartData}
@@ -176,7 +191,7 @@ export function AiUsageCard() {
             {data.by_model.length > 0 && (
               <div>
                 <p className="mb-2 text-xs font-medium text-muted-foreground">
-                  By model
+                  Por modelo
                 </p>
                 <ul className="divide-y divide-border rounded-md border border-border">
                   {data.by_model.map((m) => (
@@ -194,8 +209,11 @@ export function AiUsageCard() {
                         </span>
                       </span>
                       <span className="flex-shrink-0 tabular-nums text-muted-foreground">
-                        {formatCompactNumber(m.tokens)} tok · {m.calls}{' '}
-                        {m.calls === 1 ? 'call' : 'calls'}
+                        {formatCompactNumber(m.tokens)} tokens ·{' '}
+                        {m.calls}{' '}
+                        {m.calls === 1
+                          ? 'llamada'
+                          : 'llamadas'}
                       </span>
                     </li>
                   ))}
@@ -205,8 +223,9 @@ export function AiUsageCard() {
 
             {data.truncated && (
               <p className="text-xs text-muted-foreground">
-                Showing a partial window — usage is high enough that only the
-                most recent records are summarized here.
+                Se muestra un período parcial. El consumo es lo
+                suficientemente alto como para que aquí solo se
+                resuman los registros más recientes.
               </p>
             )}
           </>
@@ -231,9 +250,11 @@ function Stat({
         {Icon && <Icon className="h-3 w-3" />}
         {label}
       </p>
+
       <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
         {value}
       </p>
     </div>
   );
 }
+```
