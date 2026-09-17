@@ -616,7 +616,7 @@
   "Broadcasts": {
     "page": {
       "title": "Envíos masivos",
-      "subtitle": "Enviar bulk messages to your contacts using approved templates.",
+      "subtitle": "Enviar mensajes masivos a sus contactos utilizando plantillas aprobadas.",
       "newBroadcast": "Nuevo envío masivo",
       "noBroadcastsYet": "No broadcasts yet",
       "createFirst": "Crea tu first broadcast to reach your contacts at scale.",
