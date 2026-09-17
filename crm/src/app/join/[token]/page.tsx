@@ -196,7 +196,7 @@ export default function JoinPage() {
         if (res.status === 409) {
           setConflictMessage(
             payload.error ||
-              'Ya perteneces a otra cuenta. Inicia sesión con un correo electrónico diferente para unirte a esta.',
+            'Ya perteneces a otra cuenta. Inicia sesión con un correo electrónico diferente para unirte a esta.',
           );
         } else {
           toast.error(
@@ -321,9 +321,9 @@ export default function JoinPage() {
         <UsersRound className="h-6 w-6 text-primary" />
       </div>
       <CardTitle className="text-xl text-foreground">
-      <span className="text-primary">{peek.account_name}</span>
-      {' '}te invitó a unirte a CRM
-    </CardTitle>
+        <span className="text-primary">{peek.account_name}</span>
+        {' '}te invitó a unirte a CRM
+      </CardTitle>
       <CardDescription className="text-muted-foreground">
         Te unirás como{' '}
         <span className="inline-flex items-center gap-1 text-foreground">
