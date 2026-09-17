@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/card";
 import { MessageSquare, CheckCircle, UsersRound } from "lucide-react";
 
-// `useSearchParams` opts the component out of static prerendering
-// unless wrapped in Suspense — same pattern as /login.
+// `useSearchParams` hace que el componente salga del prerenderizado estático
+// a menos que esté envuelto en Suspense — mismo patrón que /login.
 export default function SignupPage() {
   return (
     <Suspense fallback={null}>
@@ -28,68 +28,70 @@ export default function SignupPage() {
 
 function SignupPageInner() {
   const searchParams = useSearchParams();
-  // When the user lands here from `/join/<token>` we carry the
-  // invite token in the query so it survives the signup → email
-  // verification → redirect round-trip. `emailRedirectTo` below
-  // points back at /join/<token> so the user lands on the redeem
-  // step after verifying instead of being dropped on /dashboard.
-  const inviteToken = searchParams.get("invite");
 
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const supabase = createClient();
+  // Cuando el usuario llega aquí desde `/ join / <token>`, conservamos
+  // el token de invitación en la URL para que sobreviva al proceso
+  // de registro → verificación por correo → redirección.
+  // `emailRedirectTo` apunta nuevamente a /join/<token> para que,
+  // después de verificar el correo, el usuario pueda aceptar la invitación
+  // en lugar de ser enviado al /dashboard.
+      const inviteToken = searchParams.get("invite");
+
+      const [fullName, setFullName] = useState("");
+      const [email, setEmail] = useState("");
+      const [password, setPassword] = useState("");
+      const [confirmPassword, setConfirmPassword] = useState("");
+      const [error, setError] = useState<string | null>(null);
+      const [loading, setLoading] = useState(false);
+      const [success, setSuccess] = useState(false);
+      const supabase = createClient();
 
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+        e.preventDefault();
+      setError(null);
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      if (password !== confirmPassword) {
+        setError("Las contraseñas no coinciden");
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      if (password.length < 6) {
+        setError("La contraseña debe tener al menos 6 caracteres");
       return;
     }
 
-    setLoading(true);
+      setLoading(true);
 
-    // If we have an invite token, point Supabase's verification
-    // email back at the join page so the user can accept after
-    // verifying. Without a token, Supabase uses its default
-    // redirect (the app root).
-    const emailRedirectTo = inviteToken
+      // Si tenemos un token de invitación, indicamos a Supabase que
+      // el correo de verificación redirija a la página de invitación
+      // para que el usuario pueda aceptarla después de verificar su correo.
+      // Sin un token, Supabase utilizará su redirección predeterminada.
+      const emailRedirectTo = inviteToken
       ? `${window.location.origin}/join/${encodeURIComponent(inviteToken)}`
       : undefined;
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
+      const {error} = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
         data: {
-          full_name: fullName,
+        full_name: fullName,
         },
-        ...(emailRedirectTo ? { emailRedirectTo } : {}),
+      ...(emailRedirectTo ? {emailRedirectTo} : { }),
       },
     });
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        setError(error.message);
       setLoading(false);
       return;
     }
 
-    setSuccess(true);
-    setLoading(false);
+      setSuccess(true);
+      setLoading(false);
   };
 
-  if (success) {
+      if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md border-border bg-card">
@@ -98,12 +100,13 @@ function SignupPageInner() {
               <CheckCircle className="h-6 w-6 text-primary" />
             </div>
             <CardTitle className="text-xl text-foreground">
-              Check your email
+              Revisa tu correo electrónico
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              We&apos;ve sent a confirmation link to{" "}
-              <span className="text-foreground">{email}</span>. Please check your
-              inbox and click the link to verify your account.
+              Hemos enviado un enlace de confirmación a{" "}
+              <span className="text-foreground">{email}</span>. Revisa tu
+              bandeja de entrada y haz clic en el enlace para verificar tu
+              cuenta.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -118,127 +121,142 @@ function SignupPageInner() {
                 variant="outline"
                 className="w-full border-border text-muted-foreground hover:bg-muted hover:text-foreground"
               >
-                Back to sign in
+                Volver a iniciar sesión
               </Button>
             </Link>
           </CardContent>
         </Card>
       </div>
-    );
+      );
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border bg-card">
-        <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            {inviteToken ? (
-              <UsersRound className="h-6 w-6 text-primary" />
-            ) : (
-              <MessageSquare className="h-6 w-6 text-primary" />
-            )}
-          </div>
-          <CardTitle className="text-xl text-foreground">
-            {inviteToken ? "Create account & join" : "Create account"}
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            {inviteToken
-              ? "Verify your email, then accept the invitation to join your team."
-              : "Get started with CRM Template for WhatsApp"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignup} className="flex flex-col gap-4">
-            {error && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                {error}
+      return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md border-border bg-card">
+          <CardHeader className="items-center text-center">
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              {inviteToken ? (
+                <UsersRound className="h-6 w-6 text-primary" />
+              ) : (
+                <MessageSquare className="h-6 w-6 text-primary" />
+              )}
+            </div>
+            <CardTitle className="text-xl text-foreground">
+              {inviteToken ? "Crear cuenta y unirse" : "Crear cuenta"}
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              {inviteToken
+                ? "Verifica tu correo electrónico y luego acepta la invitación para unirte a tu equipo."
+                : "Comienza a utilizar CRM Template para WhatsApp"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSignup} className="flex flex-col gap-4">
+              {error && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                <Label
+                  htmlFor="fullName"
+                  className="text-muted-foreground"
+                >
+                  Nombre completo
+                </Label>
+
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Juan Pérez"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
+                />
               </div>
-            )}
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="fullName" className="text-muted-foreground">
-                Full name
-              </Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="John Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
-              />
-            </div>
+              <div className="flex flex-col gap-2">
+                <Label
+                  htmlFor="email"
+                  className="text-muted-foreground"
+                >
+                  Correo electrónico
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="tu@ejemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
+                />
+              </div>
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email" className="text-muted-foreground">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
-              />
-            </div>
+              <div className="flex flex-col gap-2">
+                <Label
+                  htmlFor="password"
+                  className="text-muted-foreground"
+                >
+                  Contraseña
+                </Label>
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password" className="text-muted-foreground">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="At least 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
-              />
-            </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Al menos 6 caracteres"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
+                />
+              </div>
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="confirmPassword" className="text-muted-foreground">
-                Confirm password
-              </Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Repeat your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
-              />
-            </div>
+              <div className="flex flex-col gap-2">
+                <Label
+                  htmlFor="confirmPassword"
+                  className="text-muted-foreground"
+                >
+                  Confirmar contraseña
+                </Label>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="mt-2 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              {loading ? "Creating account..." : "Create account"}
-            </Button>
-          </form>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Repite tu contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
+                />
+              </div>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link
-              href={
-                inviteToken
-                  ? `/login?invite=${encodeURIComponent(inviteToken)}`
-                  : "/login"
-              }
-              className="text-primary hover:text-primary/80"
-            >
-              Sign in
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+              <Button
+                type="submit"
+                disabled={loading}
+                className="mt-2 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {loading ? "Creando cuenta..." : "Crear cuenta"}
+              </Button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              ¿Ya tienes una cuenta?{" "}
+              <Link
+                href={
+                  inviteToken
+                    ? `/login?invite=${encodeURIComponent(inviteToken)}`
+                    : "/login"
+                }
+                className="text-primary hover:text-primary/80"
+              >
+                Iniciar sesión
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      );
 }
