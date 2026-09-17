@@ -321,9 +321,8 @@ export default function JoinPage() {
         <UsersRound className="h-6 w-6 text-primary" />
       </div>
       <CardTitle className="text-xl text-foreground">
-      <span className="text-primary">{peek.inviter_name}</span>{' '}
-      te invitó a unirte a{' '}
       <span className="text-primary">{peek.account_name}</span>
+      {' '}te invitó a unirte a CRM
     </CardTitle>
       <CardDescription className="text-muted-foreground">
         Te unirás como{' '}
