@@ -315,25 +315,28 @@ export default function JoinPage() {
   }
 
   // ----- Peek correcto -----
-  const inviteHeader = (
-    <CardHeader className="items-center text-center">
-      <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-        <UsersRound className="h-6 w-6 text-primary" />
-      </div>
-      <CardTitle className="text-xl text-foreground">
-        Te invitaron a unirte a{' '}
-        <span className="text-primary">{peek.account_name}</span>
-      </CardTitle>
-      <CardDescription className="text-muted-foreground">
-        Te unirás como{' '}
-        <span className="inline-flex items-center gap-1 text-foreground">
-          <ShieldCheck className="size-3.5 text-primary" />
-          {ROLE_LABEL[peek.role]}
-        </span>
-        .
-      </CardDescription>
-    </CardHeader>
-  );
+const inviteHeader = (
+  <CardHeader className="items-center text-center">
+    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+      <UsersRound className="h-6 w-6 text-primary" />
+    </div>
+
+    <CardTitle className="text-xl text-foreground">
+      <span className="text-primary">{peek.inviter_name}</span>{' '}
+      te invitó a unirte a{' '}
+      <span className="text-primary">{peek.account_name}</span>
+    </CardTitle>
+
+    <CardDescription className="text-muted-foreground">
+      Te unirás como{' '}
+      <span className="inline-flex items-center gap-1 text-foreground">
+        <ShieldCheck className="size-3.5 text-primary" />
+        {ROLE_LABEL[peek.role]}
+      </span>
+      .
+    </CardDescription>
+  </CardHeader>
+);
 
   const expirationDate = new Date(peek.expires_at).toLocaleDateString(
     'es-MX',
