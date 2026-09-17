@@ -150,6 +150,7 @@ export default function JoinPage() {
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
+
     (async () => {
       try {
         const [peekRes, authRes] = await Promise.all([
@@ -320,7 +321,7 @@ export default function JoinPage() {
         <UsersRound className="h-6 w-6 text-primary" />
       </div>
       <CardTitle className="text-xl text-foreground">
-        Has sido invitado por{' '}
+        Te invitaron a unirte a{' '}
         <span className="text-primary">{peek.account_name}</span>
       </CardTitle>
       <CardDescription className="text-muted-foreground">
@@ -329,18 +330,21 @@ export default function JoinPage() {
           <ShieldCheck className="size-3.5 text-primary" />
           {ROLE_LABEL[peek.role]}
         </span>
-        . Enlace válido hasta el{' '}
-        {new Date(peek.expires_at).toLocaleDateString(undefined, {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        })}
         .
       </CardDescription>
     </CardHeader>
   );
 
-  // ----- Autenticado: mostrar botón Aceptar -----
+  const expirationDate = new Date(peek.expires_at).toLocaleDateString(
+    'es-MX',
+    {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    },
+  );
+
+  // ----- Autenticado: mostrar botón Unirme -----
   if (authedUserId) {
     return (
       <>
@@ -355,22 +359,23 @@ export default function JoinPage() {
               {accepting ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Aceptando…
+                  Uniéndote…
                 </>
               ) : (
                 <>
                   <CheckCircle className="size-4" />
-                  Aceptar invitación
+                  Unirme
                 </>
               )}
             </Button>
+
             <p className="text-center text-xs text-muted-foreground">
-              Al aceptar, tu inicio de sesión pasará a formar parte de{' '}
-              <span className="text-muted-foreground">
-                {peek.account_name}
-              </span>
-              . Tu cuenta personal vacía creada durante el registro se
-              eliminará.
+              Al unirte, tendrás acceso a {peek.account_name} como{' '}
+              {ROLE_LABEL[peek.role].toLowerCase()}.
+            </p>
+
+            <p className="text-center text-xs text-muted-foreground">
+              Esta invitación es válida hasta el {expirationDate}.
             </p>
           </CardContent>
         </Card>
@@ -403,8 +408,8 @@ export default function JoinPage() {
                   {peek.account_name}
                 </span>
                 , cierra sesión y vuelve a registrarte con una dirección de
-                correo electrónico diferente. El enlace de invitación seguirá
-                siendo válido mientras no haya caducado.
+                correo electrónico diferente. El enlace seguirá siendo válido
+                mientras no haya caducado.
               </p>
             </div>
 
@@ -455,6 +460,10 @@ export default function JoinPage() {
             Ya tengo una cuenta
           </Button>
         </Link>
+
+        <p className="pt-1 text-center text-xs text-muted-foreground">
+          Esta invitación es válida hasta el {expirationDate}.
+        </p>
       </CardContent>
     </Card>
   );
