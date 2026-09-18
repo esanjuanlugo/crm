@@ -1,5 +1,5 @@
 -- ============================================================
--- NOTIFICACIONES
+-- NOTIFICATIONS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS notifications (
     CHECK (type IN ('conversation_assigned')),
   conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
   contact_id UUID REFERENCES contacts(id) ON DELETE SET NULL,
-  -- Quién generó la notificación. NULL significa que fue una
-  -- automatización / el sistema y no un compañero conectado.
+  -- Who triggered the notification. NULL means an automation / the
+  -- system did it rather than a signed-in teammate.
   actor_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   body TEXT,
@@ -24,40 +24,34 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_created
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread
   ON notifications(user_id)
   WHERE read_at IS NULL;
--- Identidad de réplica completa para que los eventos UPDATE de Realtime
--- incluyan los valores anteriores de las columnas. Sin esto, payload.old
--- solo contiene la clave primaria, lo que hace imposible determinar
--- si una fila estaba sin leer antes de la actualización.
+
+-- Full replica identity so realtime UPDATE payloads include old column
+-- values. Without this, payload.old only carries the primary key, which
+-- makes it impossible to derive whether a row was unread before the update.
 ALTER TABLE notifications REPLICA IDENTITY FULL;
 
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
--- Los destinatarios pueden leer sus propias notificaciones y
--- marcarlas como leídas.
--- No existe una política INSERT/DELETE para el cliente:
--- las filas son creadas exclusivamente por la función trigger
--- SECURITY DEFINER que se encuentra a continuación.
+-- Recipients can read and mark their own notifications as read.
+-- No client INSERT/DELETE policy — rows are created exclusively by
+-- the SECURITY DEFINER trigger function below.
 DROP POLICY IF EXISTS notifications_select ON notifications;
 DROP POLICY IF EXISTS notifications_update ON notifications;
 CREATE POLICY notifications_select ON notifications FOR SELECT
   USING (auth.uid() = user_id);
-
--- Solo las actualizaciones de read_at son relevantes desde el cliente;
--- se restringe mediante una política de seguridad a nivel de columnas
--- para evitar que otros campos puedan ser modificados.
+-- Only read_at updates are meaningful from the client; restrict via a
+-- column-level security policy so other fields cannot be rewritten.
 CREATE POLICY notifications_update ON notifications FOR UPDATE
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- Restringir exclusivamente a la columna read_at mediante privilegios
--- a nivel de columna para impedir que los clientes sobrescriban title,
--- body u otros campos inmutables.
+-- Restrict to read_at column only at the column-privilege level so
+-- clients cannot overwrite title, body, or other immutable fields.
 REVOKE UPDATE ON notifications FROM authenticated;
-
 GRANT UPDATE (read_at) ON notifications TO authenticated;
 
 -- ============================================================
--- TRIGGER — notificar cuando se asigna una conversación
+-- TRIGGER — notify on conversation assignment
 -- ============================================================
 CREATE OR REPLACE FUNCTION notify_conversation_assigned()
 RETURNS TRIGGER
@@ -80,7 +74,7 @@ BEGIN
     END IF;
   END IF;
 
-  -- Omitir la autoasignación — no hay nada que notificar al agente.
+  -- Skip self-assignment — nothing to notify the agent about.
   IF auth.uid() IS NOT NULL AND auth.uid() = NEW.assigned_agent_id THEN
     RETURN NEW;
   END IF;
@@ -103,15 +97,14 @@ BEGIN
     NEW.id,
     NEW.contact_id,
     auth.uid(),
-    'Nueva conversación asignada',
-    COALESCE(v_actor_name, 'Alguien') || ' te asignó una conversación con '
-      || COALESCE(v_contact_name, 'un contacto')
+    'New conversation assigned',
+    COALESCE(v_actor_name, 'Someone') || ' assigned you a conversation with '
+      || COALESCE(v_contact_name, 'a contact')
   );
 
   RETURN NEW;
 EXCEPTION WHEN OTHERS THEN
-  -- Nunca permitir que un fallo al crear una notificación
-  -- bloquee la asignación de la conversación.
+  -- Never let a notification failure block the assignment itself.
   RAISE WARNING 'Failed to create assignment notification for conversation %: %', NEW.id, SQLERRM;
   RETURN NEW;
 END;
@@ -125,7 +118,7 @@ CREATE TRIGGER on_conversation_assigned
   FOR EACH ROW EXECUTE FUNCTION notify_conversation_assigned();
 
 -- ============================================================
--- ACTIVAR REALTIME
+-- ENABLE REALTIME
 -- ============================================================
 DO $$
 BEGIN
