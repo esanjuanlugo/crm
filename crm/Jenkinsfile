@@ -14,6 +14,9 @@ pipeline {
                     docker --version
                     docker compose version
 
+                    echo "=== Supabase CLI ==="
+                    npx supabase --version
+
                     echo "=== Proyecto ==="
                     cd /home/ubuntu/crm/crm
                     pwd
@@ -33,6 +36,24 @@ pipeline {
 
                     echo "=== Actualizando código ==="
                     git pull origin main
+                '''
+            }
+        }
+
+        stage('Actualizar base de datos') {
+            steps {
+                sh '''
+                    set -e
+
+                    cd /home/ubuntu/crm/crm
+
+                    echo "=== Verificando migraciones ==="
+                    npx supabase migration list --project-ref fhhzhpsydqnimzirprac
+
+                    echo "=== Actualizando base de datos Supabase ==="
+                    npx supabase db push --project-ref fhhzhpsydqnimzirprac
+
+                    echo "=== Base de datos actualizada ==="
                 '''
             }
         }
