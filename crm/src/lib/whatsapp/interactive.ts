@@ -1,58 +1,62 @@
 // ============================================================
-// Interactive message payload — shared shape + validation.
+// Payload de mensaje interactivo — estructura compartida + validación.
 //
-// The persisted, round-trippable representation of a WhatsApp
-// interactive message (reply buttons or a list). This is the single
-// source of truth used by:
-//   - the inbox composer + automation "send interactive" builders,
-//   - the send-message core + automation engine (send + persist),
-//   - the message bubble + preview (render),
-//   - quick replies (store an interactive snippet).
+// La representación persistente y reversible de un mensaje
+// interactivo de WhatsApp (botones de respuesta o una lista).
+// Esta es la única fuente de verdad utilizada por:
+//   - el compositor de la bandeja de entrada + los constructores
+//     de automatización de "enviar interactivo",
+//   - el núcleo de envío de mensajes + el motor de automatización
+//     (envío + persistencia),
+//   - la burbuja del mensaje + la vista previa (renderizado),
+//   - las respuestas rápidas (almacenan un fragmento interactivo).
 //
-// The field names (`id`/`title`/`description` on buttons/rows) match
-// `meta-api.ts`'s `InteractiveButton` / `InteractiveListRow` /
-// `InteractiveListSection` on purpose, so a payload maps straight onto
-// the Meta send args with no translation.
+// Los nombres de los campos (`id`/`title`/`description`) en botones
+// y filas coinciden intencionalmente con `InteractiveButton` /
+// `InteractiveListRow` / `InteractiveListSection` de `meta-api.ts`,
+// para que un payload pueda mapearse directamente a los argumentos
+// de envío de Meta sin necesidad de traducción.
 //
-// `validateInteractivePayload` mirrors the throws already inside the
-// meta-api senders, but returns a result object so callers (API routes,
-// activation checks) can surface a clean error to the user *before* the
-// network call rather than turning a bad payload into a 400 from Meta
-// mid-conversation.
+// `validateInteractivePayload` replica los errores que ya existen
+// dentro de los emisores de `meta-api`, pero devuelve un objeto de
+// resultado para que las rutas de API y las comprobaciones de
+// activación puedan mostrar un error claro al usuario *antes* de
+// realizar la llamada de red, en lugar de convertir un payload
+// incorrecto en un error 400 de Meta durante la conversación.
 // ============================================================
 
 import { INTERACTIVE_LIMITS } from './meta-api'
 
 export interface InteractiveButton {
-  /** Stable id echoed back in the webhook when tapped. */
+  /** ID estable que se devuelve en el webhook cuando se pulsa. */
   id: string
-  /** Visible label (≤ 20 chars per Meta). */
+  /** Etiqueta visible (≤ 20 caracteres según Meta). */
   title: string
 }
 
 export interface InteractiveButtonsPayload {
   kind: 'buttons'
-  /** Body text shown above the buttons (≤ 1024 chars). */
+  /** Texto del cuerpo mostrado sobre los botones (≤ 1024 caracteres). */
   body: string
-  /** Optional plain-text header (≤ 60 chars). */
+  /** Encabezado opcional de texto plano (≤ 60 caracteres). */
   header?: string
-  /** Optional grey footer line (≤ 60 chars). */
+  /** Línea de pie de página opcional en gris (≤ 60 caracteres). */
   footer?: string
-  /** 1–3 buttons. */
+  /** De 1 a 3 botones. */
   buttons: InteractiveButton[]
 }
 
 export interface InteractiveListRow {
-  /** Stable id echoed back in the webhook when selected. */
+  /** ID estable que se devuelve en el webhook cuando se selecciona. */
   id: string
-  /** Row title (≤ 24 chars per Meta). */
+  /** Título de la fila (≤ 24 caracteres según Meta). */
   title: string
-  /** Optional secondary line (≤ 72 chars). */
+  /** Línea secundaria opcional (≤ 72 caracteres). */
   description?: string
 }
 
 export interface InteractiveListSection {
-  /** Optional section header shown above its rows. */
+  /** Encabezado opcional de la sección mostrado sobre sus filas. */
   title?: string
   rows: InteractiveListRow[]
 }
@@ -62,9 +66,9 @@ export interface InteractiveListPayload {
   body: string
   header?: string
   footer?: string
-  /** Label of the tap-to-expand button on the message bubble (≤ 20 chars). */
+  /** Etiqueta del botón para desplegar la lista en el mensaje (≤ 20 caracteres). */
   button_label: string
-  /** 1–10 rows TOTAL across all sections. */
+  /** De 1 a 10 filas EN TOTAL entre todas las secciones. */
   sections: InteractiveListSection[]
 }
 
@@ -89,40 +93,42 @@ function validateHeaderFooter(
 ): InteractiveValidation {
   if (header && header.length > INTERACTIVE_LIMITS.headerTextMaxLength) {
     return fail(
-      `Header exceeds the ${INTERACTIVE_LIMITS.headerTextMaxLength}-character limit.`,
+      `El encabezado supera el límite de ${INTERACTIVE_LIMITS.headerTextMaxLength} caracteres.`,
     )
   }
   if (footer && footer.length > INTERACTIVE_LIMITS.footerMaxLength) {
     return fail(
-      `Footer exceeds the ${INTERACTIVE_LIMITS.footerMaxLength}-character limit.`,
+      `El pie de página supera el límite de ${INTERACTIVE_LIMITS.footerMaxLength} caracteres.`,
     )
   }
   return ok()
 }
 
 /**
- * Validate an interactive payload against Meta's hard limits + our
- * structural rules (non-empty ids/titles, unique ids). Returns a result
- * object rather than throwing so API routes can map it to a 400 with a
- * user-facing message.
+ * Valida un payload interactivo según los límites estrictos de Meta
+ * y nuestras reglas estructurales (IDs/títulos no vacíos e IDs únicos).
+ * Devuelve un objeto de resultado en lugar de lanzar una excepción,
+ * para que las rutas de API puedan convertirlo en un error 400 con
+ * un mensaje comprensible para el usuario.
  *
- * `unknown` in, narrowed here, so it's safe to call straight on a parsed
- * request body.
+ * `unknown` como entrada, con el tipo validado aquí, permite llamar
+ * a esta función directamente sobre el cuerpo de una solicitud
+ * previamente analizada.
  */
 export function validateInteractivePayload(
   payload: unknown,
 ): InteractiveValidation {
   if (!payload || typeof payload !== 'object') {
-    return fail('Interactive message payload is required.')
+    return fail('Se requiere el payload del mensaje interactivo.')
   }
   const p = payload as Partial<InteractiveMessagePayload>
 
   if (typeof p.body !== 'string' || p.body.trim() === '') {
-    return fail('Interactive message body text is required.')
+    return fail('El texto del cuerpo del mensaje interactivo es obligatorio.')
   }
   if (p.body.length > INTERACTIVE_LIMITS.bodyMaxLength) {
     return fail(
-      `Body text exceeds the ${INTERACTIVE_LIMITS.bodyMaxLength}-character limit.`,
+      `El texto del cuerpo supera el límite de ${INTERACTIVE_LIMITS.bodyMaxLength} caracteres.`,
     )
   }
   const hf = validateHeaderFooter(p.header, p.footer)
@@ -131,28 +137,28 @@ export function validateInteractivePayload(
   if (p.kind === 'buttons') {
     const buttons = (p as InteractiveButtonsPayload).buttons
     if (!Array.isArray(buttons) || buttons.length < 1) {
-      return fail('Add at least one reply button.')
+      return fail('Agrega al menos un botón de respuesta.')
     }
     if (buttons.length > INTERACTIVE_LIMITS.maxButtons) {
       return fail(
-        `A reply-button message allows at most ${INTERACTIVE_LIMITS.maxButtons} buttons.`,
+        `Un mensaje con botones de respuesta permite como máximo ${INTERACTIVE_LIMITS.maxButtons} botones.`,
       )
     }
     const seen = new Set<string>()
     for (const b of buttons) {
       if (!b || typeof b.id !== 'string' || b.id.trim() === '') {
-        return fail('Every button needs an id.')
+        return fail('Cada botón necesita un ID.')
       }
       if (seen.has(b.id)) {
-        return fail(`Duplicate button id "${b.id}".`)
+        return fail(`El ID del botón "${b.id}" está duplicado.`)
       }
       seen.add(b.id)
       if (typeof b.title !== 'string' || b.title.trim() === '') {
-        return fail('Every button needs a label.')
+        return fail('Cada botón necesita una etiqueta.')
       }
       if (b.title.length > INTERACTIVE_LIMITS.buttonTitleMaxLength) {
         return fail(
-          `Button label "${b.title}" exceeds the ${INTERACTIVE_LIMITS.buttonTitleMaxLength}-character limit.`,
+          `La etiqueta del botón "${b.title}" supera el límite de ${INTERACTIVE_LIMITS.buttonTitleMaxLength} caracteres.`,
         )
       }
     }
@@ -165,42 +171,42 @@ export function validateInteractivePayload(
       typeof list.button_label !== 'string' ||
       list.button_label.trim() === ''
     ) {
-      return fail('The list needs a button label.')
+      return fail('La lista necesita una etiqueta para el botón.')
     }
     if (list.button_label.length > INTERACTIVE_LIMITS.buttonTitleMaxLength) {
       return fail(
-        `List button label exceeds the ${INTERACTIVE_LIMITS.buttonTitleMaxLength}-character limit.`,
+        `La etiqueta del botón de la lista supera el límite de ${INTERACTIVE_LIMITS.buttonTitleMaxLength} caracteres.`,
       )
     }
     if (!Array.isArray(list.sections) || list.sections.length < 1) {
-      return fail('Add at least one list section.')
+      return fail('Agrega al menos una sección a la lista.')
     }
     if (list.sections.length > INTERACTIVE_LIMITS.maxListSections) {
       return fail(
-        `A list allows at most ${INTERACTIVE_LIMITS.maxListSections} sections.`,
+        `Una lista permite como máximo ${INTERACTIVE_LIMITS.maxListSections} secciones.`,
       )
     }
     const seen = new Set<string>()
     let total = 0
     for (const section of list.sections) {
       if (!section || !Array.isArray(section.rows)) {
-        return fail('Every list section needs rows.')
+        return fail('Cada sección de la lista necesita filas.')
       }
       for (const row of section.rows) {
         total++
         if (!row || typeof row.id !== 'string' || row.id.trim() === '') {
-          return fail('Every list row needs an id.')
+          return fail('Cada fila de la lista necesita un ID.')
         }
         if (seen.has(row.id)) {
-          return fail(`Duplicate list row id "${row.id}".`)
+          return fail(`El ID de la fila "${row.id}" está duplicado.`)
         }
         seen.add(row.id)
         if (typeof row.title !== 'string' || row.title.trim() === '') {
-          return fail('Every list row needs a title.')
+          return fail('Cada fila de la lista necesita un título.')
         }
         if (row.title.length > INTERACTIVE_LIMITS.listRowTitleMaxLength) {
           return fail(
-            `List row title "${row.title}" exceeds the ${INTERACTIVE_LIMITS.listRowTitleMaxLength}-character limit.`,
+            `El título de la fila "${row.title}" supera el límite de ${INTERACTIVE_LIMITS.listRowTitleMaxLength} caracteres.`,
           )
         }
         if (
@@ -209,31 +215,33 @@ export function validateInteractivePayload(
             INTERACTIVE_LIMITS.listRowDescriptionMaxLength
         ) {
           return fail(
-            `List row description exceeds the ${INTERACTIVE_LIMITS.listRowDescriptionMaxLength}-character limit.`,
+            `La descripción de la fila supera el límite de ${INTERACTIVE_LIMITS.listRowDescriptionMaxLength} caracteres.`,
           )
         }
       }
     }
-    if (total < 1) return fail('Add at least one list row.')
+    if (total < 1) return fail('Agrega al menos una fila a la lista.')
     if (total > INTERACTIVE_LIMITS.maxListRowsTotal) {
       return fail(
-        `A list allows at most ${INTERACTIVE_LIMITS.maxListRowsTotal} rows in total.`,
+        `Una lista permite como máximo ${INTERACTIVE_LIMITS.maxListRowsTotal} filas en total.`,
       )
     }
     return ok()
   }
 
-  return fail('Interactive message must be reply buttons or a list.')
+  return fail('El mensaje interactivo debe ser de botones de respuesta o de lista.')
 }
 
 /**
- * Short single-line summary used for `conversations.last_message_text`
- * and quick-reply list rows — the body, trimmed, or a sensible fallback.
+ * Resumen breve de una sola línea utilizado para
+ * `conversations.last_message_text` y las filas de respuestas rápidas:
+ * devuelve el cuerpo del mensaje sin espacios innecesarios o, si está
+ * vacío, un texto alternativo adecuado.
  */
 export function interactivePayloadPreviewText(
   payload: InteractiveMessagePayload,
 ): string {
   const body = payload.body?.trim()
   if (body) return body
-  return payload.kind === 'buttons' ? '[buttons]' : '[list]'
+  return payload.kind === 'buttons' ? '[botones]' : '[lista]'
 }
