@@ -18,15 +18,18 @@ import {
 import { InteractivePreview } from "./interactive-preview";
 
 // ------------------------------------------------------------
-// Blank payload factories — used to seed a fresh builder and to
-// switch kind without losing the shared body/header/footer.
+// Fábricas de payloads vacíos — se utilizan para inicializar un
+// constructor nuevo y cambiar el tipo sin perder el cuerpo,
+// encabezado y pie de mensaje compartidos.
 // ------------------------------------------------------------
 
 /**
- * Generate an id that doesn't collide with any already in use. A plain
- * count-based id (`btn_${length+1}`) regenerates an existing id after a
- * middle item is removed, which then trips the duplicate-id validator and
- * silently blocks sending. Increment past any taken id instead.
+ * Genera un ID que no coincide con ninguno de los que ya están en uso.
+ * Un ID basado únicamente en el contador (`btn_${length+1}`) puede
+ * regenerar un ID existente cuando se elimina un elemento intermedio,
+// lo que activa el validador de IDs duplicados y bloquea el envío
+ * silenciosamente. En su lugar, incrementamos hasta encontrar un ID
+ * que no esté ocupado.
  */
 function nextId(existing: string[], prefix: string): string {
   const taken = new Set(existing);
@@ -47,7 +50,7 @@ export function blankListPayload(): InteractiveListPayload {
   return {
     kind: "list",
     body: "",
-    button_label: "Menu",
+    button_label: "Menú",
     sections: [{ title: "", rows: [{ id: "row_1", title: "" }] }],
   };
 }
@@ -55,16 +58,19 @@ export function blankListPayload(): InteractiveListPayload {
 interface InteractiveBuilderProps {
   value: InteractiveMessagePayload;
   onChange: (payload: InteractiveMessagePayload) => void;
-  /** Show the live WhatsApp-style preview beside the form. Default true. */
+  /** Mostrar la vista previa de WhatsApp en vivo junto al formulario. Por defecto, true. */
   showPreview?: boolean;
 }
 
 /**
- * Controlled builder for a WhatsApp interactive message (reply buttons
- * or list). Enforces Meta's char limits inline (maxLength + counters)
- * and surfaces a single validation error via `validateInteractivePayload`
- * — the same check the server runs before sending. Shared by the inbox
- * composer, the automation Send node, and the quick-replies manager.
+ * Constructor controlado para un mensaje interactivo de WhatsApp
+ * (botones de respuesta o lista). Aplica los límites de caracteres
+ * de Meta directamente en el formulario (maxLength + contadores)
+ * y muestra un único error de validación mediante
+ * `validateInteractivePayload` — la misma comprobación que realiza
+ * el servidor antes de enviar. Se comparte entre el compositor de
+ * la bandeja de entrada, el nodo de envío de automatizaciones y el
+ * administrador de respuestas rápidas.
  */
 export function InteractiveBuilder({
   value,
@@ -88,17 +94,10 @@ export function InteractiveBuilder({
   };
 
   return (
-    // Editor and preview sit side by side only when the SPACE WE WERE
-    // GIVEN can hold both — a container query, not a viewport one. This
-    // builder is embedded in places far narrower than the screen (an
-    // automation step card, and a step nested in a condition branch is
-    // narrower still); keying the split to `md:` meant a desktop
-    // viewport forced a 280px preview column into a ~190px card and the
-    // whole editor overflowed (issue #474).
     <div className="@container">
       <div className="flex flex-col gap-4 @2xl:flex-row">
         <div className="flex min-w-0 flex-1 flex-col gap-3">
-          {/* Kind toggle */}
+          {/* Selector de tipo */}
           <div className="flex gap-2">
             <KindButton
               active={value.kind === "buttons"}
@@ -171,7 +170,7 @@ export function InteractiveBuilder({
         {showPreview && (
           <div className="flex shrink-0 flex-col gap-1.5 @2xl:w-[280px]">
             <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              Preview
+              Vista previa
             </span>
             <div className="rounded-lg bg-muted/40 p-3">
               <InteractivePreview payload={value} />
@@ -184,7 +183,7 @@ export function InteractiveBuilder({
 }
 
 // ------------------------------------------------------------
-// Buttons editor
+// Editor de botones
 // ------------------------------------------------------------
 
 function ButtonsEditor({
@@ -258,7 +257,7 @@ function ButtonsEditor({
       {buttons.length < INTERACTIVE_LIMITS.maxButtons && (
         <Button variant="ghost" size="sm" onClick={add} className="mt-2">
           <Plus className="h-3.5 w-3.5" />
-          Add button
+          Agregar botón
         </Button>
       )}
     </div>
@@ -266,7 +265,7 @@ function ButtonsEditor({
 }
 
 // ------------------------------------------------------------
-// List editor
+// Editor de listas
 // ------------------------------------------------------------
 
 function ListEditor({
@@ -410,7 +409,7 @@ function ListEditor({
           {totalRows < INTERACTIVE_LIMITS.maxListRowsTotal && (
             <Button variant="ghost" size="sm" onClick={() => addRow(sIdx)} className="mt-2">
               <Plus className="h-3.5 w-3.5" />
-              Add row
+              Agregar fila
             </Button>
           )}
         </div>
@@ -420,7 +419,7 @@ function ListEditor({
         totalRows < INTERACTIVE_LIMITS.maxListRowsTotal && (
           <Button variant="ghost" size="sm" onClick={addSection}>
             <Plus className="h-3.5 w-3.5" />
-            Add section
+            Agregar sección
           </Button>
         )}
     </div>
@@ -428,7 +427,7 @@ function ListEditor({
 }
 
 // ------------------------------------------------------------
-// Small presentational helpers
+// Pequeños componentes auxiliares de presentación
 // ------------------------------------------------------------
 
 function KindButton({
