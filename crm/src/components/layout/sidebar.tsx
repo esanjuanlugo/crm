@@ -1,914 +1,401 @@
-// ============================================================
-// Tremor BarChart [v1.0.0] — vendored from tremorlabs/tremor.
-//
-// Adaptaciones locales vs el archivo original:
-//   1. `cx` (el helper `clsx`+`twMerge` de Tremor) se reemplaza por
-//      nuestro propio `cn` de `@/lib/utils`.
-//   2. Los iconos de flecha del slider de la leyenda (`RiArrowLeftSLine` /
-//      `RiArrowRightSLine` de `@remixicon/react`) se cambian por
-//      `ChevronLeft` / `ChevronRight` de `lucide-react`.
-//   3. Se añade `aria-label` en español al `ScrollButton` para 
-//      mejorar la accesibilidad en lectores de pantalla.
-//
-// Todo lo demás (lógica del gráfico, comportamiento de accesibilidad,
-// implementación de tooltip/leyenda/slider) permanece sin cambios 
-// respecto a la fuente canónica de Tremor Raw.
-//
-// License: Apache 2.0 (Tremor).
-// Source: https://github.com/tremorlabs/tremor/blob/main/src/components/BarChart/BarChart.tsx
-// ============================================================
+"use client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-"use client"
-
-import React from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { useTotalUnread } from "@/hooks/use-total-unread";
+import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 import {
-  Bar,
-  CartesianGrid,
-  Label,
-  BarChart as RechartsBarChart,
-  Legend as RechartsLegend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts"
-import type { AxisDomain } from "recharts/types/util/types"
+  Bell,
+  Bot,
+  Crown,
+  GitBranch,
+  LayoutDashboard,
+  LogOut,
+  MessageSquare,
+  Radio,
+  Settings,
+  Shield,
+  User,
+  UserCog,
+  Users,
+  UsersRound,
+  Workflow,
+  X,
+  Zap,
+} from "lucide-react";
+import type { AccountRole } from "@/lib/auth/roles";
 
-import { useOnWindowResize } from "../../hooks/useOnWindowResize"
+// Per-role chip metadata used in the sidebar's account strip + the
+// Members tab roster. Keeping this near both consumers in a single
+// place avoids drift between the two surfaces — when a designer
+// wants to recolour "agent" rows, this is the one diff.
+const ROLE_CHIP: Record<
+  AccountRole,
+  { icon: typeof Crown; labelKey: string; className: string }
+> = {
+  owner: {
+    icon: Crown,
+    labelKey: "roleOwner",
+    // Amber: scarce, immutable, "the boss" — gets visual emphasis.
+    className:
+      "border-amber-500/40 bg-amber-500/10 text-amber-300",
+  },
+  admin: {
+    icon: Shield,
+    labelKey: "roleAdmin",
+    // Primary-tinted: significant but not as scarce as owner.
+    className:
+      "border-primary/40 bg-primary/10 text-primary",
+  },
+  agent: {
+    icon: UserCog,
+    labelKey: "roleAgent",
+    // Neutral slate: the operational default.
+    className:
+      "border-border bg-muted text-foreground",
+  },
+  viewer: {
+    icon: User,
+    labelKey: "roleViewer",
+    // Muted slate: read-only role; visually quieter than agent.
+    className:
+      "border-border bg-card text-muted-foreground",
+  },
+};
 import {
-  AvailableChartColors,
-  type AvailableChartColorsKeys,
-  constructCategoryColors,
-  getColorClassName,
-} from "../../utils/chartColors"
-import { cn } from "@/lib/utils"
-import { getYAxisDomain } from "../../utils/getYAxisDomain"
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-//#region Shape
-
-function deepEqual<T>(obj1: T, obj2: T): boolean {
-  if (obj1 === obj2) return true
-
-  if (
-    typeof obj1 !== "object" ||
-    typeof obj2 !== "object" ||
-    obj1 === null ||
-    obj2 === null
-  ) {
-    return false
-  }
-
-  const keys1 = Object.keys(obj1) as Array<keyof T>
-  const keys2 = Object.keys(obj2) as Array<keyof T>
-
-  if (keys1.length !== keys2.length) return false
-
-  for (const key of keys1) {
-    if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) return false
-  }
-
-  return true
+interface NavItem {
+  href: string;
+  labelKey: string;
+  icon: typeof LayoutDashboard;
+  /**
+   * When true, the nav row renders a small "Beta" chip after the label.
+   * Purely informational — doesn't affect routing or access.
+   */
+  beta?: boolean;
 }
 
-const renderShape = (
-  props: any,
-  activeBar: any | undefined,
-  activeLegend: string | undefined,
-  layout: string,
-) => {
-  const { fillOpacity, name, payload, value } = props
-  let { x, width, y, height } = props
+const navItems: NavItem[] = [
+  { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
+  { href: "/notifications", labelKey: "notifications", icon: Bell },
+  { href: "/contacts", labelKey: "contacts", icon: Users },
+  { href: "/pipelines", labelKey: "pipelines", icon: GitBranch },
+  { href: "/broadcasts", labelKey: "broadcasts", icon: Radio },
+  { href: "/automations", labelKey: "automations", icon: Zap },
+  { href: "/flows", labelKey: "flows", icon: Workflow, beta: true },
+  { href: "/agents", labelKey: "aiAgents", icon: Bot },
+];
 
-  if (layout === "horizontal" && height < 0) {
-    y += height
-    height = Math.abs(height) // height must be a positive number
-  } else if (layout === "vertical" && width < 0) {
-    x += width
-    width = Math.abs(width) // width must be a positive number
-  }
+const bottomNavItems = [
+  { href: "/settings", labelKey: "settings", icon: Settings },
+];
 
-  return (
-    <rect
-      x={x}
-      y={y}
-      width={width}
-      height={height}
-      opacity={
-        activeBar || (activeLegend && activeLegend !== name)
-          ? deepEqual(activeBar, { ...payload, value })
-            ? fillOpacity
-            : 0.3
-          : fillOpacity
-      }
-    />
-  )
+interface SidebarProps {
+  /** Controlled on mobile by the Header's hamburger button. Ignored on lg+. */
+  open?: boolean;
+  onClose?: () => void;
 }
 
-//#region Legend
+import { useTranslations } from "next-intl";
 
-interface LegendItemProps {
-  name: string
-  color: AvailableChartColorsKeys
-  onClick?: (name: string, color: AvailableChartColorsKeys) => void
-  activeLegend?: string
-}
+export function Sidebar({ open = false, onClose }: SidebarProps) {
+  const t = useTranslations("Sidebar");
+  const pathname = usePathname();
+  const { profile, profileLoading, account, accountRole, signOut } = useAuth();
+  const totalUnread = useTotalUnread();
+  const unreadNotifications = useUnreadNotifications();
+  // Only surface the account-name strip when it actually carries
+  // information. A solo user's personal account is named after them
+  // (the 017 signup trigger seeds it from `full_name`), so showing it
+  // here would just duplicate the user name in the footer below. Once
+  // the account is renamed or the user joins a shared account, the
+  // name diverges and the strip becomes meaningful — that's the signal
+  // we gate on. Wait for the profile fetch to settle first, otherwise
+  // the strip flashes in once the row resolves (a layout jump).
+  const showAccountStrip =
+    !profileLoading &&
+    !!account?.name &&
+    account.name !== profile?.full_name;
 
-const LegendItem = ({
-  name,
-  color,
-  onClick,
-  activeLegend,
-}: LegendItemProps) => {
-  const hasOnValueChange = !!onClick
-  return (
-    <li
-      className={cn(
-        // base
-        "group inline-flex flex-nowrap items-center gap-1.5 rounded-sm px-2 py-1 whitespace-nowrap transition",
-        hasOnValueChange
-          ? "cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-          : "cursor-default",
-      )}
-      onClick={(e) => {
-        e.stopPropagation()
-        onClick?.(name, color)
-      }}
-    >
-      <span
-        className={cn(
-          "size-2 shrink-0 rounded-xs",
-          getColorClassName(color, "bg"),
-          activeLegend && activeLegend !== name ? "opacity-40" : "opacity-100",
-        )}
-        aria-hidden={true}
-      />
-      <p
-        className={cn(
-          // base
-          "truncate text-xs whitespace-nowrap",
-          // text color
-          "text-gray-700 dark:text-gray-300",
-          hasOnValueChange &&
-            "group-hover:text-gray-900 dark:group-hover:text-gray-50",
-          activeLegend && activeLegend !== name ? "opacity-40" : "opacity-100",
-        )}
-      >
-        {name}
-      </p>
-    </li>
-  )
-}
+  // Close the drawer when route changes — users opened it to navigate,
+  // so once they pick a destination the drawer should get out of the way.
+  useEffect(() => {
+    onClose?.();
+    // Only pathname drives this — onClose identity doesn't need to re-run it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
-interface ScrollButtonProps {
-  icon: React.ElementType
-  onClick?: () => void
-  disabled?: boolean
-}
-
-const ScrollButton = ({ icon, onClick, disabled }: ScrollButtonProps) => {
-  const Icon = icon
-  const [isPressed, setIsPressed] = React.useState(false)
-  const intervalRef = React.useRef<NodeJS.Timeout | null>(null)
-
-  React.useEffect(() => {
-    if (isPressed) {
-      intervalRef.current = setInterval(() => {
-        onClick?.()
-      }, 300)
-    } else {
-      clearInterval(intervalRef.current as NodeJS.Timeout)
-    }
-    return () => clearInterval(intervalRef.current as NodeJS.Timeout)
-  }, [isPressed, onClick])
-
-  React.useEffect(() => {
-    if (disabled) {
-      clearInterval(intervalRef.current as NodeJS.Timeout)
-      setIsPressed(false)
-    }
-  }, [disabled])
-
-  const ariaLabelText =
-    icon === ChevronLeft
-      ? "Desplazar leyenda a la izquierda"
-      : "Desplazar leyenda a la derecha"
-
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabelText}
-      className={cn(
-        // base
-        "group inline-flex size-5 items-center truncate rounded-sm transition",
-        disabled
-          ? "cursor-not-allowed text-gray-400 dark:text-gray-600"
-          : "cursor-pointer text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-50",
-      )}
-      disabled={disabled}
-      onClick={(e) => {
-        e.stopPropagation()
-        onClick?.()
-      }}
-      onMouseDown={(e) => {
-        e.stopPropagation()
-        setIsPressed(true)
-      }}
-      onMouseUp={(e) => {
-        e.stopPropagation()
-        setIsPressed(false)
-      }}
-    >
-      <Icon className="size-full" aria-hidden="true" />
-    </button>
-  )
-}
-
-interface LegendProps extends React.OlHTMLAttributes<HTMLOListElement> {
-  categories: string[]
-  colors?: AvailableChartColorsKeys[]
-  onClickLegendItem?: (category: string, color: string) => void
-  activeLegend?: string
-  enableLegendSlider?: boolean
-}
-
-type HasScrollProps = {
-  left: boolean
-  right: boolean
-}
-
-const Legend = React.forwardRef<HTMLOListElement, LegendProps>((props, ref) => {
-  const {
-    categories,
-    colors = AvailableChartColors,
-    className,
-    onClickLegendItem,
-    activeLegend,
-    enableLegendSlider = false,
-    ...other
-  } = props
-  const scrollableRef = React.useRef<HTMLInputElement>(null)
-  const scrollButtonsRef = React.useRef<HTMLDivElement>(null)
-  const [hasScroll, setHasScroll] = React.useState<HasScrollProps | null>(null)
-  const [isKeyDowned, setIsKeyDowned] = React.useState<string | null>(null)
-  const intervalRef = React.useRef<NodeJS.Timeout | null>(null)
-
-  const checkScroll = React.useCallback(() => {
-    const scrollable = scrollableRef?.current
-    if (!scrollable) return
-
-    const hasLeftScroll = scrollable.scrollLeft > 0
-    const hasRightScroll =
-      scrollable.scrollWidth - scrollable.clientWidth > scrollable.scrollLeft
-
-    setHasScroll({ left: hasLeftScroll, right: hasRightScroll })
-  }, [setHasScroll])
-
-  const scrollToTest = React.useCallback(
-    (direction: "left" | "right") => {
-      const element = scrollableRef?.current
-      const scrollButtons = scrollButtonsRef?.current
-      const scrollButtonsWith = scrollButtons?.clientWidth ?? 0
-      const width = element?.clientWidth ?? 0
-
-      if (element && enableLegendSlider) {
-        element.scrollTo({
-          left:
-            direction === "left"
-              ? element.scrollLeft - width + scrollButtonsWith
-              : element.scrollLeft + width - scrollButtonsWith,
-          behavior: "smooth",
-        })
-        setTimeout(() => {
-          checkScroll()
-        }, 400)
-      }
-    },
-    [enableLegendSlider, checkScroll],
-  )
-
-  React.useEffect(() => {
-    const keyDownHandler = (key: string) => {
-      if (key === "ArrowLeft") {
-        scrollToTest("left")
-      } else if (key === "ArrowRight") {
-        scrollToTest("right")
-      }
-    }
-    if (isKeyDowned) {
-      keyDownHandler(isKeyDowned)
-      intervalRef.current = setInterval(() => {
-        keyDownHandler(isKeyDowned)
-      }, 300)
-    } else {
-      clearInterval(intervalRef.current as NodeJS.Timeout)
-    }
-    return () => clearInterval(intervalRef.current as NodeJS.Timeout)
-  }, [isKeyDowned, scrollToTest])
-
-  const keyDown = (e: KeyboardEvent) => {
-    e.stopPropagation()
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-      e.preventDefault()
-      setIsKeyDowned(e.key)
-    }
-  }
-  const keyUp = (e: KeyboardEvent) => {
-    e.stopPropagation()
-    setIsKeyDowned(null)
-  }
-
-  React.useEffect(() => {
-    const scrollable = scrollableRef?.current
-    if (enableLegendSlider) {
-      checkScroll()
-      scrollable?.addEventListener("keydown", keyDown)
-      scrollable?.addEventListener("keyup", keyUp)
-    }
-
+  // Lock body scroll and allow Escape to close while the drawer is open on
+  // mobile. No-ops on desktop because the sidebar isn't positioned there.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", onKey);
     return () => {
-      scrollable?.removeEventListener("keydown", keyDown)
-      scrollable?.removeEventListener("keyup", keyUp)
-    }
-  }, [checkScroll, enableLegendSlider])
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
 
   return (
-    <ol
-      ref={ref}
-      className={cn("relative overflow-hidden", className)}
-      {...other}
-    >
-      <div
-        ref={scrollableRef}
-        tabIndex={0}
+    <>
+      {/* Backdrop — only exists on mobile and only when open. Clicking
+          it closes the drawer. Hidden from lg+ since the sidebar is
+          part of the main flex row there. */}
+      <button
+        type="button"
+        aria-label={t("closeMenu")}
+        onClick={onClose}
         className={cn(
-          "flex h-full",
-          enableLegendSlider
-            ? hasScroll?.right || hasScroll?.left
-              ? "snap-mandatory items-center overflow-auto pr-12 pl-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              : ""
-            : "flex-wrap",
+          "fixed inset-0 z-30 bg-background/70 backdrop-blur-sm transition-opacity lg:hidden",
+          open
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0",
         )}
-      >
-        {categories.map((category, index) => (
-          <LegendItem
-            key={`item-${index}`}
-            name={category}
-            color={colors[index] as AvailableChartColorsKeys}
-            onClick={onClickLegendItem}
-            activeLegend={activeLegend}
-          />
-        ))}
-      </div>
-      {enableLegendSlider && (hasScroll?.right || hasScroll?.left) ? (
-        <>
-          <div
-            className={cn(
-              // base
-              "absolute top-0 right-0 bottom-0 flex h-full items-center justify-center pr-1",
-              // background color
-              "bg-white dark:bg-gray-950",
-            )}
-          >
-            <ScrollButton
-              icon={ChevronLeft}
-              onClick={() => {
-                setIsKeyDowned(null)
-                scrollToTest("left")
-              }}
-              disabled={!hasScroll?.left}
-            />
-            <ScrollButton
-              icon={ChevronRight}
-              onClick={() => {
-                setIsKeyDowned(null)
-                scrollToTest("right")
-              }}
-              disabled={!hasScroll?.right}
-            />
-          </div>
-        </>
-      ) : null}
-    </ol>
-  )
-})
-
-Legend.displayName = "Legend"
-
-const ChartLegend = (
-  { payload }: any,
-  categoryColors: Map<string, AvailableChartColorsKeys>,
-  setLegendHeight: React.Dispatch<React.SetStateAction<number>>,
-  activeLegend: string | undefined,
-  onClick?: (category: string, color: string) => void,
-  enableLegendSlider?: boolean,
-  legendPosition?: "left" | "center" | "right",
-  yAxisWidth?: number,
-) => {
-  const legendRef = React.useRef<HTMLDivElement>(null)
-
-  useOnWindowResize(() => {
-    const calculateHeight = (height: number | undefined) =>
-      height ? Number(height) + 15 : 60
-    setLegendHeight(calculateHeight(legendRef.current?.clientHeight))
-  })
-
-  const filteredPayload = payload.filter((item: any) => item.type !== "none")
-
-  const paddingLeft =
-    legendPosition === "left" && yAxisWidth ? yAxisWidth - 8 : 0
-
-  return (
-    <div
-      style={{ paddingLeft: paddingLeft }}
-      ref={legendRef}
-      className={cn(
-        "flex items-center",
-        { "justify-center": legendPosition === "center" },
-        {
-          "justify-start": legendPosition === "left",
-        },
-        { "justify-end": legendPosition === "right" },
-      )}
-    >
-      <Legend
-        categories={filteredPayload.map((entry: any) => entry.value)}
-        colors={filteredPayload.map((entry: any) =>
-          categoryColors.get(entry.value),
-        )}
-        onClickLegendItem={onClick}
-        activeLegend={activeLegend}
-        enableLegendSlider={enableLegendSlider}
       />
-    </div>
-  )
-}
 
-//#endregion Legend
-
-//#region Tooltip
-
-type TooltipProps = Pick<ChartTooltipProps, "active" | "payload" | "label">
-
-type PayloadItem = {
-  category: string
-  value: number
-  index: string
-  color: AvailableChartColorsKeys
-  type?: string
-  payload: any
-}
-
-interface ChartTooltipProps {
-  active: boolean | undefined
-  payload: PayloadItem[]
-  label: string
-  valueFormatter: (value: number) => string
-}
-
-const ChartTooltip = ({
-  active,
-  payload,
-  label,
-  valueFormatter,
-}: ChartTooltipProps) => {
-  if (active && payload && payload.length) {
-    return (
-      <div
+      <aside
         className={cn(
-          // base
-          "rounded-md border text-sm shadow-md",
-          // border color
-          "border-gray-200 dark:border-gray-800",
-          // background color
-          "bg-white dark:bg-gray-950",
+          // Mobile: fixed drawer that slides in from the left.
+          "fixed inset-y-0 left-0 z-40 flex h-full w-64 flex-col border-r border-border bg-card",
+          "transition-transform duration-200 ease-out will-change-transform",
+          open ? "translate-x-0" : "-translate-x-full",
+          // Desktop: static, always visible — reset all the mobile framing.
+          "lg:static lg:z-0 lg:w-60 lg:translate-x-0 lg:transition-none",
         )}
+        aria-label="Primary"
       >
-        <div className={cn("border-b border-inherit px-4 py-2")}>
-          <p
-            className={cn(
-              // base
-              "font-medium",
-              // text color
-              "text-gray-900 dark:text-gray-50",
-            )}
+        {/* Logo row. On mobile we put a close button here; on desktop the
+            close button is hidden since the sidebar is always-visible. */}
+        <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <MessageSquare className="h-4 w-4" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">
+              {t("title")}
+            </span>
+          </Link>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t("closeMenu")}
+            className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
           >
-            {label}
-          </p>
+            <X className="h-5 w-5" />
+          </button>
         </div>
-        <div className={cn("space-y-1 px-4 py-2")}>
-          {payload.map(({ value, category, color }, index) => (
-            <div
-              key={`id-${index}`}
-              className="flex items-center justify-between space-x-8"
-            >
-              <div className="flex items-center space-x-2">
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "size-2 shrink-0 rounded-xs",
-                    getColorClassName(color, "bg"),
-                  )}
-                />
-                <p
-                  className={cn(
-                    // base
-                    "text-right whitespace-nowrap",
-                    // text color
-                    "text-gray-700 dark:text-gray-300",
-                  )}
-                >
-                  {category}
+
+        {/* Main navigation */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <ul className="flex flex-col gap-1">
+            {navItems.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== "/dashboard" && pathname.startsWith(item.href));
+
+              const showUnreadDot =
+                item.href === "/inbox" && totalUnread > 0 && !isActive;
+
+              // Unlike the inbox dot, the notifications count stays visible
+              // even while the page is active — it reflects unread state
+              // (cleared by marking notifications read), not "currently
+              // viewing this section".
+              const showNotificationBadge =
+                item.href === "/notifications" && unreadNotifications > 0;
+
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      // Taller on mobile so fingers can hit the row reliably (≥44px).
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span className="flex-1">{t(item.labelKey as string)}</span>
+                    {item.beta && (
+                      <span
+                        aria-label={t("beta")}
+                        className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
+                      >
+                        {t("beta")}
+                      </span>
+                    )}
+                    {showUnreadDot && (
+                      <span
+                        aria-label={t("unreadConversations", { count: totalUnread })}
+                        className="relative flex h-2 w-2"
+                      >
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                      </span>
+                    )}
+                    {showNotificationBadge && (
+                      <span
+                        aria-label={t("unreadNotifications", { count: unreadNotifications })}
+                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground"
+                      >
+                        {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="my-4 border-t border-border" />
+
+          <ul className="flex flex-col gap-1">
+            {bottomNavItems.map((item) => {
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {t(item.labelKey as string)}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* User section */}
+        <div className="shrink-0 border-t border-border p-3">
+          {/* Account name display — surfaced only when the account
+              name differs from the user's own name (see
+              `showAccountStrip`). For a default solo account the two
+              match, so we hide it to avoid duplicating the user name
+              below; for renamed or shared accounts it tells the user
+              which account they're acting in. */}
+          {showAccountStrip && account?.name ? (
+            <div className="mb-2 flex items-center gap-2 px-3 text-xs text-muted-foreground">
+              <UsersRound className="size-3.5 shrink-0" />
+              {/* `title=` exposes the full name on hover when it
+                  gets truncated (long account names + narrow
+                  sidebars). Cheap a11y win. */}
+              <span className="truncate" title={account.name}>
+                {account.name}
+              </span>
+              {accountRole ? (
+                // Always render the chip — owners used to be
+                // invisible here, which made them indistinguishable
+                // from admins at a glance. Now everyone sees their
+                // role (with a colour cue) regardless of tier.
+                (() => {
+                  const meta = ROLE_CHIP[accountRole];
+                  const Icon = meta.icon;
+                  return (
+                    <span
+                      className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${meta.className}`}
+                    >
+                      <Icon className="size-3" />
+                      {t(meta.labelKey as string)}
+                    </span>
+                  );
+                })()
+              ) : null}
+            </div>
+          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/60 focus:bg-muted/60 focus:outline-none data-popup-open:bg-muted/60">
+              <Avatar className="size-8 shrink-0">
+                {profile?.avatar_url ? (
+                  <AvatarImage
+                    src={profile.avatar_url}
+                    alt={profile.full_name ?? t("defaultAvatar")}
+                  />
+                ) : null}
+                <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
+                  {profile?.full_name?.charAt(0)?.toUpperCase() ??
+                    profile?.email?.charAt(0)?.toUpperCase() ??
+                    "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {profile?.full_name ?? t("defaultUser")}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {profile?.email ?? ""}
                 </p>
               </div>
-              <p
-                className={cn(
-                  // base
-                  "text-right font-medium whitespace-nowrap tabular-nums",
-                  // text color
-                  "text-gray-900 dark:text-gray-50",
-                )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              side="top"
+              sideOffset={6}
+              className="min-w-56 bg-popover text-popover-foreground ring-border"
+            >
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href="/settings?tab=profile"
+                    onClick={onClose}
+                    className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
+                  />
+                }
               >
-                {valueFormatter(value)}
-              </p>
-            </div>
-          ))}
+                <User className="size-4" />
+                {t("menuProfile")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href="/settings?tab=whatsapp"
+                    onClick={onClose}
+                    className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
+                  />
+                }
+              >
+                <Settings className="size-4" />
+                {t("menuSettings")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem
+                onClick={signOut}
+                className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                <LogOut className="size-4" />
+                {t("menuSignOut")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </div>
-    )
-  }
-  return null
+      </aside>
+    </>
+  );
 }
-
-//#endregion Tooltip
-
-//#region BarChart
-
-type BaseEventProps = {
-  eventType: "category" | "bar"
-  categoryClicked: string
-  [key: string]: number | string
-}
-
-type BarChartEventProps = BaseEventProps | null | undefined
-
-interface BarChartProps extends React.HTMLAttributes<HTMLDivElement> {
-  data: Record<string, any>[]
-  index: string
-  categories: string[]
-  colors?: AvailableChartColorsKeys[]
-  valueFormatter?: (value: number) => string
-  startEndOnly?: boolean
-  showXAxis?: boolean
-  showYAxis?: boolean
-  showGridLines?: boolean
-  yAxisWidth?: number
-  intervalType?: "preserveStartEnd" | "equidistantPreserveStart"
-  showTooltip?: boolean
-  showLegend?: boolean
-  autoMinValue?: boolean
-  minValue?: number
-  maxValue?: number
-  allowDecimals?: boolean
-  onValueChange?: (value: BarChartEventProps) => void
-  enableLegendSlider?: boolean
-  tickGap?: number
-  barCategoryGap?: string | number
-  xAxisLabel?: string
-  yAxisLabel?: string
-  layout?: "vertical" | "horizontal"
-  type?: "default" | "stacked" | "percent"
-  legendPosition?: "left" | "center" | "right"
-  tooltipCallback?: (tooltipCallbackContent: TooltipProps) => void
-  customTooltip?: React.ComponentType<TooltipProps>
-}
-
-const BarChart = React.forwardRef<HTMLDivElement, BarChartProps>(
-  (props, forwardedRef) => {
-    const {
-      data = [],
-      categories = [],
-      index,
-      colors = AvailableChartColors,
-      valueFormatter = (value: number) => value.toString(),
-      startEndOnly = false,
-      showXAxis = true,
-      showYAxis = true,
-      showGridLines = true,
-      yAxisWidth = 56,
-      intervalType = "equidistantPreserveStart",
-      showTooltip = true,
-      showLegend = true,
-      autoMinValue = false,
-      minValue,
-      maxValue,
-      allowDecimals = true,
-      className,
-      onValueChange,
-      enableLegendSlider = false,
-      barCategoryGap,
-      tickGap = 5,
-      xAxisLabel,
-      yAxisLabel,
-      layout = "horizontal",
-      type = "default",
-      legendPosition = "right",
-      tooltipCallback,
-      customTooltip,
-      ...other
-    } = props
-    const CustomTooltip = customTooltip
-    const paddingValue =
-      (!showXAxis && !showYAxis) || (startEndOnly && !showYAxis) ? 0 : 20
-    const [legendHeight, setLegendHeight] = React.useState(60)
-    const [activeLegend, setActiveLegend] = React.useState<string | undefined>(
-      undefined,
-    )
-    const categoryColors = constructCategoryColors(categories, colors)
-    const [activeBar, setActiveBar] = React.useState<any | undefined>(undefined)
-    const yAxisDomain = getYAxisDomain(autoMinValue, minValue, maxValue)
-    const hasOnValueChange = !!onValueChange
-    const stacked = type === "stacked" || type === "percent"
-
-    const prevActiveRef = React.useRef<boolean | undefined>(undefined)
-    const prevLabelRef = React.useRef<string | undefined>(undefined)
-
-    function valueToPercent(value: number) {
-      return `${(value * 100).toFixed(0)}%`
-    }
-
-    function onBarClick(data: any, _: any, event: React.MouseEvent) {
-      event.stopPropagation()
-      if (!onValueChange) return
-      if (deepEqual(activeBar, { ...data.payload, value: data.value })) {
-        setActiveLegend(undefined)
-        setActiveBar(undefined)
-        onValueChange?.(null)
-      } else {
-        setActiveLegend(data.tooltipPayload?.[0]?.dataKey)
-        setActiveBar({
-          ...data.payload,
-          value: data.value,
-        })
-        onValueChange?.({
-          eventType: "bar",
-          categoryClicked: data.tooltipPayload?.[0]?.dataKey,
-          ...data.payload,
-        })
-      }
-    }
-
-    function onCategoryClick(dataKey: string) {
-      if (!hasOnValueChange) return
-      if (dataKey === activeLegend && !activeBar) {
-        setActiveLegend(undefined)
-        onValueChange?.(null)
-      } else {
-        setActiveLegend(dataKey)
-        onValueChange?.({
-          eventType: "category",
-          categoryClicked: dataKey,
-        })
-      }
-      setActiveBar(undefined)
-    }
-
-    return (
-      <div
-        ref={forwardedRef}
-        className={cn("h-80 w-full", className)}
-        tremor-id="tremor-raw"
-        {...other}
-      >
-        <ResponsiveContainer>
-          <RechartsBarChart
-            data={data}
-            onClick={
-              hasOnValueChange && (activeLegend || activeBar)
-                ? () => {
-                    setActiveBar(undefined)
-                    setActiveLegend(undefined)
-                    onValueChange?.(null)
-                  }
-                : undefined
-            }
-            margin={{
-              bottom: xAxisLabel ? 30 : undefined,
-              left: yAxisLabel ? 20 : undefined,
-              right: yAxisLabel ? 5 : undefined,
-              top: 5,
-            }}
-            stackOffset={type === "percent" ? "expand" : undefined}
-            layout={layout}
-            barCategoryGap={barCategoryGap}
-          >
-            {showGridLines ? (
-              <CartesianGrid
-                className={cn("stroke-gray-200 stroke-1 dark:stroke-gray-800")}
-                horizontal={layout !== "vertical"}
-                vertical={layout === "vertical"}
-              />
-            ) : null}
-            <XAxis
-              hide={!showXAxis}
-              tick={{
-                transform:
-                  layout !== "vertical" ? "translate(0, 6)" : undefined,
-              }}
-              fill=""
-              stroke=""
-              className={cn(
-                // base
-                "text-xs",
-                // text fill
-                "fill-gray-500 dark:fill-gray-500",
-                { "mt-4": layout !== "vertical" },
-              )}
-              tickLine={false}
-              axisLine={false}
-              minTickGap={tickGap}
-              {...(layout !== "vertical"
-                ? {
-                    padding: {
-                      left: paddingValue,
-                      right: paddingValue,
-                    },
-                    dataKey: index,
-                    interval: startEndOnly ? "preserveStartEnd" : intervalType,
-                    ticks: startEndOnly
-                      ? [data[0][index], data[data.length - 1][index]]
-                      : undefined,
-                  }
-                : {
-                    type: "number",
-                    domain: yAxisDomain as AxisDomain,
-                    tickFormatter:
-                      type === "percent" ? valueToPercent : valueFormatter,
-                    allowDecimals: allowDecimals,
-                  })}
-            >
-              {xAxisLabel && (
-                <Label
-                  position="insideBottom"
-                  offset={-20}
-                  className="fill-gray-800 text-sm font-medium dark:fill-gray-200"
-                >
-                  {xAxisLabel}
-                </Label>
-              )}
-            </XAxis>
-            <YAxis
-              width={yAxisWidth}
-              hide={!showYAxis}
-              axisLine={false}
-              tickLine={false}
-              fill=""
-              stroke=""
-              className={cn(
-                // base
-                "text-xs",
-                // text fill
-                "fill-gray-500 dark:fill-gray-500",
-              )}
-              tick={{
-                transform:
-                  layout !== "vertical"
-                    ? "translate(-3, 0)"
-                    : "translate(0, 0)",
-              }}
-              {...(layout !== "vertical"
-                ? {
-                    type: "number",
-                    domain: yAxisDomain as AxisDomain,
-                    tickFormatter:
-                      type === "percent" ? valueToPercent : valueFormatter,
-                    allowDecimals: allowDecimals,
-                  }
-                : {
-                    dataKey: index,
-                    ticks: startEndOnly
-                      ? [data[0][index], data[data.length - 1][index]]
-                      : undefined,
-                    type: "category",
-                    interval: "equidistantPreserveStart",
-                  })}
-            >
-              {yAxisLabel && (
-                <Label
-                  position="insideLeft"
-                  style={{ textAnchor: "middle" }}
-                  angle={-90}
-                  offset={-15}
-                  className="fill-gray-800 text-sm font-medium dark:fill-gray-200"
-                >
-                  {yAxisLabel}
-                </Label>
-              )}
-            </YAxis>
-            <Tooltip
-              wrapperStyle={{ outline: "none" }}
-              isAnimationActive={true}
-              animationDuration={100}
-              cursor={{ fill: "#d1d5db", opacity: "0.15" }}
-              offset={20}
-              position={{
-                y: layout === "horizontal" ? 0 : undefined,
-                x: layout === "horizontal" ? undefined : yAxisWidth + 20,
-              }}
-              content={({ active, payload, label }) => {
-                const cleanPayload: TooltipProps["payload"] = payload
-                  ? payload.map((item: any) => ({
-                      category: item.dataKey,
-                      value: item.value,
-                      index: item.payload[index],
-                      color: categoryColors.get(
-                        item.dataKey,
-                      ) as AvailableChartColorsKeys,
-                      type: item.type,
-                      payload: item.payload,
-                    }))
-                  : []
-
-                if (
-                  tooltipCallback &&
-                  (active !== prevActiveRef.current ||
-                    label !== prevLabelRef.current)
-                ) {
-                  tooltipCallback({ active, payload: cleanPayload, label })
-                  prevActiveRef.current = active
-                  prevLabelRef.current = label
-                }
-
-                return showTooltip && active ? (
-                  CustomTooltip ? (
-                    <CustomTooltip
-                      active={active}
-                      payload={cleanPayload}
-                      label={label}
-                    />
-                  ) : (
-                    <ChartTooltip
-                      active={active}
-                      payload={cleanPayload}
-                      label={label}
-                      valueFormatter={valueFormatter}
-                    />
-                  )
-                ) : null
-              }}
-            />
-            {showLegend ? (
-              <RechartsLegend
-                verticalAlign="top"
-                height={legendHeight}
-                content={({ payload }) =>
-                  ChartLegend(
-                    { payload },
-                    categoryColors,
-                    setLegendHeight,
-                    activeLegend,
-                    hasOnValueChange
-                      ? (clickedLegendItem: string) =>
-                          onCategoryClick(clickedLegendItem)
-                      : undefined,
-                    enableLegendSlider,
-                    legendPosition,
-                    yAxisWidth,
-                  )
-                }
-              />
-            ) : null}
-            {categories.map((category) => (
-              <Bar
-                className={cn(
-                  getColorClassName(
-                    categoryColors.get(category) as AvailableChartColorsKeys,
-                    "fill",
-                  ),
-                  onValueChange ? "cursor-pointer" : "",
-                )}
-                key={category}
-                name={category}
-                type="linear"
-                dataKey={category}
-                stackId={stacked ? "stack" : undefined}
-                isAnimationActive={false}
-                fill=""
-                shape={(props: any) =>
-                  renderShape(props, activeBar, activeLegend, layout)
-                }
-                onClick={onBarClick}
-              />
-            ))}
-          </RechartsBarChart>
-        </ResponsiveContainer>
-      </div>
-    )
-  },
-)
-
-BarChart.displayName = "BarChart"
-
-export { BarChart, type BarChartEventProps, type TooltipProps }
