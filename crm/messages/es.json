@@ -1332,7 +1332,7 @@
       "failedToDeleteTag": "No se pudo eliminar la etiqueta",
       "deleteAria": "Eliminar {name}",
       "noTags": "Aún no hay etiquetas. Crea la primera abajo.",
-      "placeholder": "p. ej., Newsletter",
+      "placeholder": "Ejemplo, Boletín informativo",
       "useColor": "Usar {color}",
       "addTag": "Agregar etiqueta",
       "deleteTag": "Eliminar etiqueta",
