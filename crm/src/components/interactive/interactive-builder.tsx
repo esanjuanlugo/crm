@@ -102,29 +102,29 @@ export function InteractiveBuilder({
           <div className="flex gap-2">
             <KindButton
               active={value.kind === "buttons"}
-              label="Reply buttons"
+              label="Botones de respuesta"
               onClick={() => switchKind("buttons")}
             />
             <KindButton
               active={value.kind === "list"}
-              label="List"
+              label="Lista"
               onClick={() => switchKind("list")}
             />
           </div>
 
-          <Field label="Body" counter={`${value.body.length}/${INTERACTIVE_LIMITS.bodyMaxLength}`}>
+          <Field label="Mensaje" counter={`${value.body.length}/${INTERACTIVE_LIMITS.bodyMaxLength}`}>
             <Textarea
               value={value.body}
               maxLength={INTERACTIVE_LIMITS.bodyMaxLength}
               onChange={(e) => setField({ body: e.target.value })}
-              placeholder="What the customer reads above the options"
+              placeholder="Lo que el cliente lee encima de las opciones"
               className="min-h-20 bg-muted text-foreground"
             />
           </Field>
 
           <div className="grid grid-cols-2 gap-2">
             <Field
-              label="Header (optional)"
+              label="Encabezado (opcional)"
               counter={`${(value.header ?? "").length}/${INTERACTIVE_LIMITS.headerTextMaxLength}`}
             >
               <Input
@@ -135,7 +135,7 @@ export function InteractiveBuilder({
               />
             </Field>
             <Field
-              label="Footer (optional)"
+              label="Pie de mensaje (opcional)"
               counter={`${(value.footer ?? "").length}/${INTERACTIVE_LIMITS.footerMaxLength}`}
             >
               <Input
@@ -160,7 +160,7 @@ export function InteractiveBuilder({
               onChange={(e) => setAdvanced(e.target.checked)}
               className="h-3.5 w-3.5 accent-primary"
             />
-            Show reply IDs (advanced)
+            Mostrar IDs de respuesta (avanzado)
           </label>
 
           {!validation.ok && (
@@ -216,7 +216,7 @@ function ButtonsEditor({
   return (
     <div>
       <label className="mb-2 block text-xs text-muted-foreground">
-        Buttons ({buttons.length}/{INTERACTIVE_LIMITS.maxButtons})
+        Botones ({buttons.length}/{INTERACTIVE_LIMITS.maxButtons})
       </label>
       <div className="flex flex-col gap-2">
         {buttons.map((b, i) => (
@@ -236,7 +236,7 @@ function ButtonsEditor({
               value={b.title}
               maxLength={INTERACTIVE_LIMITS.buttonTitleMaxLength}
               onChange={(e) => update(i, { title: e.target.value })}
-              placeholder="Button label"
+              placeholder="Texto del botón"
               className="flex-1 bg-muted"
             />
             <span className="w-10 shrink-0 text-right text-[10px] text-muted-foreground">
@@ -329,7 +329,7 @@ function ListEditor({
 
   return (
     <div className="flex flex-col gap-3">
-      <Field label="List button label" counter={`${value.button_label.length}/${INTERACTIVE_LIMITS.buttonTitleMaxLength}`}>
+      <Field label="Texto del botón de lista" counter={`${value.button_label.length}/${INTERACTIVE_LIMITS.buttonTitleMaxLength}`}>
         <Input
           value={value.button_label}
           maxLength={INTERACTIVE_LIMITS.buttonTitleMaxLength}
@@ -339,7 +339,7 @@ function ListEditor({
       </Field>
 
       <label className="block text-xs text-muted-foreground">
-        Rows ({totalRows}/{INTERACTIVE_LIMITS.maxListRowsTotal})
+        Filas ({totalRows}/{INTERACTIVE_LIMITS.maxListRowsTotal})
       </label>
 
       {sections.map((section, sIdx) => (
@@ -348,7 +348,7 @@ function ListEditor({
             <Input
               value={section.title ?? ""}
               onChange={(e) => updateSection(sIdx, { title: e.target.value })}
-              placeholder="Section title (optional)"
+              placeholder="Título de sección (opcional)"
               className="flex-1 bg-muted text-xs"
             />
             {sections.length > 1 && (
@@ -380,7 +380,7 @@ function ListEditor({
                     value={row.title}
                     maxLength={INTERACTIVE_LIMITS.listRowTitleMaxLength}
                     onChange={(e) => updateRow(sIdx, rIdx, { title: e.target.value })}
-                    placeholder="Row title"
+                    placeholder="Título de fila"
                     className="flex-1 bg-muted"
                   />
                   <span className="w-10 shrink-0 text-right text-[10px] text-muted-foreground">
@@ -401,7 +401,7 @@ function ListEditor({
                   value={row.description ?? ""}
                   maxLength={INTERACTIVE_LIMITS.listRowDescriptionMaxLength}
                   onChange={(e) => updateRow(sIdx, rIdx, { description: e.target.value })}
-                  placeholder="Description (optional)"
+                  placeholder="Descripción (opcional)"
                   className="mt-2 bg-muted text-xs"
                 />
               </div>
