@@ -3,31 +3,45 @@ import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
+
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") || "/reset-password";
+
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
 
-  // Si el enlace expiró o es inválido, redirige limpiamente
+  // Si Supabase devuelve un error
   if (error) {
+    const message =
+      errorDescription || "El enlace ha expirado o es inválido";
+
     return NextResponse.redirect(
-      `\({origin}/forgot-password?error=\){encodeURIComponent(
-        errorDescription || "El enlace ha expirado o es inválido"
+      `${origin}/forgot-password?error=${encodeURIComponent(message)}`
+    );
+  }
+
+  // Intercambiar el código por la sesión de Supabase
+  if (code) {
+    const supabase = await createClient();
+
+    const { error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code);
+
+    if (!exchangeError) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+
+    return NextResponse.redirect(
+      `${origin}/forgot-password?error=${encodeURIComponent(
+        "No se pudo verificar el enlace"
       )}`
     );
   }
 
-  if (code) {
-    const supabase = await createClient();
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (!exchangeError) {
-      return NextResponse.redirect(`\({origin}\){next}`);
-    }
-  }
-
-  // Si ocurrió algún otro problema, se devuelve a forgot-password
+  // No llegó ningún código
   return NextResponse.redirect(
-    `${origin}/forgot-password?error=No+se+pudo+verificar+el+enlace`
+    `${origin}/forgot-password?error=${encodeURIComponent(
+      "No se recibió un código de recuperación"
+    )}`
   );
 }
