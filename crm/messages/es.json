@@ -14,6 +14,20 @@
     "noAccount": "¿No tienes una cuenta?",
     "createAccount": "Crear cuenta"
   },
+  "ForgotPassword": {
+    "title": "Restablecer contraseña",
+    "description": "Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "sending": "Enviando...",
+    "sendResetLink": "Enviar enlace de restablecimiento",
+    "backToSignIn": "Volver a iniciar sesión",
+    "success": {
+      "title": "Revisa tu correo",
+      "description": "Hemos enviado un enlace para restablecer tu contraseña a",
+      "checkInbox": "Revisa tu bandeja de entrada."
+    }
+  },
   "Sidebar": {
     "title": "CRM para WhatsApp",
     "dashboard": "Panel",
