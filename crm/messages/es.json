@@ -122,11 +122,21 @@
     "responseTimeChart": {
       "title": "Tiempo promedio de primera respuesta",
       "description": "Minutos que tardas en responder al primer mensaje de un cliente que aún no ha recibido respuesta, por día de la semana",
-      "target": "objetivo {minutes} min",
+      "target": "Objetivo: {minutes} min",
       "thisWeek": "Esta semana:",
       "lastWeek": "La semana pasada:",
       "noReplies": "Aún no hay respuestas registradas",
-      "noRepliesHint": "Este gráfico se completa a medida que respondes a los mensajes de los clientes."
+      "noRepliesHint": "Este gráfico se completa a medida que respondes a los mensajes de los clientes.",
+      "avgMinutes": "Promedio de minutos",
+      "days": {
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mié",
+        "thu": "Jue",
+        "fri": "Vie",
+        "sat": "Sáb",
+        "sun": "Dom"
+      }
     },
     "emptyState": {
       "title": "Aún no hay suficientes datos"

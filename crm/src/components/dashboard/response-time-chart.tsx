@@ -1,6 +1,7 @@
 "use client"
 
 import { Clock } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { DOW_SHORT_MON_FIRST } from '@/lib/dashboard/date-utils'
 import type { ResponseTimeSummary } from '@/lib/dashboard/types'
 import { BarChart } from '@/components/tremor/bar-chart'
@@ -19,29 +20,30 @@ interface ResponseTimeChartProps {
   thresholdMinutes?: number
 }
 
-import { useTranslations } from 'next-intl'
-
-// Single category, single colour — the data is "average minutes
-// per weekday". Tremor expects categories as the second tuple in
-// the row object, so we shape the buckets into
-// `{ day: 'Mon', 'Avg minutes': 4.2 }` rows below.
-const CATEGORY = 'Avg minutes'
-
 export function ResponseTimeChart({
   data,
   loading,
   thresholdMinutes = 5,
 }: ResponseTimeChartProps) {
   const t = useTranslations('Dashboard.responseTimeChart')
+
+  const CATEGORY = t('avgMinutes')
+
+  const days = [
+    t('days.mon'),
+    t('days.tue'),
+    t('days.wed'),
+    t('days.thu'),
+    t('days.fri'),
+    t('days.sat'),
+    t('days.sun'),
+  ]
+
   const hasData = data?.buckets.some((b) => b.avgMinutes != null) ?? false
 
-  // Map buckets → Tremor rows. Null `avgMinutes` (no samples)
-  // collapses to 0; the chart will render an empty slot for it.
-  // We attach `samples` on the row so a future customTooltip can
-  // surface "no samples" copy without losing the data shape.
   const chartData =
     data?.buckets.map((b, i) => ({
-      day: DOW_SHORT_MON_FIRST[i],
+      day: days[i] ?? DOW_SHORT_MON_FIRST[i],
       [CATEGORY]: b.avgMinutes ?? 0,
       samples: b.samples,
     })) ?? []
@@ -57,12 +59,14 @@ export function ResponseTimeChart({
             {t('description')}
           </p>
         </div>
+
         <div className="flex items-center gap-3 text-right text-xs">
           {thresholdMinutes > 0 && (
             <span className="rounded-full border border-rose-500/40 bg-rose-500/10 px-2 py-0.5 font-medium text-rose-300 tabular-nums">
               {t('target', { minutes: thresholdMinutes })}
             </span>
           )}
+
           {data && (data.thisWeekAvg != null || data.lastWeekAvg != null) && (
             <div>
               <div className="text-muted-foreground">
@@ -71,9 +75,12 @@ export function ResponseTimeChart({
                   {fmt(data.thisWeekAvg)}
                 </span>
               </div>
+
               <div className="text-muted-foreground">
                 {t('lastWeek')}{' '}
-                <span className="tabular-nums">{fmt(data.lastWeekAvg)}</span>
+                <span className="tabular-nums">
+                  {fmt(data.lastWeekAvg)}
+                </span>
               </div>
             </div>
           )}
@@ -94,14 +101,10 @@ export function ResponseTimeChart({
             data={chartData}
             index="day"
             categories={[CATEGORY]}
-            // 'violet' maps to Tailwind's `fill-violet-500` — matches
-            // the brand accent the hand-rolled bars used (#7c3aed).
             colors={['violet']}
             valueFormatter={(value) => `${value.toFixed(1)}m`}
             showLegend={false}
             yAxisWidth={48}
-            // Compact height so the chart sits well inside the card
-            // without dominating the row alongside the donut + activity feed.
             className="h-[260px]"
           />
         )}
