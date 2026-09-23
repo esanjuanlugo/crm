@@ -28,6 +28,24 @@
       "checkInbox": "Revisa tu bandeja de entrada."
     }
   },
+  "ResetPassword": {
+    "title": "Restablecer contraseña",
+    "description": "Ingresa tu nueva contraseña.",
+    "password": "Nueva contraseña",
+    "passwordPlaceholder": "Ingresa tu nueva contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "confirmPasswordPlaceholder": "Confirma tu nueva contraseña",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "showConfirmPassword": "Mostrar confirmación de contraseña",
+    "hideConfirmPassword": "Ocultar confirmación de contraseña",
+    "updating": "Actualizando...",
+    "updatePassword": "Actualizar contraseña",
+    "success": "Tu contraseña se actualizó correctamente.",
+    "passwordMismatch": "Las contraseñas no coinciden.",
+    "error": "No se pudo actualizar la contraseña.",
+    "backToSignIn": "Volver a iniciar sesión"
+  },
   "Sidebar": {
     "title": "CRM para WhatsApp",
     "dashboard": "Panel",

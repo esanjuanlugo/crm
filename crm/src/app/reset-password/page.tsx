@@ -3,13 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, KeyRound, CheckCircle } from "lucide-react";
+import {
+  Loader2,
+  KeyRound,
+  CheckCircle,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 import {
   Card,
   CardContent,
@@ -21,7 +28,8 @@ import {
 const MIN_PASSWORD = 8;
 
 export default function ResetPasswordPage() {
-  const t = useTranslations("Settings.profile");
+  const t = useTranslations("ResetPassword");
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -30,6 +38,9 @@ export default function ResetPasswordPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,14 +69,13 @@ export default function ResetPasswordPage() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        setError("El enlace de recuperación no es válido o ha expirado.");
+        setError(t("sessionExpired"));
         return;
       }
 
-      const { error: updateError } =
-        await supabase.auth.updateUser({
-          password,
-        });
+      const { error: updateError } = await supabase.auth.updateUser({
+        password,
+      });
 
       if (updateError) {
         setError(updateError.message);
@@ -76,18 +86,13 @@ export default function ResetPasswordPage() {
       setConfirm("");
       setSuccess(true);
 
-      toast.success("Contraseña actualizada correctamente.");
+      toast.success(t("successToast"));
 
       setTimeout(() => {
         router.push("/login");
       }, 2000);
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "No se pudo actualizar la contraseña.";
-
-      setError(message);
+    } catch {
+      setError(t("error"));
     } finally {
       setSaving(false);
     }
@@ -103,12 +108,11 @@ export default function ResetPasswordPage() {
             </div>
 
             <CardTitle className="text-xl text-foreground">
-              Contraseña actualizada
+              {t("successTitle")}
             </CardTitle>
 
             <CardDescription className="text-muted-foreground">
-              Tu contraseña se actualizó correctamente. Serás redirigido al
-              inicio de sesión.
+              {t("successDescription")}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -125,11 +129,11 @@ export default function ResetPasswordPage() {
           </div>
 
           <CardTitle className="text-xl text-foreground">
-            Restablecer contraseña
+            {t("title")}
           </CardTitle>
 
           <CardDescription className="text-muted-foreground">
-            Introduce tu nueva contraseña y confírmala para continuar.
+            {t("description")}
           </CardDescription>
         </CardHeader>
 
@@ -146,19 +150,45 @@ export default function ResetPasswordPage() {
                 htmlFor="new-password"
                 className="text-foreground"
               >
-                Nueva contraseña
+                {t("password")}
               </Label>
 
-              <Input
-                id="new-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                minLength={MIN_PASSWORD}
-                disabled={saving}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={MIN_PASSWORD}
+                  disabled={saving}
+                  required
+                  className="pr-10"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  disabled={saving}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  aria-label={
+                    showPassword
+                      ? t("hidePassword")
+                      : t("showPassword")
+                  }
+                  title={
+                    showPassword
+                      ? t("hidePassword")
+                      : t("showPassword")
+                  }
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -166,19 +196,47 @@ export default function ResetPasswordPage() {
                 htmlFor="confirm-password"
                 className="text-foreground"
               >
-                Confirmar contraseña
+                {t("confirmPassword")}
               </Label>
 
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                autoComplete="new-password"
-                minLength={MIN_PASSWORD}
-                disabled={saving}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={MIN_PASSWORD}
+                  disabled={saving}
+                  required
+                  className="pr-10"
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowConfirmPassword((value) => !value)
+                  }
+                  disabled={saving}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  aria-label={
+                    showConfirmPassword
+                      ? t("hideConfirmPassword")
+                      : t("showConfirmPassword")
+                  }
+                  title={
+                    showConfirmPassword
+                      ? t("hideConfirmPassword")
+                      : t("showConfirmPassword")
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <Button
@@ -189,10 +247,10 @@ export default function ResetPasswordPage() {
               {saving ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Actualizando...
+                  {t("updating")}
                 </>
               ) : (
-                "Actualizar contraseña"
+                t("updatePassword")
               )}
             </Button>
           </form>
