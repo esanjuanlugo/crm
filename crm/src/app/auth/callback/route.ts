@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
-
+debugger;
   // URL pública de producción
   const origin = "https://emiwheels.com";
 
