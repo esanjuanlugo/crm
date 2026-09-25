@@ -28,7 +28,7 @@
       "checkInbox": "Revisa tu bandeja de entrada."
     }
   },
-  "ResetPassword": {
+"ResetPassword": {
     "title": "Restablecer contraseña",
     "description": "Ingresa tu nueva contraseña.",
     "password": "Nueva contraseña",
@@ -41,6 +41,8 @@
     "hideConfirmPassword": "Ocultar confirmación de contraseña",
     "updating": "Actualizando...",
     "updatePassword": "Actualizar contraseña",
+    "successTitle": "¡Contraseña actualizada!",
+    "successDescription": "Tu contraseña se actualizó correctamente.",
     "success": "Tu contraseña se actualizó correctamente.",
     "passwordMismatch": "Las contraseñas no coinciden.",
     "error": "No se pudo actualizar la contraseña.",
