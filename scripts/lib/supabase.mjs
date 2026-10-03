@@ -125,7 +125,8 @@ export class SupabaseAdmin {
       if (anon && service) return { ok: true, url, anon, serviceRole: service, tipo: "legacy" };
     }
 
-    const todas = await this.req("GET", `/v1/projects/${ref}/api-keys?reveal=true`);
+    let todas = await this.req("GET", `/v1/projects/${ref}/api-keys?reveal=true`);
+    if (!todas.ok) todas = await this.req("GET", `/v1/projects/${ref}/api-keys`);
     if (!todas.ok) return { ok: false, error: todas.error };
 
     const lista = Array.isArray(todas.json) ? todas.json : [];
