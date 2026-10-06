@@ -48,18 +48,23 @@ export async function POST(request: Request) {
     let providerName: string | null = null
     let baseUrl: string | null = null
     if (provider === 'custom') {
-      providerName =
+      const cleanName: string =
         typeof body.provider_name === 'string' ? body.provider_name.trim() : ''
-      if (!providerName || providerName.length > 60) {
+      if (!cleanName || cleanName.length > 60) {
         return bad('provider_name is required (max 60 characters)')
       }
-      baseUrl =
+      const cleanUrl: string =
         typeof body.base_url === 'string'
           ? body.base_url.trim().replace(/\/+$/, '')
           : ''
-      if (!/^https:\/\//i.test(baseUrl) || !(await isDeliverableUrl(baseUrl))) {
+      if (
+        !/^https:\/\//i.test(cleanUrl) ||
+        !(await isDeliverableUrl(cleanUrl))
+      ) {
         return bad('base_url must be a public https URL')
       }
+      providerName = cleanName
+      baseUrl = cleanUrl
     }
 
     const rawKey = typeof body.api_key === 'string' ? body.api_key.trim() : ''
