@@ -6,7 +6,7 @@
 // whether the account is on OpenAI or Anthropic.
 // ============================================================
 
-export type AiProvider = 'openai' | 'anthropic'
+export type AiProvider = 'openai' | 'anthropic' | 'custom'
 
 /**
  * Account AI setup, decrypted and ready to use. Produced by
@@ -29,6 +29,10 @@ export interface AiConfig {
    *  knowledge base is embedded and semantic retrieval turns on; when
    *  null, retrieval falls back to lexical full-text search. */
   embeddingsApiKey: string | null
+  /** Only for provider 'custom': display name + OpenAI-compatible base
+   *  URL (e.g. https://api.groq.com/openai/v1). Ignored otherwise. */
+  providerName?: string | null
+  baseUrl?: string | null
 }
 
 /** A single conversation turn in the shape both providers accept. */

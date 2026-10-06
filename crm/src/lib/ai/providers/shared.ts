@@ -10,6 +10,9 @@ export interface ProviderArgs {
   systemPrompt: string
   messages: ChatMessage[]
   timeoutMs: number
+  /** Custom OpenAI-compatible provider only. */
+  baseUrl?: string | null
+  providerName?: string | null
 }
 
 /**

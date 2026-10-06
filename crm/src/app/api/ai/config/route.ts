@@ -9,6 +9,7 @@ import { encrypt, decrypt } from '@/lib/whatsapp/encryption'
 import { validateAiCredentials } from '@/lib/ai/validate'
 import { embedTexts } from '@/lib/ai/embeddings'
 import { AiError, type AiProvider } from '@/lib/ai/types'
+import { isDeliverableUrl } from '@/lib/webhooks/ssrf'
 
 function bad(message: string) {
   return NextResponse.json({ error: message }, { status: 400 })
@@ -30,7 +31,7 @@ export async function GET() {
       // `api_key` is selected only to derive `has_key` — it is stripped
       // out below and never returned to the client.
       .select(
-        'provider, model, system_prompt, is_active, auto_reply_enabled, auto_reply_max_per_conversation, handoff_agent_id, api_key, embeddings_api_key',
+        'provider, provider_name, base_url, model, system_prompt, is_active, auto_reply_enabled, auto_reply_max_per_conversation, handoff_agent_id, api_key, embeddings_api_key',
       )
       .eq('account_id', accountId)
       .maybeSingle()
@@ -78,11 +79,30 @@ export async function POST(request: Request) {
     if (!body || typeof body !== 'object') return bad('Invalid request body')
 
     const provider = body.provider as AiProvider
-    if (provider !== 'openai' && provider !== 'anthropic') {
-      return bad('provider must be "openai" or "anthropic"')
+    if (provider !== 'openai' && provider !== 'anthropic' && provider !== 'custom') {
+      return bad('provider must be "openai", "anthropic" or "custom"')
     }
     const model = typeof body.model === 'string' ? body.model.trim() : ''
     if (!model) return bad('model is required')
+
+    // Custom (OpenAI-compatible) provider: needs a display name and a
+    // public https Base URL. OpenAI/Anthropic ignore both fields.
+    let providerName: string | null = null
+    let baseUrl: string | null = null
+    if (provider === 'custom') {
+      providerName =
+        typeof body.provider_name === 'string' ? body.provider_name.trim() : ''
+      if (!providerName || providerName.length > 60) {
+        return bad('provider_name is required (max 60 characters)')
+      }
+      baseUrl =
+        typeof body.base_url === 'string'
+          ? body.base_url.trim().replace(/\/+$/, '')
+          : ''
+      if (!/^https:\/\//i.test(baseUrl) || !(await isDeliverableUrl(baseUrl))) {
+        return bad('base_url must be a public https URL')
+      }
+    }
 
     const systemPrompt =
       typeof body.system_prompt === 'string' && body.system_prompt.trim()
@@ -128,7 +148,7 @@ export async function POST(request: Request) {
     // Reuse the stored key when the form didn't send a fresh one.
     const { data: existing } = await supabase
       .from('ai_configs')
-      .select('id, provider, model, api_key')
+      .select('id, provider, model, api_key, provider_name, base_url')
       .eq('account_id', accountId)
       .maybeSingle()
 
@@ -153,7 +173,9 @@ export async function POST(request: Request) {
       !existing ||
       rawKey !== '' ||
       provider !== existing.provider ||
-      model !== existing.model
+      model !== existing.model ||
+      providerName !== (existing.provider_name ?? null) ||
+      baseUrl !== (existing.base_url ?? null)
 
     if (credentialsChanged) {
       try {
@@ -167,6 +189,8 @@ export async function POST(request: Request) {
           autoReplyMaxPerConversation: maxPer,
           handoffAgentId: null,
           embeddingsApiKey: null,
+          providerName,
+          baseUrl,
         })
       } catch (err) {
         if (err instanceof AiError) {
@@ -200,6 +224,8 @@ export async function POST(request: Request) {
     const encryptedKey = rawKey ? encrypt(rawKey) : null
     const shared: Record<string, unknown> = {
       provider,
+      provider_name: providerName,
+      base_url: baseUrl,
       model,
       system_prompt: systemPrompt,
       is_active: isActive,

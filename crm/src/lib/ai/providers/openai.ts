@@ -25,11 +25,19 @@ interface OpenAiResponse {
  * in `generateReply`).
  */
 export async function generateOpenAi(args: ProviderArgs): Promise<ProviderResult> {
-  const { apiKey, model, systemPrompt, messages, timeoutMs } = args
+  const { apiKey, model, systemPrompt, messages, timeoutMs, baseUrl, providerName } =
+    args
+  // Custom OpenAI-compatible provider (Groq, OpenRouter, Together...).
+  // Plain OpenAI keeps the exact same URL / body / redirect behaviour.
+  const isCustom = !!baseUrl
+  const url = isCustom
+    ? `${baseUrl.replace(/\/+$/, '')}/chat/completions`
+    : OPENAI_URL
+  const label = isCustom ? providerName?.trim() || 'Custom provider' : 'OpenAI'
 
   let res: Response
   try {
-    res = await fetch(OPENAI_URL, {
+    res = await fetch(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -41,22 +49,27 @@ export async function generateOpenAi(args: ProviderArgs): Promise<ProviderResult
           { role: 'system', content: systemPrompt },
           ...mergeConsecutive(messages),
         ],
-        max_completion_tokens: MAX_OUTPUT_TOKENS,
+        // Most compatible providers only implement the classic name.
+        ...(isCustom
+          ? { max_tokens: MAX_OUTPUT_TOKENS }
+          : { max_completion_tokens: MAX_OUTPUT_TOKENS }),
       }),
       signal: AbortSignal.timeout(timeoutMs),
+      // A public URL must not 3xx-bounce the key to an internal host.
+      ...(isCustom ? { redirect: 'manual' as const } : {}),
     })
   } catch (err) {
     throw toNetworkError(err)
   }
 
   if (!res.ok) {
-    throw await providerHttpError('OpenAI', res)
+    throw await providerHttpError(label, res)
   }
 
   const data = (await res.json().catch(() => null)) as OpenAiResponse | null
   const text = data?.choices?.[0]?.message?.content
   if (!text || typeof text !== 'string' || !text.trim()) {
-    throw new AiError('OpenAI returned an empty response.', {
+    throw new AiError(`${label} returned an empty response.`, {
       code: 'empty_response',
     })
   }

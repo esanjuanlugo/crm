@@ -4,6 +4,11 @@ import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { validateAiCredentials } from '@/lib/ai/validate'
 import { AiError, type AiProvider } from '@/lib/ai/types'
+import { isDeliverableUrl } from '@/lib/webhooks/ssrf'
+
+function bad(message: string) {
+  return NextResponse.json({ error: message }, { status: 400 })
+}
 
 /**
  * POST /api/ai/test  (admin+)
@@ -27,15 +32,34 @@ export async function POST(request: Request) {
     }
 
     const provider = body.provider as AiProvider
-    if (provider !== 'openai' && provider !== 'anthropic') {
+    if (provider !== 'openai' && provider !== 'anthropic' && provider !== 'custom') {
       return NextResponse.json(
-        { error: 'provider must be "openai" or "anthropic"' },
+        { error: 'provider must be "openai", "anthropic" or "custom"' },
         { status: 400 },
       )
     }
     const model = typeof body.model === 'string' ? body.model.trim() : ''
     if (!model) {
       return NextResponse.json({ error: 'model is required' }, { status: 400 })
+    }
+
+    // Custom (OpenAI-compatible) provider: needs a display name and a
+    // public https Base URL. OpenAI/Anthropic ignore both fields.
+    let providerName: string | null = null
+    let baseUrl: string | null = null
+    if (provider === 'custom') {
+      providerName =
+        typeof body.provider_name === 'string' ? body.provider_name.trim() : ''
+      if (!providerName || providerName.length > 60) {
+        return bad('provider_name is required (max 60 characters)')
+      }
+      baseUrl =
+        typeof body.base_url === 'string'
+          ? body.base_url.trim().replace(/\/+$/, '')
+          : ''
+      if (!/^https:\/\//i.test(baseUrl) || !(await isDeliverableUrl(baseUrl))) {
+        return bad('base_url must be a public https URL')
+      }
     }
 
     const rawKey = typeof body.api_key === 'string' ? body.api_key.trim() : ''
@@ -73,6 +97,8 @@ export async function POST(request: Request) {
         autoReplyMaxPerConversation: 3,
         handoffAgentId: null,
         embeddingsApiKey: null,
+        providerName,
+        baseUrl,
       })
     } catch (err) {
       if (err instanceof AiError) {

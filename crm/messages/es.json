@@ -1728,6 +1728,14 @@
       "saveSuccess": "Moneda predeterminada actualizada"
     },
     "aiConfig": {
+      "providerCustom": "Otro (personalizado)",
+      "providerName": "Nombre del proveedor",
+      "baseUrl": "Base URL (compatible con OpenAI)",
+      "baseUrlHint": "Debe ser https y pública. Se usa el endpoint /chat/completions.",
+      "customModelPlaceholder": "ej. llama-3.3-70b-versatile",
+      "customKeyPlaceholder": "API key del proveedor",
+      "missingProviderName": "Escribe el nombre del proveedor",
+      "invalidBaseUrl": "La Base URL no es válida (debe empezar con https://)",
       "title": "Configuración del agente",
       "description": "Usa tu propia clave de OpenAI o Anthropic. wacrm se conecta directamente con el proveedor utilizando tu clave; no hay cargos de IA por usuario y tus datos siguen siendo tuyos. Esto permite generar respuestas con IA en la bandeja de entrada, el bot de respuesta automática y el Playground.",
       "adminOnlyConfig": "Solo los administradores y propietarios pueden cambiar la configuración de IA.",

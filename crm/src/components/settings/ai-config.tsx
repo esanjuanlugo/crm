@@ -41,11 +41,13 @@ const HANDOFF_QUEUE = '__queue__';
 const PROVIDER_LABEL: Record<AiProvider, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic (Claude)',
+  custom: '',
 };
 
 const KEY_PLACEHOLDER: Record<AiProvider, string> = {
   openai: 'sk-...',
   anthropic: 'sk-ant-...',
+  custom: '',
 };
 
 export function AiConfig() {
@@ -61,6 +63,9 @@ export function AiConfig() {
   const [configured, setConfigured] = useState(false);
   const [provider, setProvider] = useState<AiProvider>('openai');
   const [model, setModel] = useState(AI_PROVIDER_DEFAULT_MODEL.openai);
+  // Only used when provider === 'custom' (OpenAI-compatible endpoint).
+  const [providerName, setProviderName] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [keyEdited, setKeyEdited] = useState(false);
   const [showKey, setShowKey] = useState(false);
@@ -95,6 +100,8 @@ export function AiConfig() {
         setConfigured(true);
         setProvider(data.provider);
         setModel(data.model);
+        setProviderName(data.provider_name ?? '');
+        setBaseUrl(data.base_url ?? '');
         setSystemPrompt(data.system_prompt ?? '');
         setIsActive(data.is_active);
         setAutoReplyEnabled(data.auto_reply_enabled);
@@ -135,6 +142,11 @@ export function AiConfig() {
     if (isDefaultModel) setModel(AI_PROVIDER_DEFAULT_MODEL[next]);
   };
 
+  const customFields = () =>
+    provider === 'custom'
+      ? { provider_name: providerName.trim(), base_url: baseUrl.trim() }
+      : { provider_name: null, base_url: null };
+
   const keyPayload = () => (keyEdited ? apiKey.trim() : undefined);
 
   // undefined = leave unchanged; '' typed = null (clear); text = set.
@@ -144,6 +156,7 @@ export function AiConfig() {
   const buildBody = () => ({
     provider,
     model: model.trim(),
+    ...customFields(),
     api_key: keyPayload(),
     embeddings_api_key: embeddingsKeyPayload(),
     system_prompt: systemPrompt.trim() || null,
@@ -162,6 +175,7 @@ export function AiConfig() {
         body: JSON.stringify({
           provider,
           model: model.trim(),
+          ...customFields(),
           api_key: keyPayload(),
         }),
       });
@@ -179,6 +193,19 @@ export function AiConfig() {
     if (!model.trim()) {
       toast.error(t('missingModel'));
       return;
+    }
+    if (provider === 'custom') {
+      if (!providerName.trim()) {
+        toast.error(t('missingProviderName'));
+        return;
+      }
+      try {
+        const u = new URL(baseUrl.trim());
+        if (u.protocol !== 'https:') throw new Error();
+      } catch {
+        toast.error(t('invalidBaseUrl'));
+        return;
+      }
     }
     if (!configured && !keyEdited) {
       toast.error(t('missingApiKey'));
@@ -219,6 +246,8 @@ export function AiConfig() {
         setAutoReplyEnabled(false);
         setSystemPrompt('');
         setHandoffAgentId('');
+        setProviderName('');
+        setBaseUrl('');
       } else {
         const data = await res.json();
         toast.error(data.error ?? t('removeFailed'));
@@ -281,6 +310,7 @@ export function AiConfig() {
                     <SelectItem value="anthropic">
                       {PROVIDER_LABEL.anthropic}
                     </SelectItem>
+                    <SelectItem value="custom">{t('providerCustom')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -291,11 +321,45 @@ export function AiConfig() {
                   id="ai-model"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  placeholder={AI_PROVIDER_DEFAULT_MODEL[provider]}
+                  placeholder={
+                    provider === 'custom'
+                      ? t('customModelPlaceholder')
+                      : AI_PROVIDER_DEFAULT_MODEL[provider]
+                  }
                   disabled={disabled}
                 />
               </div>
             </div>
+
+            {provider === 'custom' && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="ai-provider-name">{t('providerName')}</Label>
+                  <Input
+                    id="ai-provider-name"
+                    value={providerName}
+                    onChange={(e) => setProviderName(e.target.value)}
+                    placeholder="Groq, OpenRouter, Together..."
+                    maxLength={60}
+                    disabled={disabled}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ai-base-url">{t('baseUrl')}</Label>
+                  <Input
+                    id="ai-base-url"
+                    value={baseUrl}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                    placeholder="https://api.groq.com/openai/v1"
+                    disabled={disabled}
+                    autoComplete="off"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t('baseUrlHint')}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="ai-key">{t('apiKey')}</Label>
@@ -315,7 +379,11 @@ export function AiConfig() {
                         setKeyEdited(true);
                       }
                     }}
-                    placeholder={KEY_PLACEHOLDER[provider]}
+                    placeholder={
+                      provider === 'custom'
+                        ? t('customKeyPlaceholder')
+                        : KEY_PLACEHOLDER[provider]
+                    }
                     disabled={disabled}
                     autoComplete="off"
                   />

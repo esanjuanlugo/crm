@@ -8,6 +8,7 @@ import {
 import { HANDOFF_SENTINEL, aiRequestTimeoutMs } from './defaults'
 import { generateOpenAi } from './providers/openai'
 import { generateAnthropic } from './providers/anthropic'
+import { isDeliverableUrl } from '@/lib/webhooks/ssrf'
 
 export interface GenerateArgs {
   config: AiConfig
@@ -41,6 +42,29 @@ export async function generateReply(args: GenerateArgs): Promise<GenerateResult>
     case 'anthropic':
       result = await generateAnthropic(providerArgs)
       break
+    case 'custom': {
+      const baseUrl = config.baseUrl?.trim()
+      if (!baseUrl || !config.providerName?.trim()) {
+        throw new AiError('Custom provider needs a name and a Base URL.', {
+          code: 'invalid_config',
+          status: 400,
+        })
+      }
+      // The URL is admin-typed and our server calls it with their key:
+      // refuse anything that resolves to a private/internal address.
+      if (!/^https:\/\//i.test(baseUrl) || !(await isDeliverableUrl(baseUrl))) {
+        throw new AiError('The Base URL must be a public https address.', {
+          code: 'invalid_base_url',
+          status: 400,
+        })
+      }
+      result = await generateOpenAi({
+        ...providerArgs,
+        baseUrl,
+        providerName: config.providerName,
+      })
+      break
+    }
     default:
       throw new AiError(`Unsupported AI provider: ${config.provider}`, {
         code: 'unsupported_provider',
