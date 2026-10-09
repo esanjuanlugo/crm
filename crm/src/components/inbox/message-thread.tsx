@@ -1158,19 +1158,22 @@ export function MessageThread({
 
       {/* AI auto-reply banner — take over an active bot, or resume it
           after a handoff. Renders nothing unless the account has
-          auto-reply configured. */}
-      <AiThreadBanner
-        conversationId={conversation.id}
-        disabled={conversation.ai_autoreply_disabled ?? false}
-        handoffSummary={conversation.ai_handoff_summary}
-        assignedAgentId={assignedAgentId}
-        currentUserId={user?.id}
-        onChange={(patch) => {
-          if ("assigned_agent_id" in patch) {
-            onAssignChange(conversation.id, patch.assigned_agent_id ?? null);
-          }
-        }}
-      />
+          auto-reply configured, and is hidden once the 24h session
+          expired (the bot can only reply to a fresh inbound message). */}
+      {!sessionInfo.expired && (
+        <AiThreadBanner
+          conversationId={conversation.id}
+          disabled={conversation.ai_autoreply_disabled ?? false}
+          handoffSummary={conversation.ai_handoff_summary}
+          assignedAgentId={assignedAgentId}
+          currentUserId={user?.id}
+          onChange={(patch) => {
+            if ("assigned_agent_id" in patch) {
+              onAssignChange(conversation.id, patch.assigned_agent_id ?? null);
+            }
+          }}
+        />
+      )}
 
       {/* Composer */}
       <MessageComposer
