@@ -1,0 +1,40 @@
+# Caddy para Supabase self-hosted + CRM, con HTTPS automático (Let's Encrypt).
+# Reemplaza al Caddyfile del stack oficial: agrega el dominio del CRM.
+#
+#   {$PROXY_DOMAIN}  → API de Supabase (y Studio, con usuario y contraseña)
+#   {$CRM_DOMAIN}    → el CRM (Next.js)
+
+{$PROXY_DOMAIN} {
+@supabase_api path /auth/v1/* /rest/v1/* /graphql/v1 /realtime/v1/* /storage/v1/* /functions/v1/* /mcp /sso/* /.well-known/oauth-authorization-server
+
+handle @supabase_api {
+reverse_proxy api-gw:8000
+}
+
+handle {
+basic_auth {
+# PROXY_AUTH_PASSWORD se reemplaza por su bcrypt al arrancar
+{$PROXY_AUTH_USERNAME} {$PROXY_AUTH_PASSWORD}
+}
+reverse_proxy studio:3000
+}
+
+# Las subidas de archivos (audios, fotos) pasan por acá.
+request_body {
+max_size 50MB
+}
+
+header -server
+}
+
+{$CRM_DOMAIN} {
+reverse_proxy app:3000
+
+# El webhook de WhatsApp puede traer audios y fotos.
+request_body {
+max_size 25MB
+}
+
+encode gzip
+header -server
+}

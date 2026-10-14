@@ -16,6 +16,7 @@
     "levantar": "node scripts/levantar.mjs",
     "tunel": "node scripts/tunel.mjs",
     "vincular": "node scripts/vincular.mjs",
-    "vps": "node scripts/vps.mjs"
+    "vps": "node scripts/vps.mjs",
+    "supabase-vps": "node scripts/supabase-vps.mjs"
   }
 }

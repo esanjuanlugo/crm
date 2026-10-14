@@ -17,3 +17,5 @@ node_modules/
 tunel.log
 .DS_Store
 Thumbs.db
+supabase-prod/
+.setup-supabase.sh
