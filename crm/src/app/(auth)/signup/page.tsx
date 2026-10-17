@@ -65,7 +65,7 @@ function SignupPageInner() {
     setLoading(true);
 
     // URL de producción definida mediante variable de entorno
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const siteUrl = window.location.origin;
 
     if (!siteUrl) {
       setError(t("error"));
