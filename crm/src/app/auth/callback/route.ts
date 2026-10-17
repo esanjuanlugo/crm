@@ -9,9 +9,9 @@ export async function GET(request: Request) {
 
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
-debugger;
+
   // URL pública de producción
-  const origin = "https://emiwheels.com";
+  const origin = (() => { const host = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || request.headers.get("host"); const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https"; return host ? `${proto}://${host}` : new URL(request.url).origin; })();
 
   // Si Supabase devuelve un error
   if (error) {
