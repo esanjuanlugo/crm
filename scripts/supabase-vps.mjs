@@ -17,6 +17,9 @@
  * Uso:
  *   npm run supabase-vps -- --supabase api.tudominio.com --crm crm.tudominio.com
  *   npm run supabase-vps -- --migrar      (solo aplica migraciones nuevas)
+ *   npm run supabase-vps -- --actualizar  (después de `git pull`: migra, reconstruye
+ *                                          el CRM y verifica; NO toca secretos)
+ *   npm run supabase-vps -- --verificar   (solo revisa que todo apunte al dominio correcto)
  *
  * Los dos dominios tienen que apuntar (registro A) a la IP de este servidor
  * ANTES de correrlo, o Caddy no puede sacar el certificado.
@@ -40,6 +43,10 @@ verificarNode();
 const argv = process.argv.slice(2);
 const valorDe = (n) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : undefined; };
 const soloMigrar = argv.includes("--migrar");
+const soloActualizar = argv.includes("--actualizar");
+const soloVerificar = argv.includes("--verificar");
+// Instalación completa = ninguno de los modos parciales.
+const completo = !soloMigrar && !soloActualizar && !soloVerificar;
 
 const PROYECTO = resolve(ROOT, "supabase-prod");
 const ENV_SB = resolve(PROYECTO, ".env");
@@ -57,11 +64,11 @@ if (!existsSync(DIR_MIG)) morir("No encuentro crm/supabase/migrations.", "Verifi
 // ── 0. dominios ─────────────────────────────────────────────────────────────
 let dSb = limpiar(valorDe("--supabase") || creds.SUPABASE_DOMAIN || "");
 let dCrm = limpiar(valorDe("--crm") || creds.CRM_DOMAIN || (creds.PUBLIC_URL || ""));
-if (soloMigrar && existsSync(ENV_SB)) {
+if (!completo && existsSync(ENV_SB)) {
   const e = leerEnv(ENV_SB);
   dSb ||= e.PROXY_DOMAIN || ""; dCrm ||= e.CRM_DOMAIN || "";
 }
-if (!soloMigrar) {
+if (completo) {
   titulo("0. Dominios");
   if (!dSb) dSb = limpiar(await preguntar("  Dominio para Supabase (ej. api.tudominio.com)"));
   if (!dCrm) dCrm = limpiar(await preguntar("  Dominio para el CRM     (ej. crm.tudominio.com)"));
@@ -74,7 +81,7 @@ if (!soloMigrar) {
 }
 
 // ── 1. stack oficial ────────────────────────────────────────────────────────
-if (!soloMigrar) {
+if (completo) {
   titulo("1. Stack oficial de Supabase self-hosted");
   if (existsSync(ENV_SB)) {
     ok("supabase-prod/ ya existe", "no lo toco (así no se rotan tus secretos)");
@@ -103,7 +110,7 @@ if (!soloMigrar) {
     SUPABASE_PUBLIC_URL: `https://${dSb}`,
     API_EXTERNAL_URL: `https://${dSb}/auth/v1`,
     SITE_URL: `https://${dCrm}`,
-    ADDITIONAL_REDIRECT_URLS: `https://${dCrm}`,
+    ADDITIONAL_REDIRECT_URLS: `https://${dCrm}/**`,
     PROXY_DOMAIN: dSb,
     CRM_DOMAIN: dCrm,
     CERTBOT_EMAIL: `admin@${dCrm.split(".").slice(-2).join(".")}`,
@@ -162,15 +169,18 @@ if (!soloMigrar) {
 }
 
 // ── 5. migraciones ──────────────────────────────────────────────────────────
-titulo(`${soloMigrar ? "1" : "5"}. Migraciones`);
-migrar();
+if (!soloVerificar) {
+  titulo(`${completo ? "5" : "1"}. Migraciones`);
+  migrar();
+}
 
 // ── 6. app + HTTPS ──────────────────────────────────────────────────────────
-if (!soloMigrar) {
-  titulo("6. CRM + HTTPS");
+if (completo || soloActualizar) {
+  titulo(soloActualizar ? "2. Reconstruyendo el CRM" : "6. CRM + HTTPS");
   info("Construyendo la imagen del CRM (varios minutos la primera vez)…");
   compose("up", "-d", "--build", "--wait", "--wait-timeout", "600", "app", "caddy");
   ok("CRM y Caddy arriba");
+  await verificarDespliegue();
 
   const e = leerEnv(ENV_SB);
   console.log(`\n${C.green(C.bold("✓ Listo."))}`);
@@ -183,7 +193,54 @@ if (!soloMigrar) {
   console.log(C.dim(`  Logs:  cd supabase-prod && docker compose logs -f app\n`));
 }
 
+if (soloVerificar) {
+  titulo("Verificación");
+  await verificarDespliegue();
+  console.log(`\n${C.green(C.bold("✓ Todo en orden."))}\n`);
+}
+
 // ── helpers ─────────────────────────────────────────────────────────────────
+// Revisa lo que falló en el despliegue de octubre 2026: el dominio público tiene
+// que ser el que se visita, y no puede haber DOS copias del CRM (el proxy
+// terminaba mandando el tráfico a una copia vieja con otro dominio).
+async function verificarDespliegue() {
+  const e = leerEnv(ENV_SB);
+  const crm = e.CRM_DOMAIN || dCrm;
+  const api = e.PROXY_DOMAIN || dSb;
+  if (!crm || !api) morir("No sé qué dominios verificar.", "Corré el comando completo con --supabase y --crm.");
+
+  // 1. Una sola copia del CRM corriendo.
+  try {
+    const filas = execFileSync("docker", ["ps", "--format", "{{.Names}}\t{{.Image}}"], { encoding: "utf8" })
+      .split("\n").filter(Boolean).map((l) => l.split("\t"));
+    const extra = filas.filter(([n, img]) => /^(wacrm|crm)[-_]/.test(img || "") && n !== "supabase-app-1");
+    if (extra.length) {
+      warn(`Hay otra copia del CRM corriendo: ${extra.map(([n]) => n).join(", ")}`,
+        "no uses `docker compose` dentro de crm/ junto con este script; apagala con `docker stop <nombre>`");
+    } else ok("Una sola copia del CRM", "supabase-app-1");
+  } catch { warn("No pude listar los contenedores", "¿docker está corriendo?"); }
+
+  // 2. SITE_URL de Auth = dominio del CRM.
+  if (e.SITE_URL === `https://${crm}`) ok("SITE_URL de Auth correcto", e.SITE_URL);
+  else warn(`SITE_URL (${e.SITE_URL || "vacío"}) no coincide con https://${crm}`, "corré el comando completo con tus dos dominios");
+
+  // 3. El callback del CRM redirige al dominio con el que se lo visita.
+  try {
+    const r = await fetch(`https://${crm}/auth/callback?code=x&next=/dashboard`, { redirect: "manual", signal: AbortSignal.timeout(15000) });
+    const loc = r.headers.get("location") || "";
+    if (loc.startsWith(`https://${crm}/`)) ok("El CRM redirige al dominio correcto", loc.split("?")[0]);
+    else morir(`El CRM redirige a "${loc || "(nada)"}" y debería ser https://${crm}/…`,
+      "Casi seguro hay otra copia vieja detrás de Caddy, o la imagen no se reconstruyó: cd supabase-prod && docker compose up -d --build app");
+  } catch { warn(`No pude llegar a https://${crm}`, "¿el DNS ya apunta a este servidor y Caddy sacó el certificado? Reintentá en 1-2 min con --verificar"); }
+
+  // 4. Auth responde por el dominio de Supabase.
+  try {
+    const r = await fetch(`https://${api}/auth/v1/settings`, { headers: { apikey: e.ANON_KEY }, signal: AbortSignal.timeout(15000) });
+    if (r.ok) ok("Auth de Supabase responde", `https://${api}/auth/v1`);
+    else warn(`Auth respondió ${r.status}`, "revisá `docker compose logs auth`");
+  } catch { warn(`No pude llegar a https://${api}`, "revisá DNS y certificado"); }
+}
+
 function migrar() {
   const e = leerEnv(ENV_SB);
   const psql = (sql, entrada) =>
