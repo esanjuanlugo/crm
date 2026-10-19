@@ -1381,7 +1381,7 @@
       "labelTooLong": "La etiqueta debe tener {max} caracteres o menos",
       "copied": "Enlace de invitación copiado",
       "clipboardBlocked": "El portapapeles está bloqueado; copia el enlace manualmente",
-      "whatsappMessage": "Únete a {accountNombre} en wacrm usando este enlace (válido durante {expiresInDías} días): {url}"
+      "whatsappMessage": "Únete a {accountName} en wacrm usando este enlace (válido durante {expiresInDays} días): {url}"
     },
     "tagsAndFields": {
       "title": "Campos y etiquetas",
@@ -1622,7 +1622,7 @@
       "photoHint": "PNG, JPG, WebP o GIF. Hasta 2 MB.",
       "displayName": "Nombre para mostrar",
       "email": "Correo electrónico",
-      "emailChangeHint": "Revisa las bandejas de entrada de <bold>{oldCorreo}</bold> y <bold>{newCorreo}</bold>; ambas direcciones deben confirmar antes de que el cambio tenga efecto.",
+      "emailChangeHint": "Revisa las bandejas de entrada de <bold>{oldEmail}</bold> y <bold>{newEmail}</bold>; ambas direcciones deben confirmar antes de que el cambio tenga efecto.",
       "accountDetails": "Detalles de la cuenta",
       "role": "Rol",
       "joined": "Se unió",
@@ -1751,7 +1751,7 @@
       "testNetworkError": "No se pudo conectar con el proveedor.",
       "embeddingsKey": "Clave de embeddings",
       "optionalSemanticSearch": "(opcional; habilita la búsqueda semántica en la base de conocimientos)",
-      "embeddingsHint": "Una clave de OpenAI utilizada únicamente para generar embeddings de tu base de conocimientos (text-embedding-3-small){sameKeyTexto}. Déjala en blanco para utilizar la búsqueda por palabras clave. Elimínala para desactivar la búsqueda semántica.",
+      "embeddingsHint": "Una clave de OpenAI utilizada únicamente para generar embeddings de tu base de conocimientos (text-embedding-3-small){sameKeyText}. Déjala en blanco para utilizar la búsqueda por palabras clave. Elimínala para desactivar la búsqueda semántica.",
       "sameKeyText": " — puede ser la misma clave de arriba",
       "behaviour": "Comportamiento",
       "behaviourDesc": "Indícale al asistente información sobre tu negocio: productos, tono de comunicación y lo que puede o no puede prometer. Este contexto se utiliza tanto para los borradores como para las respuestas automáticas.",
