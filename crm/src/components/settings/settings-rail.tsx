@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import {
   RAIL_GROUPS,
   SECTION_META,
+  HIDDEN_SECTIONS,
   SETTINGS_SECTIONS,
   type SettingsSection,
 } from './settings-sections';
@@ -57,7 +58,8 @@ export function SettingsRail({
     >
       {RAIL_GROUPS.map(({ label, group }) => {
         const items = SETTINGS_SECTIONS.filter(
-          (s) => SECTION_META[s].group === group,
+          (s) =>
+            SECTION_META[s].group === group && !HIDDEN_SECTIONS.includes(s),
         );
         return (
           <div

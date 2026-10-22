@@ -39,6 +39,9 @@ export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 export const DEFAULT_SECTION: SettingsSection = 'overview';
 
+/** Sections hidden from the rail and not reachable via `?tab=`. */
+export const HIDDEN_SECTIONS: readonly SettingsSection[] = ['api'];
+
 /** Rail grouping. `adminOnly` items are hidden for non-admins. */
 export interface SectionMeta {
   id: SettingsSection;
@@ -79,6 +82,6 @@ function isSection(value: string | null): value is SettingsSection {
  */
 export function resolveSection(raw: string | null): SettingsSection {
   if (raw === 'tags' || raw === 'custom-fields') return 'fields';
-  if (isSection(raw)) return raw;
+  if (isSection(raw) && !HIDDEN_SECTIONS.includes(raw)) return raw;
   return DEFAULT_SECTION;
 }
