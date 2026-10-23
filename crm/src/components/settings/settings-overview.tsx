@@ -81,8 +81,7 @@ export function SettingsOverview({
             .eq('status', 'PENDING'),
           supabase
             .from('tags')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId),
+            .select('id', { count: 'exact', head: true }),
           supabase.from('custom_fields').select('id', { count: 'exact', head: true }),
         ]);
 

@@ -551,7 +551,7 @@
     },
     "customFields": {
       "title": "Campos personalizados",
-      "desc": "Define campos adicionales para los contactos (por ejemplo, código postal o fuente del prospecto). Estos campos aparecerán en todos los contactos y en la acción de automatización «Actualizar campo del contacto».",
+      "desc": "Define campos adicionales para los contactos (por ejemplo, código postal o fuente del prospecto). Estos campos aparecerán en todos los contactos, y podrás usarlos para segmentar y personalizar difusiones y en la acción de automatización «Actualizar campo del contacto».",
       "addField": "Agregar campo",
       "fieldName": "Nombre del nuevo campo…",
       "loading": "Cargando…",
@@ -1389,7 +1389,7 @@
       "tagsTitle": "Etiquetas",
       "tagsDesc": "Etiquetas con colores para agrupar y filtrar contactos.",
       "fieldsTitle": "Campos personalizados",
-      "fieldsDesc": "Campos adicionales de los contactos (p. ej., código postal o fuente del prospecto). Aparecen en todos los contactos y en la acción de automatización «Actualizar campo del contacto».",
+      "fieldsDesc": "Campos adicionales de los contactos (p. ej., código postal o fuente del prospecto). Aparecen en todos los contactos, y puedes usarlos para segmentar y personalizar difusiones y en la acción de automatización «Actualizar campo del contacto».",
       "adminRole": "Administrador",
       "failedToLoadTags": "No se pudieron cargar las etiquetas",
       "nameRequired": "El nombre de la etiqueta es obligatorio",
