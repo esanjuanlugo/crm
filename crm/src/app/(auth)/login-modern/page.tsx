@@ -196,7 +196,7 @@ function ModernLoginInner() {
       <main className="relative flex items-center justify-center px-6 py-12">
         <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/10 to-transparent lg:hidden" />
 
-        <div className="relative w-full max-w-sm">
+        <div className="relative w-full max-w-md rounded-3xl border border-border/60 bg-card/50 p-8 shadow-2xl shadow-black/20 backdrop-blur sm:p-10">
           {/* Brand on small screens */}
           <div className="mb-8 flex flex-col items-center text-center lg:hidden">
             <BrandMark className="h-14 w-14" />
@@ -208,8 +208,8 @@ function ModernLoginInner() {
             </p>
           </div>
 
-          <div className="mb-8">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               {inviteToken ? t("titleAccept") : t("titleWelcome")}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -310,7 +310,7 @@ function ModernLoginInner() {
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-muted-foreground">
+          <p className="mt-8 border-t border-border/60 pt-6 text-center text-sm text-muted-foreground">
             {t("noAccount")}{" "}
             <Link
               href={
@@ -324,7 +324,7 @@ function ModernLoginInner() {
             </Link>
           </p>
 
-          <p className="mt-4 text-center text-xs text-muted-foreground/70">
+          <p className="mt-3 text-center text-xs text-muted-foreground/70">
             <Link
               href={
                 inviteToken
