@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#7c3aed"/><stop offset=".55" stop-color="#4c1d95"/><stop offset="1" stop-color="#1e0a3c"/></linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6e2a8"/><stop offset="1" stop-color="#c9993f"/></linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/><rect width="64" height="64" rx="15" fill="url(#sheen)"/>
+  <path d="M13 14 L28 14 L32 31 L24 31 Z" fill="#f5f3ff"/>
+  <path d="M51 14 L36 14 L32 31 L40 31 Z" fill="#ddd6fe"/>
+  <path d="M24 31 L32 52 L40 31 L32 36 Z" fill="#f5f3ff" opacity=".95"/>
+  <circle cx="32" cy="43" r="2.6" fill="url(#gold)"/>
+</svg>

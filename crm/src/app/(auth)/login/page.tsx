@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MessageSquare, UsersRound } from "lucide-react";
+import { UsersRound } from "lucide-react";
+import { VelvetSuitMark } from "@/components/brand/velvet-suit-logo";
 
 // `useSearchParams` opts the component out of static prerendering
 // unless it sits under a Suspense boundary. We split the form into
@@ -75,16 +77,31 @@ function LoginPageInner() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border bg-card">
-        <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            {inviteToken ? (
-              <UsersRound className="h-6 w-6 text-primary" />
-            ) : (
-              <MessageSquare className="h-6 w-6 text-primary" />
-            )}
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
+      {/* Soft velvet glow behind the card */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(60%_50%_at_50%_0%,color-mix(in_oklab,var(--primary)_22%,transparent),transparent_70%)]"
+      />
+      <div className="relative z-10 flex w-full max-w-md flex-col items-center">
+        <div className="mb-6 flex flex-col items-center gap-3">
+          <VelvetSuitMark className="h-16 w-16 drop-shadow-lg" />
+          <div className="text-center">
+            <p className="text-2xl font-semibold tracking-wide text-foreground">
+              Velvet <span className="text-primary">Suit</span>
+            </p>
+            <p className="mt-1 text-xs uppercase tracking-[0.25em] text-muted-foreground">
+              {BRAND.tagline}
+            </p>
           </div>
+        </div>
+      <Card className="w-full border-border bg-card shadow-xl">
+        <CardHeader className="items-center text-center">
+          {inviteToken && (
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <UsersRound className="h-6 w-6 text-primary" />
+            </div>
+          )}
           <CardTitle className="text-xl text-foreground">
             {inviteToken ? t('titleAccept') : t('titleWelcome')}
           </CardTitle>
@@ -164,6 +181,7 @@ function LoginPageInner() {
           </p>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
