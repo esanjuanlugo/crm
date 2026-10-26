@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowRight,
-  Bot,
   CheckCheck,
   Eye,
   EyeOff,
@@ -18,6 +17,7 @@ import {
   Zap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { LoginChatDemo } from "@/components/auth/login-chat-demo";
 
 // ---------------------------------------------------------------------------
 // Modern login — second option next to the classic card at /login.
@@ -181,15 +181,7 @@ function ModernLoginInner() {
         </div>
 
         {/* Decorative chat preview */}
-        <div className="relative flex max-w-sm flex-col gap-2" aria-hidden="true">
-          <div className="w-fit max-w-[85%] rounded-2xl rounded-bl-md border border-border/60 bg-card/60 px-4 py-2.5 text-sm text-foreground backdrop-blur">
-            {c.chatIn}
-          </div>
-          <div className="ml-auto flex w-fit max-w-[85%] items-center gap-2 rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground shadow-lg shadow-primary/20">
-            {c.chatOut}
-            <Bot className="h-4 w-4 shrink-0 opacity-80" />
-          </div>
-        </div>
+        <LoginChatDemo incoming={c.chatIn} outgoing={c.chatOut} />
       </aside>
 
       {/* ---------- Form panel ---------- */}
