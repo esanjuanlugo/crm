@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowRight,
-  Bot,
   CheckCheck,
   Eye,
   EyeOff,
@@ -14,79 +13,69 @@ import {
   Loader2,
   Lock,
   Mail,
+  Radio,
   Zap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ChatwiseMark } from "@/components/brand/chatwise-logo";
+import { LoginChatDemo } from "@/components/auth/login-chat-demo";
 
 // ---------------------------------------------------------------------------
-// Chatwise login — served at /login.
+// Modern login — second option next to the classic card at /login.
 //
 // Same auth logic as /login (Supabase password sign-in, invite token,
-// full-page redirect so the middleware sees the fresh cookies), with the
-// Chatwise identity: midnight brand panel + light form panel.
+// full-page redirect) with a split-screen layout: brand panel on the
+// left (hidden on small screens), form on the right.
+//
+// Change the brand here. Colors follow the active theme (`primary`).
 // ---------------------------------------------------------------------------
+const BRAND_FIRST = "Chat";
+const BRAND_SECOND = "wise";
 
 const COPY = {
   es: {
-    tagline: "CRM con IA para tus chats",
-    headline: "Cada chat cuenta. Atiéndelos con ayuda de la IA.",
-    sub: "Responde, da seguimiento y vende desde un solo lugar.",
-    f1: "Bandeja compartida",
+    tagline: "CRM para WhatsApp",
+    headline: "Todas tus conversaciones de WhatsApp, en un solo lugar.",
+    sub: "Atiende, automatiza y vende sin salir de tu bandeja.",
+    f1: "Bandeja de entrada compartida",
     f2: "Embudos de ventas",
-    f3: "Automatizaciones",
-    f4: "Asistente de IA",
+    f3: "Automatizaciones y agentes de IA",
+    f4: "Envíos masivos",
     chatIn: "Hola, ¿tienen disponible el plan Pro?",
     chatOut: "¡Claro! Te envío los detalles ahora mismo.",
+    classic: "Usar el diseño clásico",
     show: "Mostrar contraseña",
     hide: "Ocultar contraseña",
   },
   en: {
-    tagline: "AI-powered CRM for your chats",
-    headline: "Every chat counts. Handle them with AI by your side.",
-    sub: "Reply, follow up and sell from one place.",
-    f1: "Shared inbox",
+    tagline: "CRM for WhatsApp",
+    headline: "All your WhatsApp conversations, in one place.",
+    sub: "Support, automate and sell without leaving your inbox.",
+    f1: "Shared team inbox",
     f2: "Sales pipelines",
-    f3: "Automations",
-    f4: "AI assistant",
+    f3: "Automations and AI agents",
+    f4: "Broadcasts",
     chatIn: "Hi, is the Pro plan available?",
     chatOut: "Of course! Sending you the details now.",
+    classic: "Use the classic design",
     show: "Show password",
     hide: "Hide password",
   },
 } as const;
 
-function ChatwiseMark({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 64 64"
-      role="img"
-      aria-label="Chatwise"
-      className={className}
-    >
-      <rect width="64" height="64" rx="15" fill="#6D4AFF" />
-      <g transform="translate(8 8)">
-        <path
-          d="M12 4h24a8 8 0 0 1 8 8v14a8 8 0 0 1-8 8H24l-9 8v-8h-3a8 8 0 0 1-8-8V12a8 8 0 0 1 8-8z"
-          fill="#FFFFFF"
-        />
-        <path
-          d="M24 10C24.8 15 26.2 17.2 33 19C26.2 20.8 24.8 23 24 28C23.2 23 21.8 20.8 15 19C21.8 17.2 23.2 15 24 10z"
-          fill="#6D4AFF"
-        />
-      </g>
-    </svg>
-  );
-}
-
-export default function ChatwiseLoginPage() {
+export default function ModernLoginPage() {
   return (
     <Suspense fallback={null}>
-      <ChatwiseLoginInner />
+      <ModernLoginInner />
     </Suspense>
   );
 }
 
-function ChatwiseLoginInner() {
+function BrandMark({ className = "" }: { className?: string }) {
+  return <ChatwiseMark className={className} />;
+}
+
+function ModernLoginInner() {
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("invite");
   const t = useTranslations("LoginPage");
@@ -116,55 +105,66 @@ function ChatwiseLoginInner() {
       return;
     }
 
-    // Full-page navigation so the middleware sees the fresh auth cookies.
-    window.location.href = inviteToken
+    // Full-page navigation so the middleware sees the fresh auth
+    // cookies (same reasoning as the classic /login page).
+    const destination = inviteToken
       ? `/join/${encodeURIComponent(inviteToken)}`
       : "/dashboard";
+    window.location.href = destination;
   };
 
   const features = [
     { icon: CheckCheck, label: c.f1 },
     { icon: GitBranch, label: c.f2 },
     { icon: Zap, label: c.f3 },
-    { icon: Bot, label: c.f4 },
+    { icon: Radio, label: c.f4 },
   ];
 
   const inputClass =
-    "h-12 w-full rounded-xl border border-[#E6DEF7] bg-white pl-11 pr-4 text-sm text-[#1E1433] outline-none transition placeholder:text-[#8B7FA8] focus:border-[#6D4AFF] focus:ring-4 focus:ring-[#6D4AFF]/15";
+    "h-12 w-full rounded-xl border border-border bg-muted/60 pl-11 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:bg-muted focus:ring-4 focus:ring-primary/15";
 
   return (
-    <div className="grid min-h-screen bg-[#FAF7FF] text-[#1E1433] lg:grid-cols-[1.05fr_1fr]">
+    <div className="grid min-h-screen bg-background lg:grid-cols-[1.05fr_1fr]">
       {/* ---------- Brand panel ---------- */}
-      <aside className="relative hidden overflow-hidden bg-[#1E1433] lg:flex lg:flex-col lg:justify-between lg:p-12">
-        <div className="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-[#6D4AFF]/40 blur-3xl" />
-        <div className="absolute -bottom-24 right-0 h-80 w-80 rounded-full bg-[#FF8FA8]/20 blur-3xl" />
+      <aside className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-background to-background" />
+        <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-primary/30 blur-3xl" />
+        <div className="absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
+        <div
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+          }}
+        />
 
         <div className="relative flex items-center gap-3">
-          <ChatwiseMark className="h-11 w-11" />
+          <BrandMark className="h-11 w-11" />
           <div className="leading-tight">
-            <p className="text-xl font-bold tracking-tight text-white">
-              Chat<span className="text-[#FF8FA8]">wise</span>
+            <p className="text-lg font-semibold text-foreground">
+              {BRAND_FIRST}<span className="text-primary">{BRAND_SECOND}</span>
             </p>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-[#D9CFF5]">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               {c.tagline}
             </p>
           </div>
         </div>
 
         <div className="relative max-w-lg">
-          <h2 className="text-4xl font-bold leading-tight tracking-tight text-white">
+          <h2 className="text-4xl font-semibold leading-tight tracking-tight text-foreground">
             {c.headline}
           </h2>
-          <p className="mt-4 text-base text-[#D9CFF5]">{c.sub}</p>
+          <p className="mt-4 text-base text-muted-foreground">{c.sub}</p>
 
           <ul className="mt-8 grid grid-cols-2 gap-3">
             {features.map(({ icon: Icon, label }) => (
               <li
                 key={label}
-                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white"
+                className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3 text-sm text-foreground backdrop-blur"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#6D4AFF] text-white">
-                  <Icon className="h-4 w-4" aria-hidden="true" />
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <Icon className="h-4 w-4" />
                 </span>
                 {label}
               </li>
@@ -172,36 +172,31 @@ function ChatwiseLoginInner() {
           </ul>
         </div>
 
-        <div className="relative flex max-w-sm flex-col gap-2" aria-hidden="true">
-          <div className="w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-white/10 px-4 py-2.5 text-sm text-white">
-            {c.chatIn}
-          </div>
-          <div className="ml-auto flex w-fit max-w-[85%] items-center gap-2 rounded-2xl rounded-br-md bg-[#6D4AFF] px-4 py-2.5 text-sm text-white">
-            {c.chatOut}
-            <Bot className="h-4 w-4 shrink-0 opacity-80" />
-          </div>
-        </div>
+        {/* Decorative chat preview */}
+        <LoginChatDemo incoming={c.chatIn} outgoing={c.chatOut} />
       </aside>
 
       {/* ---------- Form panel ---------- */}
-      <main className="flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md rounded-3xl border border-[#E6DEF7] bg-white p-8 shadow-xl shadow-[#6D4AFF]/10 sm:p-10">
+      <main className="relative flex items-center justify-center px-6 py-12">
+        <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/10 to-transparent lg:hidden" />
+
+        <div className="relative w-full max-w-md rounded-3xl border border-border/60 bg-card/50 p-8 shadow-2xl shadow-black/20 backdrop-blur sm:p-10">
           {/* Brand on small screens */}
           <div className="mb-8 flex flex-col items-center text-center lg:hidden">
-            <ChatwiseMark className="h-14 w-14" />
-            <p className="mt-4 text-2xl font-bold tracking-tight">
-              Chat<span className="text-[#6D4AFF]">wise</span>
+            <BrandMark className="h-14 w-14" />
+            <p className="mt-4 text-2xl font-semibold text-foreground">
+              {BRAND_FIRST}<span className="text-primary">{BRAND_SECOND}</span>
             </p>
-            <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-[#5B4F78]">
+            <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               {c.tagline}
             </p>
           </div>
 
           <div className="mb-8 text-center">
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               {inviteToken ? t("titleAccept") : t("titleWelcome")}
             </h1>
-            <p className="mt-2 text-sm text-[#5B4F78]">
+            <p className="mt-2 text-sm text-muted-foreground">
               {inviteToken ? t("descAccept") : t("descWelcome")}
             </p>
           </div>
@@ -210,18 +205,21 @@ function ChatwiseLoginInner() {
             {error && (
               <div
                 role="alert"
-                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400"
               >
                 {error}
               </div>
             )}
 
             <div className="flex flex-col gap-2">
-              <label htmlFor="email" className="text-sm font-medium text-[#5B4F78]">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-muted-foreground"
+              >
                 {t("emailLabel")}
               </label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8B7FA8]" />
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   id="email"
                   type="email"
@@ -237,18 +235,21 @@ function ChatwiseLoginInner() {
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-sm font-medium text-[#5B4F78]">
+                <label
+                  htmlFor="password"
+                  className="text-sm font-medium text-muted-foreground"
+                >
                   {t("passwordLabel")}
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm font-medium text-[#6D4AFF] transition hover:text-[#5A38F0]"
+                  className="text-sm text-primary transition hover:text-primary/80"
                 >
                   {t("forgotPassword")}
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8B7FA8]" />
+                <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -263,7 +264,7 @@ function ChatwiseLoginInner() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={showPassword ? c.hide : c.show}
-                  className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[#5B4F78] transition hover:bg-[#FAF7FF] hover:text-[#1E1433]"
+                  className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -277,7 +278,7 @@ function ChatwiseLoginInner() {
             <button
               type="submit"
               disabled={loading}
-              className="group mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#6D4AFF] text-sm font-semibold text-white shadow-lg shadow-[#6D4AFF]/25 transition hover:bg-[#5A38F0] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="group mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <>
@@ -293,7 +294,7 @@ function ChatwiseLoginInner() {
             </button>
           </form>
 
-          <p className="mt-8 border-t border-[#E6DEF7] pt-6 text-center text-sm text-[#5B4F78]">
+          <p className="mt-8 border-t border-border/60 pt-6 text-center text-sm text-muted-foreground">
             {t("noAccount")}{" "}
             <Link
               href={
@@ -301,12 +302,24 @@ function ChatwiseLoginInner() {
                   ? `/signup?invite=${encodeURIComponent(inviteToken)}`
                   : "/signup"
               }
-              className="font-semibold text-[#6D4AFF] transition hover:text-[#5A38F0]"
+              className="font-medium text-primary transition hover:text-primary/80"
             >
               {t("createAccount")}
             </Link>
           </p>
 
+          <p className="mt-3 text-center text-xs text-muted-foreground/70">
+            <Link
+              href={
+                inviteToken
+                  ? `/login?invite=${encodeURIComponent(inviteToken)}`
+                  : "/login"
+              }
+              className="underline-offset-4 transition hover:text-foreground hover:underline"
+            >
+              {c.classic}
+            </Link>
+          </p>
         </div>
       </main>
     </div>

@@ -47,7 +47,7 @@ export function ChatwiseLogo({
       <ChatwiseMark className={cn("h-8 w-8", markClassName)} />
       {showWordmark && (
         <span className="leading-none">
-          <span className="block text-base font-bold tracking-tight text-foreground">
+          <span className="block text-sm font-semibold tracking-wide text-foreground">
             Chat<span className="text-primary">wise</span>
           </span>
         </span>
