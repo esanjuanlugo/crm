@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { VelvetSuitMark } from "@/components/brand/velvet-suit-logo";
+import { ChatwiseMark } from "@/components/brand/chatwise-logo";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-md border-border bg-card">
         <CardHeader className="items-center text-center">
           <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <VelvetSuitMark className="h-10 w-10" />
+            <ChatwiseMark className="h-10 w-10" />
           </div>
 
           <CardTitle className="text-xl text-foreground">

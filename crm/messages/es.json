@@ -73,7 +73,7 @@
     "backToSignIn": "Volver a iniciar sesión"
   },
   "Sidebar": {
-    "title": "Velvet Suit",
+    "title": "Chatwise",
     "dashboard": "Panel",
     "inbox": "Bandeja de entrada",
     "notifications": "Notificaciones",
@@ -1381,7 +1381,7 @@
       "labelTooLong": "La etiqueta debe tener {max} caracteres o menos",
       "copied": "Enlace de invitación copiado",
       "clipboardBlocked": "El portapapeles está bloqueado; copia el enlace manualmente",
-      "whatsappMessage": "Únete a {accountName} en Velvet Suit usando este enlace (válido durante {expiresInDays} días): {url}"
+      "whatsappMessage": "Únete a {accountName} en Chatwise usando este enlace (válido durante {expiresInDays} días): {url}"
     },
     "tagsAndFields": {
       "title": "Campos y etiquetas",
@@ -1492,8 +1492,8 @@
       "saveResubmit": "Guardar y volver a enviar",
       "submitApproval": "Enviar para aprobación",
       "deleteDialogTitle": "¿Eliminar plantilla?",
-      "deleteMetaDesc": "\"{name}\" se eliminará de Meta y de Velvet Suit. Los envíos masivos activos que utilicen esta plantilla comenzarán a fallar en su próximo envío. Esta acción no se puede deshacer.",
-      "deleteLocalDesc": "\"{name}\" se eliminará de Velvet Suit. Nunca se envió a Meta, por lo que no es necesario realizar ninguna limpieza remota.",
+      "deleteMetaDesc": "\"{name}\" se eliminará de Meta y de Chatwise. Los envíos masivos activos que utilicen esta plantilla comenzarán a fallar en su próximo envío. Esta acción no se puede deshacer.",
+      "deleteLocalDesc": "\"{name}\" se eliminará de Chatwise. Nunca se envió a Meta, por lo que no es necesario realizar ninguna limpieza remota.",
       "deleting": "Eliminando…",
       "delete": "Eliminar",
       "toastLoadFailed": "No se pudieron cargar las plantillas",
@@ -1534,7 +1534,7 @@
       "notConnected": "No conectado",
       "connectedDesc": "Tu token de acceso se autentica correctamente con Meta. Consulta el estado del registro para comprobar si los webhooks están realmente configurados.",
       "notConnectedDesc": "Configura las credenciales de tu API de Meta a continuación para conectar tu cuenta de WhatsApp Business.",
-      "registered": "Registrado; Meta enviará eventos a Velvet Suit",
+      "registered": "Registrado; Meta enviará eventos a Chatwise",
       "notRegistered": "No registrado; Meta no enviará eventos",
       "verifyWithMeta": "Verificar con Meta",
       "subscribedSince": "Suscrito desde {date}. Haz clic en Verificar con Meta si dejan de llegar eventos.",
@@ -1558,7 +1558,7 @@
       "twoStepPin": "PIN de verificación en dos pasos",
       "optional": "(opcional)",
       "pinPlaceholder": "PIN de 6 dígitos de Meta WhatsApp Business",
-      "pinHint": "Solo es necesario para configurar los mensajes entrantes de un número de producción. Establécelo en Meta Business Manager → Cuentas de WhatsApp → Números de teléfono → Verificación en dos pasos y pégalo aquí para que Velvet Suit pueda suscribir el número. De lo contrario, Meta dirigirá los eventos entrantes a la aplicación que haya reclamado el número más recientemente (el problema que suele ocurrir con segundos números dentro de una WABA compartida). Los números de prueba de Meta no tienen PIN y ya están registrados; deja este campo vacío para ellos. Dejarlo vacío también conserva el registro existente sin cambios.",
+      "pinHint": "Solo es necesario para configurar los mensajes entrantes de un número de producción. Establécelo en Meta Business Manager → Cuentas de WhatsApp → Números de teléfono → Verificación en dos pasos y pégalo aquí para que Chatwise pueda suscribir el número. De lo contrario, Meta dirigirá los eventos entrantes a la aplicación que haya reclamado el número más recientemente (el problema que suele ocurrir con segundos números dentro de una WABA compartida). Los números de prueba de Meta no tienen PIN y ya están registrados; deja este campo vacío para ellos. Dejarlo vacío también conserva el registro existente sin cambios.",
       "webhookTitle": "Configuración del webhook",
       "webhookDesc": "Usa esta URL como callback de tu webhook en el panel de aplicaciones de Meta.",
       "webhookUrl": "URL de callback del webhook",
@@ -1737,7 +1737,7 @@
       "missingProviderName": "Escribe el nombre del proveedor",
       "invalidBaseUrl": "La Base URL no es válida (debe empezar con https://)",
       "title": "Configuración del agente",
-      "description": "Usa tu propia clave de OpenAI o Anthropic. Velvet Suit se conecta directamente con el proveedor utilizando tu clave; no hay cargos de IA por usuario y tus datos siguen siendo tuyos. Esto permite generar respuestas con IA en la bandeja de entrada, el bot de respuesta automática y el Playground.",
+      "description": "Usa tu propia clave de OpenAI o Anthropic. Chatwise se conecta directamente con el proveedor utilizando tu clave; no hay cargos de IA por usuario y tus datos siguen siendo tuyos. Esto permite generar respuestas con IA en la bandeja de entrada, el bot de respuesta automática y el Playground.",
       "adminOnlyConfig": "Solo los administradores y propietarios pueden cambiar la configuración de IA.",
       "loadFailed": "No se pudo cargar la configuración de IA",
       "providerAndKey": "Proveedor y clave",

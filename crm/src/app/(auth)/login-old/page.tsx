@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { UsersRound } from "lucide-react";
-import { VelvetSuitMark } from "@/components/brand/velvet-suit-logo";
+import { ChatwiseMark } from "@/components/brand/chatwise-logo";
 
 // `useSearchParams` opts the component out of static prerendering
 // unless it sits under a Suspense boundary. We split the form into
@@ -85,10 +85,10 @@ function LoginPageInner() {
       />
       <div className="relative z-10 flex w-full max-w-md flex-col items-center">
         <div className="mb-6 flex flex-col items-center gap-3">
-          <VelvetSuitMark className="h-16 w-16 drop-shadow-lg" />
+          <ChatwiseMark className="h-16 w-16 drop-shadow-lg" />
           <div className="text-center">
             <p className="text-2xl font-semibold tracking-wide text-foreground">
-              Velvet <span className="text-primary">Suit</span>
+              Chat<span className="text-primary">wise</span>
             </p>
             <p className="mt-1 text-xs uppercase tracking-[0.25em] text-muted-foreground">
               {BRAND.tagline}

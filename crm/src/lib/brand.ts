@@ -3,7 +3,7 @@
 // intentionally keep their original values so existing integrations
 // and saved sessions keep working.
 export const BRAND = {
-  name: "Velvet Suit",
-  tagline: "CRM para WhatsApp",
-  fallbackAccountName: "nuestra cuenta de Velvet Suit",
+  name: "Chatwise",
+  tagline: "CRM con IA para tus chats",
+  fallbackAccountName: "nuestra cuenta de Chatwise",
 } as const;

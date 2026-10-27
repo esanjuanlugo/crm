@@ -22,10 +22,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Velvet Suit",
-    template: "%s — Velvet Suit",
+    default: "Chatwise",
+    template: "%s — Chatwise",
   },
-  description: "Velvet Suit — CRM para WhatsApp.",
+  description: "Chatwise — CRM con IA para tus chats.",
   robots: {
     index: false,
     follow: false,

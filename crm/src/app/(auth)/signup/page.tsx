@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { VelvetSuitMark } from "@/components/brand/velvet-suit-logo";
+import { ChatwiseMark } from "@/components/brand/chatwise-logo";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,7 +145,7 @@ function SignupPageInner() {
             {inviteToken ? (
               <UsersRound className="h-6 w-6 text-primary" />
             ) : (
-              <VelvetSuitMark className="h-10 w-10" />
+              <ChatwiseMark className="h-10 w-10" />
             )}
           </div>
           <CardTitle className="text-xl text-foreground">
