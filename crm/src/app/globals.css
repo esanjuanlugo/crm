@@ -287,3 +287,11 @@ html[data-theme="rose"] {
     animation: none;
   }
 }
+
+/* ---- Chatwise: detalles de acabado ---- */
+html { scroll-behavior: smooth; }
+::selection { background: var(--primary-soft-2); }
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
