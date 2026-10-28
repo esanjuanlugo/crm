@@ -679,6 +679,12 @@ export function MessageThread({
         content_type: "template",
         content_text: renderedBody,
         template_name: template.name,
+        media_url:
+          template.header_type === "image" ||
+          template.header_type === "video" ||
+          template.header_type === "document"
+            ? template.header_media_url || undefined
+            : undefined,
         status: "sending",
         created_at: new Date().toISOString(),
       };

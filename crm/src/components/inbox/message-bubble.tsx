@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Message, MessageReaction } from "@/types";
 import {
@@ -9,6 +10,7 @@ import {
   XCircle,
   MapPin,
   LayoutTemplate,
+  FileText,
   CornerDownLeft,
   Sparkles,
 } from "lucide-react";
@@ -55,6 +57,53 @@ function StatusIcon({ status }: { status: Message["status"] }) {
     default:
       return null;
   }
+}
+
+/**
+ * Image / video / document HEADER of a template message. The send path
+ * stores the header's public URL in `media_url`; the kind is inferred from
+ * the extension (defaults to image, the common case).
+ */
+function TemplateHeaderMedia({ url }: { url: string }) {
+  const [broken, setBroken] = useState(false);
+  const path = url.split(/[?#]/)[0].toLowerCase();
+  const isVideo = /\.(mp4|3gp|mov|webm)$/.test(path);
+  const isDoc = /\.(pdf|docx?|xlsx?|pptx?|txt|csv)$/.test(path);
+
+  if (isDoc) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mb-2 flex items-center gap-2 rounded-lg bg-black/10 px-3 py-2 text-xs underline"
+      >
+        <FileText className="h-4 w-4 shrink-0" />
+        <span className="truncate">{path.split("/").pop() || "documento"}</span>
+      </a>
+    );
+  }
+  if (isVideo) {
+    return (
+      <video
+        src={url}
+        controls
+        preload="metadata"
+        className="mb-2 max-h-72 w-full rounded-lg"
+      />
+    );
+  }
+  if (broken) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt=""
+      loading="lazy"
+      onError={() => setBroken(true)}
+      className="mb-2 max-h-80 w-full rounded-lg bg-white object-contain"
+    />
+  );
 }
 
 function MessageContent({
@@ -139,7 +188,8 @@ function MessageContent({
       // template's name when we have no stored body (legacy rows sent
       // before the fix).
       return (
-        <div>
+        <div className={message.media_url ? "w-64 max-w-full sm:w-72" : undefined}>
+          {message.media_url && <TemplateHeaderMedia url={message.media_url} />}
           <span
             className={cn(
               "mb-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",

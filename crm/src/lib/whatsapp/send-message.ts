@@ -468,6 +468,19 @@ export async function sendMessageToConversation(
           )
         : (contentText ?? null);
 
+  // Templates with an image / video / document HEADER: persist the media
+  // link so the Inbox can render it like WhatsApp does. Same precedence the
+  // send-builder uses: per-send override first, then the template's URL.
+  const templateHeaderMediaUrl: string | null = (() => {
+    if (messageType !== 'template' || !templateRow) return null;
+    const ht = templateRow.header_type;
+    if (ht !== 'image' && ht !== 'video' && ht !== 'document') return null;
+    const override = (templateMessageParams as { headerMediaUrl?: unknown } | null | undefined)
+      ?.headerMediaUrl;
+    if (typeof override === 'string' && override) return override;
+    return templateRow.header_media_url || null;
+  })();
+
   const { data: messageRecord, error: msgError } = await db
     .from('messages')
     .insert({
@@ -475,7 +488,7 @@ export async function sendMessageToConversation(
       sender_type: 'agent',
       content_type: messageType,
       content_text: persistedText,
-      media_url: mediaUrl || null,
+      media_url: mediaUrl || templateHeaderMediaUrl || null,
       template_name: templateName || null,
       interactive_payload:
         messageType === 'interactive' ? interactivePayload : null,
