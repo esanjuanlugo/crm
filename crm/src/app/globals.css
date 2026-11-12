@@ -331,9 +331,11 @@ html { scroll-behavior: smooth; }
   .login-root aside ul { margin-top: clamp(1rem, 3.5vh, 3rem); gap: clamp(0.5rem, 1.6vh, 1.25rem); }
   .login-root aside ul li { padding-block: clamp(0.5rem, 1.6vh, 1.25rem); font-size: clamp(0.8125rem, min(0.85vw, 2vh), 1.25rem); }
 }
-/* Ventanas bajas (laptops, escala 125%): se oculta el chat de demo y se centra el contenido */
-@media (min-width: 1024px) and (max-height: 800px) {
-  .login-root aside { justify-content: flex-start; }
+/* Ventanas bajas: el chat de demo se mantiene, solo se compacta */
+@media (min-width: 1024px) {
+  .login-root aside > div:last-child > div { min-height: clamp(6.5rem, 18vh, 15rem); }
+}
+/* Solo en ventanas muy bajas (menos de 560px de alto) no cabe y se oculta */
+@media (min-width: 1024px) and (max-height: 560px) {
   .login-root aside > div:last-child { display: none; }
-  .login-root aside > div:nth-last-child(2) { margin-block: auto; }
 }
