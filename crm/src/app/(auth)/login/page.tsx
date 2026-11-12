@@ -124,7 +124,7 @@ function ModernLoginInner() {
     "h-12 w-full rounded-xl border border-border bg-muted/60 pl-11 pr-4 text-sm text-foreground xl:h-14 xl:pl-12 xl:text-base 3xl:h-16 3xl:pl-14 3xl:text-lg outline-none transition placeholder:text-muted-foreground focus:border-primary focus:bg-muted focus:ring-4 focus:ring-primary/15";
 
   return (
-    <div className="grid min-h-dvh bg-background lg:grid-cols-[1.05fr_1fr] 3xl:grid-cols-[1fr_1fr]">
+    <div className="login-root grid min-h-dvh bg-background lg:grid-cols-[1.05fr_1fr] 3xl:grid-cols-[1fr_1fr]">
       {/* ---------- Brand panel ---------- */}
       <aside className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-10 xl:p-14 2xl:p-16 3xl:p-24">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-background to-background" />
