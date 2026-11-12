@@ -124,7 +124,7 @@ export function LoginChatDemo({
   return (
     <div
       aria-hidden="true"
-      className={`relative flex min-h-[152px] max-w-sm flex-col gap-2 transition-all duration-500 ease-out ${
+      className={`relative flex min-h-[152px] max-w-sm flex-col gap-2 transition-all xl:min-h-[176px] xl:max-w-md xl:gap-3 2xl:max-w-lg 3xl:min-h-[240px] 3xl:max-w-2xl 3xl:gap-4 duration-500 ease-out ${
         phase === "leaving"
           ? "-translate-y-1 opacity-0"
           : "translate-y-0 opacity-100"
@@ -132,12 +132,12 @@ export function LoginChatDemo({
     >
       {/* Customer: typing dots → message */}
       {showIncomingTyping && (
-        <div className="login-chat-pop w-fit origin-bottom-left rounded-2xl rounded-bl-md border border-border/60 bg-card/60 px-4 py-3 text-muted-foreground backdrop-blur">
+        <div className="login-chat-pop w-fit origin-bottom-left rounded-2xl rounded-bl-md border border-border/60 bg-card/60 px-4 py-3 text-muted-foreground backdrop-blur 3xl:px-6 3xl:py-4">
           <TypingDots />
         </div>
       )}
       {showIncoming && (
-        <div className="login-chat-pop w-fit max-w-[85%] origin-bottom-left rounded-2xl rounded-bl-md border border-border/60 bg-card/60 px-4 py-2.5 text-sm text-foreground backdrop-blur">
+        <div className="login-chat-pop w-fit max-w-[85%] origin-bottom-left rounded-2xl rounded-bl-md border border-border/60 bg-card/60 px-4 py-2.5 text-sm text-foreground backdrop-blur xl:text-base 3xl:px-6 3xl:py-4 3xl:text-xl">
           {incoming}
         </div>
       )}
@@ -151,14 +151,14 @@ export function LoginChatDemo({
       )}
       {showOutgoing && (
         <div className="ml-auto flex w-fit max-w-[85%] flex-col items-end gap-1">
-          <div className="login-chat-pop flex origin-bottom-right items-center gap-2 rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground shadow-lg shadow-primary/20">
+          <div className="login-chat-pop flex origin-bottom-right items-center gap-2 rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground shadow-lg shadow-primary/20 xl:text-base 3xl:px-6 3xl:py-4 3xl:text-xl">
             {/* Full text is rendered invisibly so the bubble keeps its final
                 size while the visible copy is typed over it. */}
             <span className="relative">
               <span className="invisible">{outgoing}</span>
               <span className="absolute inset-0">{outgoing.slice(0, typed)}</span>
             </span>
-            <Bot className="h-4 w-4 shrink-0 opacity-80" />
+            <Bot className="h-4 w-4 shrink-0 opacity-80 3xl:h-6 3xl:w-6" />
           </div>
           <CheckCheck
             className={`h-3.5 w-3.5 transition-colors duration-500 ${

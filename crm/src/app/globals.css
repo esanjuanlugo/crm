@@ -57,6 +57,12 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Breakpoint extra para monitores grandes / ultrawide (≥ 1920px).
+ * Habilita las utilidades `3xl:` (se usan en el login moderno). */
+@theme {
+  --breakpoint-3xl: 120rem;
+}
+
 /* ============================================================
  * THEMING — two orthogonal dimensions
  *

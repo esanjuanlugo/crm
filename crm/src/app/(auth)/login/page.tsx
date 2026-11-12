@@ -121,15 +121,15 @@ function ModernLoginInner() {
   ];
 
   const inputClass =
-    "h-12 w-full rounded-xl border border-border bg-muted/60 pl-11 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:bg-muted focus:ring-4 focus:ring-primary/15";
+    "h-12 w-full rounded-xl border border-border bg-muted/60 pl-11 pr-4 text-sm text-foreground xl:h-14 xl:pl-12 xl:text-base 3xl:h-16 3xl:pl-14 3xl:text-lg outline-none transition placeholder:text-muted-foreground focus:border-primary focus:bg-muted focus:ring-4 focus:ring-primary/15";
 
   return (
-    <div className="grid min-h-screen bg-background lg:grid-cols-[1.05fr_1fr]">
+    <div className="grid min-h-dvh bg-background lg:grid-cols-[1.05fr_1fr] 3xl:grid-cols-[1fr_1fr]">
       {/* ---------- Brand panel ---------- */}
-      <aside className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12">
+      <aside className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-10 xl:p-14 2xl:p-16 3xl:p-24">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-background to-background" />
-        <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-primary/30 blur-3xl" />
-        <div className="absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-primary/30 blur-3xl 2xl:h-[36rem] 2xl:w-[36rem] 3xl:h-[48rem] 3xl:w-[48rem]" />
+        <div className="absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-primary/20 blur-3xl 2xl:h-[36rem] 2xl:w-[36rem] 3xl:h-[48rem] 3xl:w-[48rem]" />
         <div
           className="absolute inset-0 opacity-[0.07]"
           style={{
@@ -139,32 +139,32 @@ function ModernLoginInner() {
           }}
         />
 
-        <div className="relative flex items-center gap-3">
-          <BrandMark className="h-11 w-11" />
+        <div className="relative flex items-center gap-3 3xl:gap-4">
+          <BrandMark className="h-11 w-11 2xl:h-14 2xl:w-14 3xl:h-16 3xl:w-16" />
           <div className="leading-tight">
-            <p className="text-lg font-semibold text-foreground">
+            <p className="text-lg font-semibold text-foreground 2xl:text-2xl 3xl:text-3xl">
               {BRAND_FIRST}<span className="text-primary">{BRAND_SECOND}</span>
             </p>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground 2xl:text-xs 3xl:text-sm">
               {c.tagline}
             </p>
           </div>
         </div>
 
-        <div className="relative max-w-lg">
-          <h2 className="text-4xl font-semibold leading-tight tracking-tight text-foreground">
+        <div className="relative max-w-lg xl:max-w-xl 2xl:max-w-2xl 3xl:max-w-4xl">
+          <h2 className="text-balance text-3xl font-semibold leading-[1.1] tracking-tight text-foreground lg:text-4xl xl:text-5xl 2xl:text-6xl 3xl:text-7xl">
             {c.headline}
           </h2>
-          <p className="mt-4 text-base text-muted-foreground">{c.sub}</p>
+          <p className="mt-4 text-base text-muted-foreground xl:mt-5 xl:text-lg 2xl:text-xl 3xl:mt-6 3xl:text-2xl">{c.sub}</p>
 
-          <ul className="mt-8 grid grid-cols-2 gap-3">
+          <ul className="mt-8 grid grid-cols-2 gap-3 xl:mt-10 xl:gap-4 3xl:mt-12 3xl:gap-5">
             {features.map(({ icon: Icon, label }) => (
               <li
                 key={label}
-                className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3 text-sm text-foreground backdrop-blur"
+                className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3 text-sm text-foreground backdrop-blur xl:px-5 xl:py-4 xl:text-base 3xl:gap-4 3xl:px-6 3xl:py-5 3xl:text-xl"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <Icon className="h-4 w-4" />
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary xl:h-10 xl:w-10 3xl:h-12 3xl:w-12">
+                  <Icon className="h-4 w-4 xl:h-5 xl:w-5 3xl:h-6 3xl:w-6" />
                 </span>
                 {label}
               </li>
@@ -173,18 +173,20 @@ function ModernLoginInner() {
         </div>
 
         {/* Decorative chat preview */}
-        <LoginChatDemo incoming={c.chatIn} outgoing={c.chatOut} />
+        <div className="relative [@media(max-height:720px)]:hidden">
+          <LoginChatDemo incoming={c.chatIn} outgoing={c.chatOut} />
+        </div>
       </aside>
 
       {/* ---------- Form panel ---------- */}
-      <main className="relative flex items-center justify-center px-6 py-12">
+      <main className="relative flex items-center justify-center px-6 py-12 md:px-10 md:py-16 xl:px-16 3xl:px-24">
         <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/10 to-transparent lg:hidden" />
 
-        <div className="relative w-full max-w-md rounded-3xl border border-border/60 bg-card/50 p-8 shadow-2xl shadow-black/20 backdrop-blur sm:p-10">
+        <div className="relative w-full max-w-md rounded-3xl border border-border/60 bg-card/50 p-8 shadow-2xl shadow-black/20 backdrop-blur sm:p-10 md:max-w-lg md:p-12 lg:max-w-md lg:p-10 xl:max-w-lg xl:p-12 2xl:max-w-xl 3xl:max-w-2xl 3xl:p-16">
           {/* Brand on small screens */}
           <div className="mb-8 flex flex-col items-center text-center lg:hidden">
-            <BrandMark className="h-14 w-14" />
-            <p className="mt-4 text-2xl font-semibold text-foreground">
+            <BrandMark className="h-14 w-14 md:h-16 md:w-16" />
+            <p className="mt-4 text-2xl font-semibold text-foreground md:text-3xl">
               {BRAND_FIRST}<span className="text-primary">{BRAND_SECOND}</span>
             </p>
             <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -192,16 +194,16 @@ function ModernLoginInner() {
             </p>
           </div>
 
-          <div className="mb-8 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          <div className="mb-8 text-center xl:mb-10 3xl:mb-12">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl xl:text-4xl 3xl:text-5xl">
               {inviteToken ? t("titleAccept") : t("titleWelcome")}
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground xl:mt-3 xl:text-base 3xl:text-lg">
               {inviteToken ? t("descAccept") : t("descWelcome")}
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+          <form onSubmit={handleLogin} className="flex flex-col gap-5 3xl:gap-7">
             {error && (
               <div
                 role="alert"
@@ -214,12 +216,12 @@ function ModernLoginInner() {
             <div className="flex flex-col gap-2">
               <label
                 htmlFor="email"
-                className="text-sm font-medium text-muted-foreground"
+                className="text-sm font-medium text-muted-foreground xl:text-base 3xl:text-lg"
               >
                 {t("emailLabel")}
               </label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground xl:left-5 xl:h-5 xl:w-5 3xl:left-6 3xl:h-6 3xl:w-6" />
                 <input
                   id="email"
                   type="email"
@@ -237,19 +239,19 @@ function ModernLoginInner() {
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="password"
-                  className="text-sm font-medium text-muted-foreground"
+                  className="text-sm font-medium text-muted-foreground xl:text-base 3xl:text-lg"
                 >
                   {t("passwordLabel")}
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-primary transition hover:text-primary/80"
+                  className="text-sm text-primary transition hover:text-primary/80 xl:text-base 3xl:text-lg"
                 >
                   {t("forgotPassword")}
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground xl:left-5 xl:h-5 xl:w-5 3xl:left-6 3xl:h-6 3xl:w-6" />
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -264,7 +266,7 @@ function ModernLoginInner() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={showPassword ? c.hide : c.show}
-                  className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 xl:right-4 xl:h-9 xl:w-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -278,23 +280,23 @@ function ModernLoginInner() {
             <button
               type="submit"
               disabled={loading}
-              className="group mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="group mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold xl:h-14 xl:text-base 3xl:h-16 3xl:text-lg text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin xl:h-5 xl:w-5" />
                   {t("signingIn")}
                 </>
               ) : (
                 <>
                   {t("signIn")}
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 xl:h-5 xl:w-5" />
                 </>
               )}
             </button>
           </form>
 
-          <p className="mt-8 border-t border-border/60 pt-6 text-center text-sm text-muted-foreground">
+          <p className="mt-8 border-t border-border/60 pt-6 text-center text-sm text-muted-foreground xl:mt-10 xl:pt-8 xl:text-base 3xl:text-lg">
             {t("noAccount")}{" "}
             <Link
               href={
@@ -308,7 +310,7 @@ function ModernLoginInner() {
             </Link>
           </p>
 
-          <p className="mt-3 text-center text-xs text-muted-foreground/70">
+          <p className="mt-3 text-center text-xs text-muted-foreground/70 xl:text-sm">
             <Link
               href={
                 inviteToken
