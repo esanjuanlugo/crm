@@ -1095,6 +1095,7 @@ export function WhatsAppConfig() {
                     <li dangerouslySetInnerHTML={{ __html: t.raw('step3_2') }} />
                     <li dangerouslySetInnerHTML={{ __html: t.raw('step3_3') }} />
                     <li dangerouslySetInnerHTML={{ __html: t.raw('step3_4') }} />
+                    <li dangerouslySetInnerHTML={{ __html: t.raw('step3_5') }} />
                   </ol>
                 </AccordionContent>
               </AccordionItem>
@@ -1109,10 +1110,29 @@ export function WhatsAppConfig() {
                 <AccordionContent className="text-muted-foreground">
                   <ol className="list-decimal list-inside space-y-1 text-sm">
                     <li>{t('step4_1')}</li>
-                    <li>{t('step4_2')}</li>
-                    <li dangerouslySetInnerHTML={{ __html: t.raw('step4_3') }} />
-                    <li dangerouslySetInnerHTML={{ __html: t.raw('step4_4') }} />
-                    <li>{t('step4_5')}</li>
+                    <li dangerouslySetInnerHTML={{ __html: t.raw('step4_2') }} />
+                    <li>{t('step4_3')}</li>
+                    <li>{t('step4_4')}</li>
+                  </ol>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem className="border-border">
+                <AccordionTrigger className="text-muted-foreground hover:text-foreground hover:no-underline">
+                  <span className="flex items-center gap-2">
+                    <span className="flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">5</span>
+                    {t('step5')}
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  <ol className="list-decimal list-inside space-y-1 text-sm">
+                    <li>{t('step5_1')}</li>
+                    <li>{t('step5_2')}</li>
+                    <li dangerouslySetInnerHTML={{ __html: t.raw('step5_3') }} />
+                    <li dangerouslySetInnerHTML={{ __html: t.raw('step5_4') }} />
+                    <li>{t('step5_5')}</li>
+                    <li>{t('step5_6')}</li>
+                    <li>{t('step5_7')}</li>
                   </ol>
                 </AccordionContent>
               </AccordionItem>
