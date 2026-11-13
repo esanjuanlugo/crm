@@ -1551,7 +1551,7 @@
       "wabaId": "ID de la cuenta de WhatsApp Business",
       "accessToken": "Token de acceso permanente",
       "accessTokenPlaceholder": "Introduce tu token de acceso",
-      "tokenHidden": "El token está oculto por seguridad. Vuelve a introducirlo para actualizar la configuración.",
+      "tokenHidden": "El token est\u00e1 guardado y oculto por seguridad. D\u00e9jalo as\u00ed para conservarlo, o escribe uno nuevo para reemplazarlo.",
       "webhookVerifyToken": "Token de verificación del webhook",
       "webhookVerifyTokenPlaceholder": "Crea un token de verificación personalizado",
       "webhookVerifyTokenHint": "Una cadena personalizada que tú creas. Debe coincidir con el token que establezcas en la configuración del webhook de Meta.",

@@ -32,6 +32,13 @@ import {
 } from '@/components/ui/accordion';
 import type { WhatsAppConfig as WhatsAppConfigType } from '@/types';
 
+// Token de verificacion sugerido para una configuracion nueva (se puede cambiar).
+function generateVerifyToken(): string {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return 'chatwise_' + Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 const MASKED_TOKEN = '••••••••••••••••';
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'unknown';
@@ -146,7 +153,7 @@ export function WhatsAppConfig() {
         setPhoneNumberId('');
         setWabaId('');
         setAccessToken('');
-        setVerifyToken('');
+        setVerifyToken(generateVerifyToken());
         setPin('');
         setTokenEdited(false);
         setMirrorMedia(true);
@@ -159,6 +166,9 @@ export function WhatsAppConfig() {
         try {
           const res = await fetch('/api/whatsapp/config', { method: 'GET' });
           const payload = await res.json();
+          if (typeof payload.verify_token === 'string') {
+            setVerifyToken(payload.verify_token);
+          }
 
           if (payload.connected) {
             setConnectionStatus('connected');
@@ -255,15 +265,8 @@ export function WhatsAppConfig() {
 
       if (tokenEdited && accessToken !== MASKED_TOKEN && accessToken.trim()) {
         payload.access_token = accessToken.trim();
-      } else if (config) {
-        // Existing config — reuse stored encrypted token by decrypting on the
-        // server. But our POST handler requires an access_token to verify
-        // with Meta. If the user didn't change the token, we need to signal
-        // that. Simplest: require token re-entry if they're updating.
-        toast.error('Please re-enter the Access Token to save changes');
-        setSaving(false);
-        return;
       }
+      // Si el token no se cambio, el servidor reutiliza el guardado.
 
       const res = await fetch('/api/whatsapp/config', {
         method: 'POST',

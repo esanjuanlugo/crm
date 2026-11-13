@@ -87,7 +87,7 @@ export async function GET() {
 
     const { data: config, error: configError } = await supabase
       .from('whatsapp_config')
-      .select('phone_number_id, access_token, status')
+      .select('phone_number_id, access_token, verify_token, status')
       .eq('account_id', accountId)
       .maybeSingle()
 
@@ -129,13 +129,26 @@ export async function GET() {
       )
     }
 
+    // Token de verificacion del webhook: se devuelve descifrado para
+    // precargarlo en el formulario (solo miembros autenticados de la cuenta).
+    let verifyTokenPlain: string | null = null
+    try {
+      verifyTokenPlain = config.verify_token ? decrypt(config.verify_token) : null
+    } catch {
+      verifyTokenPlain = null
+    }
+
     // Validate credentials against Meta
     try {
       const phoneInfo = await verifyPhoneNumber({
         phoneNumberId: config.phone_number_id,
         accessToken,
       })
-      return NextResponse.json({ connected: true, phone_info: phoneInfo })
+      return NextResponse.json({
+        connected: true,
+        phone_info: phoneInfo,
+        verify_token: verifyTokenPlain,
+      })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown Meta API error'
       console.error('[whatsapp/config GET] Meta API verification failed:', message)
@@ -144,6 +157,7 @@ export async function GET() {
           connected: false,
           reason: 'meta_api_error',
           message: `Meta API rejected the credentials: ${message}`,
+          verify_token: verifyTokenPlain,
         },
         { status: 200 }
       )
@@ -185,9 +199,40 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { phone_number_id, waba_id, access_token, verify_token, pin } = body
+    const { phone_number_id, waba_id, verify_token, pin } = body
+    let access_token: string | undefined = body.access_token
 
-    if (!access_token || !phone_number_id) {
+    if (!phone_number_id) {
+      return NextResponse.json(
+        { error: 'access_token and phone_number_id are required' },
+        { status: 400 }
+      )
+    }
+
+    // Reutiliza el token guardado cuando el formulario no envia uno nuevo
+    // (asi no hay que volver a pegarlo cada vez que se cambia otro campo).
+    if (!access_token) {
+      const { data: stored } = await supabase
+        .from('whatsapp_config')
+        .select('access_token')
+        .eq('account_id', accountId)
+        .maybeSingle()
+      if (stored?.access_token) {
+        try {
+          access_token = decrypt(stored.access_token)
+        } catch {
+          return NextResponse.json(
+            {
+              error:
+                'The stored access token cannot be decrypted. Enter the access token again.',
+            },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
+    if (!access_token) {
       return NextResponse.json(
         { error: 'access_token and phone_number_id are required' },
         { status: 400 }
