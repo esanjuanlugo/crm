@@ -1,9 +1,10 @@
 "use client";
 
 import { ChatwiseLogo } from "@/components/brand/chatwise-logo";
+import { SettingsSubnav } from "@/components/layout/settings-subnav";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
@@ -267,6 +268,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           <ul className="flex flex-col gap-1">
             {bottomNavItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
+              const isSettings = item.href === "/settings";
               return (
                 <li key={item.href}>
                   <Link
@@ -274,13 +276,23 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
                       isActive
-                        ? "bg-primary/10 text-primary"
+                        ? isSettings
+                          ? "text-foreground"
+                          : "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon
+                      className={cn("h-4 w-4", isActive && isSettings && "text-primary")}
+                    />
                     {t(item.labelKey as string)}
                   </Link>
+                  {/* Configuracion abierta: sus secciones viven aqui, ya no en un segundo menu. */}
+                  {isActive && isSettings ? (
+                    <Suspense fallback={null}>
+                      <SettingsSubnav onNavigate={onClose} />
+                    </Suspense>
+                  ) : null}
                 </li>
               );
             })}
