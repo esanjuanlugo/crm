@@ -7,8 +7,9 @@ import { decrypt } from '@/lib/whatsapp/encryption'
 /**
  * POST /api/whatsapp/config/reveal-token
  *
- * Devuelve el token de acceso guardado, descifrado, SOLO si el usuario
- * confirma su contrasena. Solo owner/admin. Maximo 5 intentos cada
+ * Devuelve el token de acceso o el App Secret guardado (campo field:
+ * 'access_token' por defecto, o 'app_secret'), descifrado, SOLO si el
+ * usuario confirma su contrasena. Solo owner/admin. Maximo 5 intentos cada
  * 10 minutos por usuario para frenar fuerza bruta.
  *
  * La contrasena se comprueba con un cliente aparte que no guarda sesion,
@@ -26,6 +27,8 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => null)
     const password = typeof body?.password === 'string' ? body.password : ''
+    const field: 'access_token' | 'app_secret' =
+      body?.field === 'app_secret' ? 'app_secret' : 'access_token'
     if (!password) {
       return NextResponse.json({ error: 'Password is required' }, { status: 400 })
     }
@@ -61,29 +64,35 @@ export async function POST(request: Request) {
 
     const { data: config } = await supabase
       .from('whatsapp_config')
-      .select('access_token')
+      .select('access_token, app_secret')
       .eq('account_id', accountId)
       .maybeSingle()
 
-    if (!config?.access_token) {
-      return NextResponse.json({ error: 'No hay token guardado.' }, { status: 404 })
+    const stored = config?.[field]
+    if (!stored) {
+      return NextResponse.json(
+        { error: 'No hay valor guardado.' },
+        { status: 404 },
+      )
     }
 
-    let accessToken: string
+    let value: string
     try {
-      accessToken = decrypt(config.access_token)
+      value = decrypt(stored)
     } catch {
       return NextResponse.json(
         {
           error:
-            'El token guardado no se puede descifrar (ENCRYPTION_KEY distinta). Escribe el token de nuevo.',
+            'El valor guardado no se puede descifrar (ENCRYPTION_KEY distinta). Escribelo de nuevo.',
         },
         { status: 409 },
       )
     }
 
     return NextResponse.json(
-      { access_token: accessToken },
+      field === 'app_secret'
+        ? { app_secret: value }
+        : { access_token: value },
       { headers: { 'Cache-Control': 'no-store' } },
     )
   } catch (err) {

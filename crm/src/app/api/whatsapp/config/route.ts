@@ -280,6 +280,23 @@ export async function POST(request: Request) {
       )
     }
 
+    // App Secret obligatorio: debe venir en el formulario o ya estar guardado.
+    const hasNewAppSecret =
+      typeof app_secret === 'string' && app_secret.trim().length > 0
+    if (!hasNewAppSecret) {
+      const { data: storedSecret } = await supabase
+        .from('whatsapp_config')
+        .select('app_secret')
+        .eq('account_id', accountId)
+        .maybeSingle()
+      if (!storedSecret?.app_secret) {
+        return NextResponse.json(
+          { error: 'app_secret is required' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Verify credentials with Meta BEFORE saving
     let phoneInfo
     try {
@@ -303,7 +320,7 @@ export async function POST(request: Request) {
     try {
       encryptedAccessToken = encrypt(access_token)
       encryptedVerifyToken = verify_token ? encrypt(verify_token) : null
-      // App Secret opcional: si viene vacio se conserva el ya guardado.
+      // App Secret obligatorio: si no viene uno nuevo se conserva el ya guardado.
       encryptedAppSecret =
         typeof app_secret === 'string' && app_secret.trim()
           ? encrypt(app_secret.trim())

@@ -73,6 +73,7 @@ export function WhatsAppConfig() {
   const [testing, setTesting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [showToken, setShowToken] = useState(false);
+  const [showAppSecret, setShowAppSecret] = useState(false);
   const [config, setConfig] = useState<WhatsAppConfigType | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('unknown');
   const [resetReason, setResetReason] = useState<ResetReason>(null);
@@ -91,6 +92,9 @@ export function WhatsAppConfig() {
   const [verifyToken, setVerifyToken] = useState('');
   const [pin, setPin] = useState('');
   const [appSecret, setAppSecret] = useState('');
+  const [appSecretEdited, setAppSecretEdited] = useState(false);
+  // Que campo se esta revelando en el dialogo de contrasena
+  const [revealTarget, setRevealTarget] = useState<'access_token' | 'app_secret'>('access_token');
   // Mostrar el token guardado: pide la contrasena del usuario
   const [revealOpen, setRevealOpen] = useState(false);
   const [revealPassword, setRevealPassword] = useState('');
@@ -157,7 +161,9 @@ export function WhatsAppConfig() {
         setPhoneNumberId(data.phone_number_id || '');
         setWabaId(data.waba_id || '');
         setAccessToken(MASKED_TOKEN);
-        setAppSecret('');
+        setAppSecret(data.app_secret ? MASKED_TOKEN : '');
+        setAppSecretEdited(false);
+        setShowAppSecret(false);
         setVerifyToken('');
         setPin('');
         setTokenEdited(false);
@@ -169,6 +175,8 @@ export function WhatsAppConfig() {
         setPhoneNumberId('');
         setWabaId('');
         setAccessToken('');
+        setAppSecret('');
+        setAppSecretEdited(false);
         setVerifyToken(generateVerifyToken());
         setPin('');
         setTokenEdited(false);
@@ -260,7 +268,7 @@ export function WhatsAppConfig() {
       const res = await fetch('/api/whatsapp/config/reveal-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: revealPassword }),
+        body: JSON.stringify({ password: revealPassword, field: revealTarget }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -271,11 +279,17 @@ export function WhatsAppConfig() {
         );
         return;
       }
-      // Token recuperado: se muestra en el campo. No cuenta como "editado",
+      // Valor recuperado: se muestra en el campo. No cuenta como "editado",
       // asi que al guardar el servidor sigue reutilizando el guardado.
-      setAccessToken(data.access_token);
-      setTokenEdited(false);
-      setShowToken(true);
+      if (revealTarget === 'app_secret') {
+        setAppSecret(data.app_secret);
+        setAppSecretEdited(false);
+        setShowAppSecret(true);
+      } else {
+        setAccessToken(data.access_token);
+        setTokenEdited(false);
+        setShowToken(true);
+      }
       setRevealOpen(false);
       setRevealPassword('');
     } catch {
@@ -294,6 +308,12 @@ export function WhatsAppConfig() {
       toast.error('Access Token is required for initial setup');
       return;
     }
+    // App Secret obligatorio: o ya hay uno guardado, o se escribe uno nuevo.
+    const hasStoredSecret = Boolean(config?.app_secret) && !appSecretEdited;
+    if (!hasStoredSecret && (!appSecretEdited || !appSecret.trim())) {
+      toast.error(t('appSecretRequired'));
+      return;
+    }
 
     try {
       setSaving(true);
@@ -306,8 +326,9 @@ export function WhatsAppConfig() {
         phone_number_id: phoneNumberId.trim(),
         waba_id: wabaId.trim() || null,
         verify_token: verifyToken.trim() || null,
-        // Solo se envia si se escribio uno nuevo; vacio conserva el guardado.
-        app_secret: appSecret.trim() || undefined,
+        // Solo se envia si se escribio uno nuevo; si no, se conserva el guardado.
+        app_secret:
+          appSecretEdited && appSecret.trim() ? appSecret.trim() : undefined,
         // Optional — only sent when the user filled it in. The server
         // requires it on first save or when changing numbers; for a
         // simple token rotation, leaving it blank skips re-register.
@@ -452,6 +473,9 @@ export function WhatsAppConfig() {
       setWabaId('');
       setAccessToken('');
       setVerifyToken('');
+      setAppSecret('');
+      setAppSecretEdited(false);
+      setShowAppSecret(false);
       setTokenEdited(false);
       setConnectionStatus('disconnected');
       setResetReason(null);
@@ -666,10 +690,10 @@ export function WhatsAppConfig() {
           <DialogContent className="sm:max-w-md bg-popover border-border">
             <DialogHeader>
               <DialogTitle className="text-popover-foreground">
-                {t('revealTokenTitle')}
+                {revealTarget === 'app_secret' ? t('revealSecretTitle') : t('revealTokenTitle')}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                {t('revealTokenDesc')}
+                {revealTarget === 'app_secret' ? t('revealSecretDesc') : t('revealTokenDesc')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
@@ -709,7 +733,7 @@ export function WhatsAppConfig() {
               </Button>
               <Button onClick={handleRevealToken} disabled={revealing || !revealPassword}>
                 {revealing && <Loader2 className="mr-2 size-4 animate-spin" />}
-                {t('revealConfirm')}
+                {revealTarget === 'app_secret' ? t('revealSecretConfirm') : t('revealConfirm')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -777,6 +801,7 @@ export function WhatsAppConfig() {
                       setRevealPassword('');
                       setRevealError('');
                       setRevealReady(false);
+                      setRevealTarget('access_token');
                       setRevealOpen(true);
                       return;
                     }
@@ -811,21 +836,58 @@ export function WhatsAppConfig() {
             <div className="space-y-2">
               <Label className="text-muted-foreground">
                 {t('appSecret')}
-                <span className="ml-1 text-muted-foreground">{t('optional')}</span>
+                <span className="ml-1 text-red-400">*</span>
               </Label>
-              <Input
-                type="password"
-                name="wa-app-secret"
-                autoComplete="new-password"
-                data-1p-ignore
-                data-lpignore="true"
-                placeholder={config?.app_secret ? MASKED_TOKEN : t('appSecretPlaceholder')}
-                value={appSecret}
-                onChange={(e) => setAppSecret(e.target.value)}
-                className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
-              />
+              <div className="relative">
+                <Input
+                  type={showAppSecret ? 'text' : 'password'}
+                  name="wa-app-secret"
+                  autoComplete="new-password"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  required
+                  placeholder={t('appSecretPlaceholder')}
+                  value={appSecret}
+                  onChange={(e) => {
+                    setAppSecret(e.target.value);
+                    setAppSecretEdited(true);
+                  }}
+                  onFocus={() => {
+                    if (appSecret === MASKED_TOKEN && !appSecretEdited) {
+                      setAppSecret('');
+                      setAppSecretEdited(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    // Si lo dejo vacio y ya habia uno guardado, vuelve a mostrarse oculto.
+                    if (config?.app_secret && appSecretEdited && !appSecret) {
+                      setAppSecret(MASKED_TOKEN);
+                      setAppSecretEdited(false);
+                    }
+                  }}
+                  className="bg-muted border-border text-foreground placeholder:text-muted-foreground pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Secreto guardado y oculto: primero pide la contrasena.
+                    if (config?.app_secret && !appSecretEdited && appSecret === MASKED_TOKEN) {
+                      setRevealPassword('');
+                      setRevealError('');
+                      setRevealReady(false);
+                      setRevealTarget('app_secret');
+                      setRevealOpen(true);
+                      return;
+                    }
+                    setShowAppSecret(!showAppSecret);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showAppSecret ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                {config?.app_secret ? t('appSecretSaved') : t('appSecretHint')}
+                {config?.app_secret && !appSecretEdited ? t('appSecretSaved') : t('appSecretHint')}
               </p>
             </div>
 
