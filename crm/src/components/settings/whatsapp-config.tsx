@@ -95,6 +95,7 @@ export function WhatsAppConfig() {
   const [revealPassword, setRevealPassword] = useState('');
   const [revealError, setRevealError] = useState('');
   const [revealing, setRevealing] = useState(false);
+  const [revealReady, setRevealReady] = useState(false);
   const [tokenEdited, setTokenEdited] = useState(false);
 
   // Inbound-media mirror (issue #466). Unlike everything else on this
@@ -671,8 +672,17 @@ export function WhatsAppConfig() {
               <Label className="text-muted-foreground">{t('revealPasswordLabel')}</Label>
               <Input
                 type="password"
-                autoFocus
-                autoComplete="current-password"
+                name="wa-reveal-confirm"
+                autoComplete="new-password"
+                data-1p-ignore
+                data-lpignore="true"
+                readOnly={!revealReady}
+                onFocus={() => {
+                  if (!revealReady) {
+                    setRevealReady(true);
+                    setRevealPassword('');
+                  }
+                }}
                 value={revealPassword}
                 onChange={(e) => setRevealPassword(e.target.value)}
                 onKeyDown={(e) => {
@@ -715,6 +725,7 @@ export function WhatsAppConfig() {
               <Input
                 placeholder="e.g. 100234567890123"
                 value={phoneNumberId}
+                autoComplete="off"
                 onChange={(e) => setPhoneNumberId(e.target.value)}
                 className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
               />
@@ -725,6 +736,7 @@ export function WhatsAppConfig() {
               <Input
                 placeholder="e.g. 100234567890456"
                 value={wabaId}
+                autoComplete="off"
                 onChange={(e) => setWabaId(e.target.value)}
                 className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
               />
@@ -735,6 +747,10 @@ export function WhatsAppConfig() {
               <div className="relative">
                 <Input
                   type={showToken ? 'text' : 'password'}
+                  name="wa-access-token"
+                  autoComplete="new-password"
+                  data-1p-ignore
+                  data-lpignore="true"
                   placeholder={t('accessTokenPlaceholder')}
                   value={accessToken}
                   onChange={(e) => {
@@ -756,6 +772,7 @@ export function WhatsAppConfig() {
                     if (config && !tokenEdited && accessToken === MASKED_TOKEN) {
                       setRevealPassword('');
                       setRevealError('');
+                      setRevealReady(false);
                       setRevealOpen(true);
                       return;
                     }
@@ -778,6 +795,7 @@ export function WhatsAppConfig() {
               <Input
                 placeholder={t('webhookVerifyTokenPlaceholder')}
                 value={verifyToken}
+                autoComplete="off"
                 onChange={(e) => setVerifyToken(e.target.value)}
                 className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
               />
