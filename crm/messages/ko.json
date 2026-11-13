@@ -1561,6 +1561,9 @@
       "step5_7": "Back in Chatwise, click \"Verify with Meta\": it should show \"Registered\"",
       "metaDocs": "Meta WhatsApp API 문서"
     },
+    "sectionsNav": {
+      "security": "Login & security"
+    },
     "sections": {
       "overview": "개요",
       "profile": "내 프로필",

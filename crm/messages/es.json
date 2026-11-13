@@ -1619,6 +1619,9 @@
       "step5_7": "Vuelve a Chatwise y pulsa \"Verificar con Meta\": debe aparecer \"Registrado\"",
       "metaDocs": "Documentación de la API de WhatsApp de Meta"
     },
+    "sectionsNav": {
+      "security": "Sesión y seguridad"
+    },
     "sections": {
       "overview": "Resumen",
       "profile": "Tu perfil",
