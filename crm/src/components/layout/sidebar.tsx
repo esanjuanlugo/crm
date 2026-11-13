@@ -4,7 +4,7 @@ import { ChatwiseLogo } from "@/components/brand/chatwise-logo";
 import { SettingsSubnav } from "@/components/layout/settings-subnav";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
@@ -12,6 +12,7 @@ import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 import {
   Bell,
   Bot,
+  ChevronDown,
   Crown,
   GitBranch,
   LayoutDashboard,
@@ -119,6 +120,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const { profile, profileLoading, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
   const unreadNotifications = useUnreadNotifications();
+  // Configuracion es retractil: se abre al entrar a /settings y se
+  // cierra al salir; tambien se puede abrir/cerrar a mano con el clic.
+  const [settingsOpen, setSettingsOpen] = useState(pathname.startsWith("/settings"));
+  useEffect(() => {
+    setSettingsOpen(pathname.startsWith("/settings"));
+  }, [pathname]);
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
   // (the 017 signup trigger seeds it from `full_name`), so showing it
@@ -272,7 +279,21 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               return (
                 <li key={item.href}>
                   <Link
-                    href={item.href}
+                    href={isSettings ? "/settings?tab=overview" : item.href}
+                    onClick={
+                      isSettings
+                        ? (e) => {
+                            // Abierta: solo se retrae. Cerrada: se abre y carga el Resumen.
+                            if (settingsOpen) {
+                              e.preventDefault();
+                              setSettingsOpen(false);
+                            } else {
+                              setSettingsOpen(true);
+                            }
+                          }
+                        : undefined
+                    }
+                    aria-expanded={isSettings ? settingsOpen : undefined}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
                       isActive
@@ -285,10 +306,18 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     <item.icon
                       className={cn("h-4 w-4", isActive && isSettings && "text-primary")}
                     />
-                    {t(item.labelKey as string)}
+                    <span className="flex-1">{t(item.labelKey as string)}</span>
+                    {isSettings ? (
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform",
+                          settingsOpen && "rotate-180",
+                        )}
+                      />
+                    ) : null}
                   </Link>
-                  {/* Configuracion abierta: sus secciones viven aqui, ya no en un segundo menu. */}
-                  {isActive && isSettings ? (
+                  {/* Configuracion retractil: sus secciones viven aqui. */}
+                  {isSettings && settingsOpen ? (
                     <Suspense fallback={null}>
                       <SettingsSubnav onNavigate={onClose} />
                     </Suspense>
