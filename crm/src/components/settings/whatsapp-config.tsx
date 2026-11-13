@@ -23,6 +23,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { SettingsPanelHead } from './settings-panel-head';
 import {
   Accordion,
@@ -82,6 +90,11 @@ export function WhatsAppConfig() {
   const [accessToken, setAccessToken] = useState('');
   const [verifyToken, setVerifyToken] = useState('');
   const [pin, setPin] = useState('');
+  // Mostrar el token guardado: pide la contrasena del usuario
+  const [revealOpen, setRevealOpen] = useState(false);
+  const [revealPassword, setRevealPassword] = useState('');
+  const [revealError, setRevealError] = useState('');
+  const [revealing, setRevealing] = useState(false);
   const [tokenEdited, setTokenEdited] = useState(false);
 
   // Inbound-media mirror (issue #466). Unlike everything else on this
@@ -233,6 +246,39 @@ export function WhatsAppConfig() {
       toast.error(t('mirrorInboundSaveFailed'));
     } finally {
       setSavingMirror(false);
+    }
+  }
+
+  async function handleRevealToken() {
+    if (!revealPassword) return;
+    setRevealing(true);
+    setRevealError('');
+    try {
+      const res = await fetch('/api/whatsapp/config/reveal-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: revealPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setRevealError(
+          res.status === 401
+            ? t('revealWrongPassword')
+            : data.error || t('revealFailed'),
+        );
+        return;
+      }
+      // Token recuperado: se muestra en el campo. No cuenta como "editado",
+      // asi que al guardar el servidor sigue reutilizando el guardado.
+      setAccessToken(data.access_token);
+      setTokenEdited(false);
+      setShowToken(true);
+      setRevealOpen(false);
+      setRevealPassword('');
+    } catch {
+      setRevealError(t('revealFailed'));
+    } finally {
+      setRevealing(false);
     }
   }
 
@@ -601,6 +647,60 @@ export function WhatsAppConfig() {
           </Alert>
         )}
 
+        {/* Pide contrasena para mostrar el token guardado */}
+        <Dialog
+          open={revealOpen}
+          onOpenChange={(o) => {
+            setRevealOpen(o);
+            if (!o) {
+              setRevealPassword('');
+              setRevealError('');
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-md bg-popover border-border">
+            <DialogHeader>
+              <DialogTitle className="text-popover-foreground">
+                {t('revealTokenTitle')}
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                {t('revealTokenDesc')}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">{t('revealPasswordLabel')}</Label>
+              <Input
+                type="password"
+                autoFocus
+                autoComplete="current-password"
+                value={revealPassword}
+                onChange={(e) => setRevealPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleRevealToken();
+                  }
+                }}
+                className="bg-muted border-border text-foreground"
+              />
+              {revealError && <p className="text-xs text-red-400">{revealError}</p>}
+            </div>
+            <DialogFooter className="border-border bg-popover/50">
+              <Button
+                variant="outline"
+                onClick={() => setRevealOpen(false)}
+                className="border-border bg-transparent text-muted-foreground hover:bg-muted"
+              >
+                {t('revealCancel')}
+              </Button>
+              <Button onClick={handleRevealToken} disabled={revealing || !revealPassword}>
+                {revealing && <Loader2 className="mr-2 size-4 animate-spin" />}
+                {t('revealConfirm')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* API Credentials */}
         <Card>
           <CardHeader>
@@ -651,13 +751,22 @@ export function WhatsAppConfig() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowToken(!showToken)}
+                  onClick={() => {
+                    // Token guardado y oculto: primero pide la contrasena.
+                    if (config && !tokenEdited && accessToken === MASKED_TOKEN) {
+                      setRevealPassword('');
+                      setRevealError('');
+                      setRevealOpen(true);
+                      return;
+                    }
+                    setShowToken(!showToken);
+                  }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showToken ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
-              {config && !tokenEdited && (
+              {config && !tokenEdited && accessToken === MASKED_TOKEN && (
                 <p className="text-xs text-muted-foreground">
                   {t('tokenHidden')}
                 </p>
