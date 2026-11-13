@@ -1562,7 +1562,8 @@
       "metaDocs": "Meta WhatsApp API Documentation"
     },
     "sectionsNav": {
-      "security": "Login & security"
+      "security": "Login & security",
+      "deals": "Deals"
     },
     "sections": {
       "overview": "Overview",

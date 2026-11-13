@@ -1620,7 +1620,8 @@
       "metaDocs": "Documentación de la API de WhatsApp de Meta"
     },
     "sectionsNav": {
-      "security": "Sesión y seguridad"
+      "security": "Sesión y seguridad",
+      "deals": "Oportunidades"
     },
     "sections": {
       "overview": "Resumen",
