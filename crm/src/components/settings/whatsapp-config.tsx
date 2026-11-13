@@ -90,6 +90,7 @@ export function WhatsAppConfig() {
   const [accessToken, setAccessToken] = useState('');
   const [verifyToken, setVerifyToken] = useState('');
   const [pin, setPin] = useState('');
+  const [appSecret, setAppSecret] = useState('');
   // Mostrar el token guardado: pide la contrasena del usuario
   const [revealOpen, setRevealOpen] = useState(false);
   const [revealPassword, setRevealPassword] = useState('');
@@ -156,6 +157,7 @@ export function WhatsAppConfig() {
         setPhoneNumberId(data.phone_number_id || '');
         setWabaId(data.waba_id || '');
         setAccessToken(MASKED_TOKEN);
+        setAppSecret('');
         setVerifyToken('');
         setPin('');
         setTokenEdited(false);
@@ -304,6 +306,8 @@ export function WhatsAppConfig() {
         phone_number_id: phoneNumberId.trim(),
         waba_id: wabaId.trim() || null,
         verify_token: verifyToken.trim() || null,
+        // Solo se envia si se escribio uno nuevo; vacio conserva el guardado.
+        app_secret: appSecret.trim() || undefined,
         // Optional — only sent when the user filled it in. The server
         // requires it on first save or when changing numbers; for a
         // simple token rotation, leaving it blank skips re-register.
@@ -801,6 +805,27 @@ export function WhatsAppConfig() {
               />
               <p className="text-xs text-muted-foreground">
                 {t('webhookVerifyTokenHint')}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">
+                {t('appSecret')}
+                <span className="ml-1 text-muted-foreground">{t('optional')}</span>
+              </Label>
+              <Input
+                type="password"
+                name="wa-app-secret"
+                autoComplete="new-password"
+                data-1p-ignore
+                data-lpignore="true"
+                placeholder={config?.app_secret ? MASKED_TOKEN : t('appSecretPlaceholder')}
+                value={appSecret}
+                onChange={(e) => setAppSecret(e.target.value)}
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
+              />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {config?.app_secret ? t('appSecretSaved') : t('appSecretHint')}
               </p>
             </div>
 

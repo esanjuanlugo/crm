@@ -21,13 +21,17 @@ import crypto from 'node:crypto'
 export function verifyMetaWebhookSignature(
   rawBody: string,
   signatureHeader: string | null,
+  extraSecrets: string[] = [],
 ): boolean {
-  const secret = process.env.META_APP_SECRET
-  if (!secret) {
+  // Candidatos: el App Secret guardado en la conexion (cada dueno puede usar
+  // su propia app de Meta) y, como respaldo, META_APP_SECRET del servidor.
+  const candidates = [...extraSecrets, process.env.META_APP_SECRET].filter(
+    (s): s is string => typeof s === 'string' && s.length > 0,
+  )
+  if (candidates.length === 0) {
     console.error(
-      '[webhook] META_APP_SECRET is not set — rejecting request. ' +
-        'Configure the env var (Meta → App Settings → Basic → App Secret) ' +
-        'to enable signature verification.',
+      '[webhook] No App Secret available (not saved in the WhatsApp connection ' +
+        'and META_APP_SECRET is not set) - rejecting request.',
     )
     return false
   }
@@ -35,13 +39,14 @@ export function verifyMetaWebhookSignature(
   if (!signatureHeader) return false
   if (!signatureHeader.startsWith('sha256=')) return false
 
-  const expected =
-    'sha256=' +
-    crypto.createHmac('sha256', secret).update(rawBody).digest('hex')
-
   const a = Buffer.from(signatureHeader)
-  const b = Buffer.from(expected)
-  // Bail if lengths differ — timingSafeEqual throws otherwise.
-  if (a.length !== b.length) return false
-  return crypto.timingSafeEqual(a, b)
+  for (const secret of candidates) {
+    const expected =
+      'sha256=' +
+      crypto.createHmac('sha256', secret).update(rawBody).digest('hex')
+    const b = Buffer.from(expected)
+    // Lengths must match - timingSafeEqual throws otherwise.
+    if (a.length === b.length && crypto.timingSafeEqual(a, b)) return true
+  }
+  return false
 }

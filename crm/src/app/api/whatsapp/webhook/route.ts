@@ -179,6 +179,54 @@ export async function GET(request: Request) {
   }
 }
 
+// Busca el App Secret guardado en la(s) conexion(es) a las que pertenece el
+// evento, para que cada cuenta (dueno) pueda usar su propia app de Meta.
+// El cuerpo se lee ANTES de verificar la firma, pero solo para elegir que
+// secretos probar: un cuerpo falso no pasa el HMAC sin el secreto real.
+async function resolveAppSecrets(rawBody: string): Promise<string[]> {
+  try {
+    const parsed = JSON.parse(rawBody) as { entry?: WhatsAppWebhookEntry[] }
+    const phoneIds = new Set<string>()
+    const wabaIds = new Set<string>()
+    for (const entry of parsed.entry ?? []) {
+      if (entry?.id) wabaIds.add(String(entry.id))
+      for (const change of entry?.changes ?? []) {
+        const pid = change?.value?.metadata?.phone_number_id
+        if (pid) phoneIds.add(String(pid))
+      }
+    }
+
+    const rows: Array<{ app_secret: string | null }> = []
+    if (phoneIds.size > 0) {
+      const { data } = await supabaseAdmin()
+        .from('whatsapp_config')
+        .select('app_secret')
+        .in('phone_number_id', [...phoneIds].slice(0, 50))
+      if (data) rows.push(...data)
+    }
+    if (wabaIds.size > 0) {
+      const { data } = await supabaseAdmin()
+        .from('whatsapp_config')
+        .select('app_secret')
+        .in('waba_id', [...wabaIds].slice(0, 50))
+      if (data) rows.push(...data)
+    }
+
+    const secrets: string[] = []
+    for (const row of rows) {
+      if (!row.app_secret) continue
+      try {
+        secrets.push(decrypt(row.app_secret))
+      } catch {
+        // Fila con clave distinta o mal formada: se ignora.
+      }
+    }
+    return secrets
+  } catch {
+    return []
+  }
+}
+
 // POST - Receive messages
 export async function POST(request: Request) {
   // Read raw body first so we can HMAC-verify the exact bytes Meta
@@ -186,7 +234,8 @@ export async function POST(request: Request) {
   const rawBody = await request.text()
   const signature = request.headers.get('x-hub-signature-256')
 
-  if (!verifyMetaWebhookSignature(rawBody, signature)) {
+  const appSecrets = await resolveAppSecrets(rawBody)
+  if (!verifyMetaWebhookSignature(rawBody, signature, appSecrets)) {
     // 401 (not 200) — we want Meta's delivery dashboard to show failures
     // loudly if a misconfiguration causes signatures to stop matching,
     // rather than silently eating events.
