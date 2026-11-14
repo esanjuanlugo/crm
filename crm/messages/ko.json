@@ -1645,6 +1645,9 @@
       "useMode": "{mode} 모드 사용",
       "active": "사용 중",
       "accentColor": "강조 색상",
+      "modeLight": "라이트",
+      "modeDark": "다크",
+      "preview": "미리보기",
       "useTheme": "{name} 테마 사용"
     },
     "security": {

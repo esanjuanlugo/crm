@@ -1701,6 +1701,9 @@
       "useMode": "Usar el modo {mode}",
       "active": "Activo",
       "accentColor": "Color de acento",
+      "modeLight": "Claro",
+      "modeDark": "Oscuro",
+      "preview": "Vista previa",
       "useTheme": "Usar el tema {name}"
     },
     "security": {

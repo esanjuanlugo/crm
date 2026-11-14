@@ -1645,6 +1645,9 @@
       "useMode": "Use {mode} mode",
       "active": "Active",
       "accentColor": "Accent color",
+      "modeLight": "Light",
+      "modeDark": "Dark",
+      "preview": "Preview",
       "useTheme": "Use {name} theme"
     },
     "security": {
