@@ -17,7 +17,7 @@ export function SecurityPanel() {
         title={t('title')}
         description={t('description')}
       />
-      <div className="space-y-4">
+      <div className="space-y-4 xl:grid xl:grid-cols-2 xl:items-start xl:gap-4 xl:space-y-0">
         <PasswordForm />
         <SessionsCard />
       </div>

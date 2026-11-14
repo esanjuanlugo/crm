@@ -95,6 +95,7 @@
     "defaultUser": "Usuario",
     "defaultAvatar": "Avatar",
     "menuProfile": "Perfil",
+    "menuSecurity": "Seguridad",
     "menuSettings": "Configuración",
     "menuSignOut": "Cerrar sesión"
   },
@@ -112,6 +113,7 @@
     "defaultUser": "Usuario",
     "defaultAvatar": "Avatar",
     "menuProfile": "Perfil",
+    "menuSecurity": "Seguridad",
     "menuSettings": "Configuración",
     "menuSignOut": "Cerrar sesión"
   },

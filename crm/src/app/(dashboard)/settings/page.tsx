@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { SettingsOverview } from '@/components/settings/settings-overview';
-import { AccountPanel } from '@/components/settings/account-panel';
+import { ProfileForm } from '@/components/settings/profile-form';
+import { SecurityPanel } from '@/components/settings/security-panel';
 import { WhatsAppConfig } from '@/components/settings/whatsapp-config';
 import { MessagesPanel } from '@/components/settings/messages-panel';
 import { CrmPanel } from '@/components/settings/crm-panel';
@@ -65,7 +66,16 @@ function SettingsPageInner() {
 
   const panel: Record<SettingsSection, ReactNode> = {
     overview: <SettingsOverview onSelect={go} />,
-    account: <AccountPanel />,
+    profile: (
+      <div className="max-w-3xl">
+        <ProfileForm />
+      </div>
+    ),
+    security: (
+      <div className="max-w-5xl">
+        <SecurityPanel />
+      </div>
+    ),
     whatsapp: <WhatsAppConfig />,
     messages: <MessagesPanel />,
     crm: <CrmPanel />,

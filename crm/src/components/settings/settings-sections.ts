@@ -3,6 +3,7 @@ import {
   KeyRound,
   LayoutGrid,
   PlugZap,
+  Shield,
   Tags,
   User,
   UsersRound,
@@ -12,19 +13,21 @@ import {
 /**
  * Settings information architecture.
  *
- * Related settings are merged into fewer sections:
- *   account  = profile + login & security + appearance
+ * Merged sections:
  *   messages = templates + quick replies
  *   crm      = fields & tags + deals & currency
  *
- * The URL query param stays `?tab=`. Old values (profile, security,
+ * profile and security are their own screens, but they do not appear in
+ * the Settings rail: they live in the account menus (header and sidebar
+ * user menu). The URL query param stays "?tab=". Old values (account,
  * appearance, templates, quick-replies, fields, tags, custom-fields,
- * deals) still work: they resolve onto the merged section and scroll to
- * the block they used to be (see LEGACY_TABS / resolveAnchor).
+ * deals) still work: they resolve onto the section that now contains
+ * them and scroll to the block they used to be (see LEGACY_TABS).
  */
 export const SETTINGS_SECTIONS = [
   'overview',
-  'account',
+  'profile',
+  'security',
   'whatsapp',
   'messages',
   'crm',
@@ -36,8 +39,17 @@ export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 export const DEFAULT_SECTION: SettingsSection = 'overview';
 
-/** Sections hidden from the rail and not reachable via `?tab=`. */
+/** Sections hidden from the rail and not reachable via "?tab=". */
 export const HIDDEN_SECTIONS: readonly SettingsSection[] = ['api'];
+
+/** Reachable via "?tab=" but not listed in the Settings rail (account menu only). */
+export const MENU_ONLY_SECTIONS: readonly SettingsSection[] = ['profile', 'security'];
+
+/** Everything the rail should not list. */
+export const RAIL_HIDDEN_SECTIONS: readonly SettingsSection[] = [
+  ...HIDDEN_SECTIONS,
+  ...MENU_ONLY_SECTIONS,
+];
 
 /** Rail grouping. */
 export interface SectionMeta {
@@ -49,7 +61,8 @@ export interface SectionMeta {
 
 export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   overview: { id: 'overview', label: 'Overview', icon: LayoutGrid, group: 'top' },
-  account: { id: 'account', label: 'Account', icon: User, group: 'account' },
+  profile: { id: 'profile', label: 'Your profile', icon: User, group: 'account' },
+  security: { id: 'security', label: 'Login & security', icon: Shield, group: 'account' },
   whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
   messages: { id: 'messages', label: 'Messages', icon: FileText, group: 'workspace' },
   crm: { id: 'crm', label: 'CRM data', icon: Tags, group: 'workspace' },
@@ -64,13 +77,12 @@ export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[
 ];
 
 /**
- * Old `?tab=` values -> merged section + the block to scroll to. A null
+ * Old "?tab=" values -> current section + the block to scroll to. A null
  * anchor means "first block of the section" (no scroll needed).
  */
 const LEGACY_TABS: Record<string, { section: SettingsSection; anchor: string | null }> = {
-  profile: { section: 'account', anchor: null },
-  security: { section: 'account', anchor: 'security' },
-  appearance: { section: 'account', anchor: null },
+  account: { section: 'profile', anchor: null },
+  appearance: { section: 'profile', anchor: null },
   templates: { section: 'messages', anchor: null },
   'quick-replies': { section: 'messages', anchor: 'quick-replies' },
   fields: { section: 'crm', anchor: null },
@@ -90,9 +102,9 @@ function isSection(value: string | null): value is SettingsSection {
 }
 
 /**
- * Resolve a raw `?tab=` value to a section. Legacy tabs collapse onto the
- * merged section that now contains them. Anything unknown falls back to
- * the Overview landing.
+ * Resolve a raw "?tab=" value to a section. Legacy tabs collapse onto the
+ * section that now contains them. Anything unknown falls back to the
+ * Overview landing.
  */
 export function resolveSection(raw: string | null): SettingsSection {
   const legacy = legacyOf(raw);
@@ -101,7 +113,7 @@ export function resolveSection(raw: string | null): SettingsSection {
   return DEFAULT_SECTION;
 }
 
-/** Block id (without the `settings-` prefix) to scroll to for a legacy tab. */
+/** Block id (without the "settings-" prefix) to scroll to for a legacy tab. */
 export function resolveAnchor(raw: string | null): string | null {
   return legacyOf(raw)?.anchor ?? null;
 }

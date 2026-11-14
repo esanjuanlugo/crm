@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import {
-  HIDDEN_SECTIONS,
   RAIL_GROUPS,
+  RAIL_HIDDEN_SECTIONS,
   SECTION_META,
   SETTINGS_SECTIONS,
   resolveSection,
@@ -31,7 +31,7 @@ export function SettingsSubnav({ onNavigate }: { onNavigate?: () => void }) {
       (s) =>
         s !== "overview" &&
         SECTION_META[s].group === group &&
-        !HIDDEN_SECTIONS.includes(s),
+        !RAIL_HIDDEN_SECTIONS.includes(s),
     ),
   );
 

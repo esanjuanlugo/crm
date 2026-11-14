@@ -410,6 +410,18 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               <DropdownMenuItem
                 render={
                   <Link
+                    href="/settings?tab=security"
+                    onClick={onClose}
+                    className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
+                  />
+                }
+              >
+                <Shield className="size-4" />
+                {t("menuSecurity")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={
+                  <Link
                     href="/settings?tab=whatsapp"
                     onClick={onClose}
                     className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"

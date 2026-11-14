@@ -199,7 +199,7 @@ export function SettingsOverview({
             })} · ${defaultCurrency}`,
     },
     {
-      section: 'account',
+      section: 'profile',
       loading: false,
       subtitle: profile?.email ?? t('yourAccount'),
     },

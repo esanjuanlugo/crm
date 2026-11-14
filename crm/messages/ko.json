@@ -37,6 +37,7 @@
     "defaultUser": "사용자",
     "defaultAvatar": "아바타",
     "menuProfile": "프로필",
+    "menuSecurity": "보안",
     "menuSettings": "설정",
     "menuSignOut": "로그아웃"
   },
@@ -54,6 +55,7 @@
     "defaultUser": "사용자",
     "defaultAvatar": "아바타",
     "menuProfile": "프로필",
+    "menuSecurity": "보안",
     "menuSettings": "설정",
     "menuSignOut": "로그아웃"
   },

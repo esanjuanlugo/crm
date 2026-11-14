@@ -37,6 +37,7 @@
     "defaultUser": "User",
     "defaultAvatar": "Avatar",
     "menuProfile": "Profile",
+    "menuSecurity": "Security",
     "menuSettings": "Settings",
     "menuSignOut": "Sign out"
   },
@@ -54,6 +55,7 @@
     "defaultUser": "User",
     "defaultAvatar": "Avatar",
     "menuProfile": "Profile",
+    "menuSecurity": "Security",
     "menuSettings": "Settings",
     "menuSignOut": "Sign out"
   },
