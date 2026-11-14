@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, Menu, Settings as SettingsIcon, Shield, User } from "lucide-react";
+import { LogOut, Menu, Shield, User } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -146,17 +146,6 @@ export function Header({ onOpenSidebar }: HeaderProps) {
           >
             <Shield className="size-4" />
             {t("menuSecurity")}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            render={
-              <Link
-                href="/settings?tab=whatsapp"
-                className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
-              />
-            }
-          >
-            <SettingsIcon className="size-4" />
-            {t("menuSettings")}
           </DropdownMenuItem>
           <DropdownMenuSeparator className="bg-border" />
           <DropdownMenuItem

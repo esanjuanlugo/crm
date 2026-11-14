@@ -18,7 +18,6 @@ import {
   LogOut,
   MessageSquare,
   Radio,
-  Settings,
   Shield,
   User,
   UserCog,
@@ -222,7 +221,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                       // Taller on mobile so fingers can hit the row reliably (≥44px).
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
                       isActive
-                        ? "bg-primary/10 text-primary"
+                        ? "text-primary"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
@@ -351,18 +350,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               >
                 <Shield className="size-4" />
                 {t("menuSecurity")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                render={
-                  <Link
-                    href="/settings?tab=whatsapp"
-                    onClick={onClose}
-                    className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
-                  />
-                }
-              >
-                <Settings className="size-4" />
-                {t("menuSettings")}
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
