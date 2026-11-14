@@ -21,7 +21,7 @@ export function SettingsPanelHead({
   return (
     <div
       className={cn(
-        'mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between',
+        'mb-5 flex flex-col items-start gap-4',
         className,
       )}
     >
