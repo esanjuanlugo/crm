@@ -88,7 +88,7 @@ const LEGACY_TABS: Record<string, { section: SettingsSection; anchor: string | n
   fields: { section: 'crm', anchor: null },
   tags: { section: 'crm', anchor: null },
   'custom-fields': { section: 'crm', anchor: null },
-  deals: { section: 'crm', anchor: 'deals' },
+  deals: { section: 'crm', anchor: null },
 };
 
 function legacyOf(raw: string | null) {

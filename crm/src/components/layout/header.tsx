@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AppearanceMenu } from "@/components/layout/appearance-menu";
+import { CurrencyMenu } from "@/components/layout/currency-menu";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "dashboard",
@@ -74,6 +75,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2">
+        <CurrencyMenu />
         <AppearanceMenu />
 
         <DropdownMenu>
