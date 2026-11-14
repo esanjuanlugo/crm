@@ -70,7 +70,7 @@ export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[
 const LEGACY_TABS: Record<string, { section: SettingsSection; anchor: string | null }> = {
   profile: { section: 'account', anchor: null },
   security: { section: 'account', anchor: 'security' },
-  appearance: { section: 'account', anchor: 'appearance' },
+  appearance: { section: 'account', anchor: null },
   templates: { section: 'messages', anchor: null },
   'quick-replies': { section: 'messages', anchor: 'quick-replies' },
   fields: { section: 'crm', anchor: null },
