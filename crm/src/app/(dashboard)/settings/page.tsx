@@ -7,7 +7,8 @@ import { SettingsOverview } from '@/components/settings/settings-overview';
 import { ProfileForm } from '@/components/settings/profile-form';
 import { SecurityPanel } from '@/components/settings/security-panel';
 import { WhatsAppConfig } from '@/components/settings/whatsapp-config';
-import { MessagesPanel } from '@/components/settings/messages-panel';
+import { TemplateManager } from '@/components/settings/template-manager';
+import { QuickRepliesManager } from '@/components/settings/quick-replies-manager';
 import { CrmPanel } from '@/components/settings/crm-panel';
 import { MembersTab } from '@/components/settings/members-tab';
 import { ApiKeysSettings } from '@/components/settings/api-keys-settings';
@@ -75,7 +76,8 @@ function SettingsPageInner() {
       </div>
     ),
     whatsapp: <WhatsAppConfig />,
-    messages: <MessagesPanel />,
+    templates: <TemplateManager />,
+    'quick-replies': <QuickRepliesManager />,
     crm: <CrmPanel />,
     members: <MembersTab />,
     api: <ApiKeysSettings />,

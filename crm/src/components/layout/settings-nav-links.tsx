@@ -16,7 +16,13 @@ import {
  * items del menu principal. La URL (?tab=) sigue siendo la fuente de
  * verdad; Perfil y Seguridad se abren desde el menu de la cuenta.
  */
-const NAV_SECTIONS: SettingsSection[] = ["whatsapp", "messages", "crm", "members"];
+const NAV_SECTIONS: SettingsSection[] = [
+  "whatsapp",
+  "templates",
+  "quick-replies",
+  "crm",
+  "members",
+];
 
 function Items({
   active,

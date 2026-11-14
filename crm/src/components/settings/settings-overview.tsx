@@ -177,7 +177,7 @@ export function SettingsOverview({
             }`,
     },
     {
-      section: 'messages',
+      section: 'templates',
       loading: countsLoading,
       subtitle:
         counts?.templates == null

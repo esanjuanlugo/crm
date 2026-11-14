@@ -7,6 +7,7 @@ import {
   Tags,
   User,
   UsersRound,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -14,7 +15,7 @@ import {
  * Settings information architecture.
  *
  * Merged sections:
- *   messages = templates + quick replies
+ *   templates and quick replies are separate sections (own menu items)
  *   crm      = fields & tags + deals & currency
  *
  * profile and security are their own screens, but they do not appear in
@@ -29,7 +30,8 @@ export const SETTINGS_SECTIONS = [
   'profile',
   'security',
   'whatsapp',
-  'messages',
+  'templates',
+  'quick-replies',
   'crm',
   'members',
   'api',
@@ -64,7 +66,8 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   profile: { id: 'profile', label: 'Your profile', icon: User, group: 'account' },
   security: { id: 'security', label: 'Login & security', icon: Shield, group: 'account' },
   whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
-  messages: { id: 'messages', label: 'Messages', icon: FileText, group: 'workspace' },
+  templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
+  'quick-replies': { id: 'quick-replies', label: 'Quick replies', icon: Zap, group: 'workspace' },
   crm: { id: 'crm', label: 'CRM data', icon: Tags, group: 'workspace' },
   members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
   api: { id: 'api', label: 'API keys', icon: KeyRound, group: 'workspace' },
@@ -83,8 +86,7 @@ export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[
 const LEGACY_TABS: Record<string, { section: SettingsSection; anchor: string | null }> = {
   account: { section: 'profile', anchor: null },
   appearance: { section: 'profile', anchor: null },
-  templates: { section: 'messages', anchor: null },
-  'quick-replies': { section: 'messages', anchor: 'quick-replies' },
+  messages: { section: 'templates', anchor: null },
   fields: { section: 'crm', anchor: null },
   tags: { section: 'crm', anchor: null },
   'custom-fields': { section: 'crm', anchor: null },
