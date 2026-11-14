@@ -518,10 +518,10 @@ export function MembersTab() {
                     return (
                     <li
                       key={inv.id}
-                      className="flex items-center gap-4 px-4 py-3"
+                      className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-4"
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-medium text-foreground">
                             {inv.label || t('untitledInvite')}
                           </span>
@@ -545,7 +545,7 @@ export function MembersTab() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleRevoke(inv)}
-                        className="border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:border-red-500/60 hover:text-red-200"
+                        className="self-start sm:self-auto border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:border-red-500/60 hover:text-red-200"
                       >
                         <MailX className="size-4" />
                         {t('revoke')}

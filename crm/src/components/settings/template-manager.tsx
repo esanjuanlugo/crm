@@ -487,7 +487,7 @@ export function TemplateManager() {
         title={t('title')}
         description={t('description')}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               onClick={handleSyncFromMeta}
@@ -521,7 +521,7 @@ export function TemplateManager() {
             const status = templateStatusConfig[statusKey];
             return (
               <Card key={template.id}>
-                <CardContent className="flex items-start justify-between pt-4">
+                <CardContent className="flex flex-col justify-between gap-3 pt-4 sm:flex-row sm:items-start">
                   <div className="space-y-2 min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-medium text-foreground">{template.name}</h3>
@@ -570,7 +570,7 @@ export function TemplateManager() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0 ml-2">
+                  <div className="flex items-center gap-1 sm:ml-2 sm:shrink-0">
                     {statusKey === 'APPROVED' && (
                       <Button
                         variant="ghost"
@@ -674,7 +674,7 @@ export function TemplateManager() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label className="text-muted-foreground">{t('category')}</Label>
                 <Select
@@ -955,7 +955,7 @@ export function TemplateManager() {
                             changeButtonType(i, val as TemplateButton['type']);
                           }}
                         >
-                          <SelectTrigger className="w-40 bg-muted border-border text-foreground h-8 text-xs">
+                          <SelectTrigger className="w-32 bg-muted border-border text-foreground h-8 text-xs sm:w-40">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="bg-popover border-border">
