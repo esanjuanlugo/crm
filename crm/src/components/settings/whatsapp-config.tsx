@@ -515,9 +515,10 @@ export function WhatsAppConfig() {
         title={t("title")}
         description={t("description")}
       />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] 3xl:grid-cols-[minmax(0,1fr)_400px]">
       {/* Main config form */}
-      <div className="min-w-0 space-y-6">
+      <div className="min-w-0 space-y-6 3xl:grid 3xl:grid-cols-2 3xl:items-start 3xl:gap-6 3xl:space-y-0">
+        <div className="min-w-0 space-y-6">
         {/* Corrupted-token reset banner */}
         {showResetBanner && (
           <Alert className="bg-amber-950/40 border-amber-600/40">
@@ -914,6 +915,8 @@ export function WhatsAppConfig() {
           </CardContent>
         </Card>
 
+        </div>
+        <div className="min-w-0 space-y-6">
         {/* Webhook URL */}
         <Card>
           <CardHeader>
@@ -1035,6 +1038,7 @@ export function WhatsAppConfig() {
               )}
             </Button>
           )}
+        </div>
         </div>
       </div>
 

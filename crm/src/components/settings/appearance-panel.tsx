@@ -25,7 +25,7 @@ export function AppearancePanel() {
   const t = useTranslations("Settings.appearance");
 
   return (
-    <section className="max-w-3xl animate-in fade-in-50 duration-200">
+    <section className="max-w-3xl xl:max-w-5xl animate-in fade-in-50 duration-200">
       <SettingsPanelHead
         title={t("title")}
         description={t("description")}
