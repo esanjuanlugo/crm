@@ -20,7 +20,7 @@ export function FieldsAndTagsPanel() {
   const canEditSettings = useCan('edit-settings');
 
   return (
-    <section className="max-w-3xl 2xl:max-w-6xl animate-in fade-in-50 space-y-4 duration-200">
+    <section className="max-w-3xl 2xl:max-w-7xl 3xl:max-w-[1700px] animate-in fade-in-50 space-y-4 duration-200">
       <SettingsPanelHead
         title={t('title')}
         description={t('description')}

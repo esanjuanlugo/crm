@@ -70,7 +70,7 @@ export function DealsSettings() {
   }
 
   return (
-    <section className="max-w-2xl animate-in fade-in-50 duration-200">
+    <section className="max-w-2xl xl:max-w-4xl animate-in fade-in-50 duration-200">
       <SettingsPanelHead
         title={t("title")}
         description={t("description")}

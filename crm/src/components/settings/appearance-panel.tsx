@@ -25,7 +25,7 @@ export function AppearancePanel() {
   const t = useTranslations("Settings.appearance");
 
   return (
-    <section className="max-w-3xl xl:max-w-5xl animate-in fade-in-50 duration-200">
+    <section className="max-w-3xl xl:max-w-5xl 2xl:max-w-7xl 3xl:max-w-[1700px] animate-in fade-in-50 duration-200">
       <SettingsPanelHead
         title={t("title")}
         description={t("description")}
@@ -40,7 +40,7 @@ export function AppearancePanel() {
         <div
           role="radiogroup"
           aria-label="Color mode"
-          className="grid max-w-md grid-cols-1 gap-3 min-[400px]:grid-cols-2"
+          className="grid max-w-md 2xl:max-w-xl grid-cols-1 gap-3 min-[400px]:grid-cols-2"
         >
           {MODES.map((m) => (
             <ModeCard
@@ -59,7 +59,7 @@ export function AppearancePanel() {
           {t("accentColor")}
         </h3>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           {THEMES.map((tObj) => (
             <ThemeCard
               key={tObj.id}

@@ -207,14 +207,15 @@ export function ProfileForm() {
     : '—';
 
   return (
-    <section className="max-w-2xl animate-in fade-in-50 duration-200">
+    <section className="max-w-2xl xl:max-w-6xl 3xl:max-w-[1700px] animate-in fade-in-50 duration-200">
       <SettingsPanelHead
         title={t('title')}
         description={t('description')}
       />
       <form onSubmit={onSubmit} className="space-y-4">
         <Card>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 xl:grid xl:grid-cols-2 xl:items-start xl:gap-x-10 xl:gap-y-6 xl:space-y-0">
+          <div className="space-y-6">
           {/* Avatar row */}
           <div className="flex flex-wrap items-center gap-5">
             <Avatar size="lg" className="size-16">
@@ -304,6 +305,9 @@ export function ProfileForm() {
             )}
           </div>
 
+          </div>
+
+          <div className="space-y-6">
           {/* Read-only block */}
           <div className="rounded-lg border border-border bg-muted p-4">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -335,6 +339,7 @@ export function ProfileForm() {
               {t('loading')}
             </p>
           )}
+          </div>
 
         </CardContent>
         </Card>

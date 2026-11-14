@@ -150,7 +150,7 @@ export function QuickRepliesManager() {
           tus conversaciones.
         </p>
       ) : (
-        <ul className="grid gap-2 3xl:grid-cols-2">
+        <ul className="grid gap-2 xl:grid-cols-2 3xl:grid-cols-3">
           {items.map((qr) => (
             <li
               key={qr.id}
