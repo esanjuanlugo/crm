@@ -11,16 +11,17 @@ import { AppearancePanel } from './appearance-panel';
  */
 export function AccountPanel() {
   return (
-    <div className="animate-in fade-in-50 space-y-10 duration-200">
-      <div className="grid items-start gap-x-8 gap-y-10 xl:grid-cols-2">
-        <div id="settings-profile" className="min-w-0 scroll-mt-6">
-          <ProfileForm />
-        </div>
-        <div id="settings-security" className="min-w-0 scroll-mt-6">
-          <SecurityPanel />
-        </div>
+    <div className="animate-in fade-in-50 grid items-start gap-x-8 gap-y-10 duration-200 xl:grid-cols-2 2xl:grid-cols-3">
+      <div id="settings-profile" className="min-w-0 scroll-mt-6">
+        <ProfileForm />
       </div>
-      <div id="settings-appearance" className="min-w-0 scroll-mt-6">
+      <div id="settings-security" className="min-w-0 scroll-mt-6">
+        <SecurityPanel />
+      </div>
+      <div
+        id="settings-appearance"
+        className="@container min-w-0 scroll-mt-6 xl:col-span-2 2xl:col-span-1"
+      >
         <AppearancePanel />
       </div>
     </div>
