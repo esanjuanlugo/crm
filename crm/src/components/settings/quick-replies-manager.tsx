@@ -58,6 +58,7 @@ export function QuickRepliesManager() {
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "text" | "interactive">("all");
+  const [ideaKind, setIdeaKind] = useState<"text" | "interactive">("text");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -138,8 +139,6 @@ export function QuickRepliesManager() {
     [load],
   );
 
-  const textCount = items.filter((q) => q.kind === "text").length;
-  const interactiveCount = items.length - textCount;
   const needle = query.trim().toLowerCase();
   const previewOf = (qr: QuickReply) =>
     qr.kind === "interactive" && qr.interactive_payload
@@ -153,28 +152,38 @@ export function QuickRepliesManager() {
       previewOf(qr).toLowerCase().includes(needle)
     );
   });
-  const openFromIdea = (idea: { title: string; text: string }) =>
-    setDraft({ ...emptyDraft(), title: idea.title, content_text: idea.text });
+  const openFromIdea = (idea: Idea) =>
+    setDraft(
+      idea.kind === "interactive"
+        ? {
+            ...emptyDraft(),
+            title: idea.title,
+            kind: "interactive",
+            interactive_payload: structuredClone(idea.payload),
+          }
+        : { ...emptyDraft(), title: idea.title, content_text: idea.text },
+    );
+  const visibleIdeas = IDEAS.filter((i) => i.kind === ideaKind);
 
   return (
     <div>
       <SettingsPanelHead
-        className="sm:flex-row sm:items-start sm:justify-between"
         title="Respuestas rápidas"
         description="Guarda mensajes reutilizables, de texto o interactivos, para que los agentes puedan insertarlos desde el compositor de mensajes."
-        action={
-          <Button onClick={openCreate}>
-            <Plus className="mr-1 h-4 w-4" />
-            Nueva respuesta rápida
-          </Button>
-        }
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] 3xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-4">
-          {items.length > 0 && (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="relative w-full sm:max-w-xs">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <Button
+              onClick={openCreate}
+              className="w-full shrink-0 sm:w-auto sm:self-start lg:self-auto"
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Nueva respuesta rápida
+            </Button>
+            {items.length > 0 && (
+              <div className="relative w-full lg:max-w-xs">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={query}
@@ -184,28 +193,27 @@ export function QuickRepliesManager() {
                   className="bg-muted pl-9 text-foreground"
                 />
               </div>
-              <div className="flex flex-wrap gap-2">
+            )}
+            {items.length > 0 && (
+              <div className="flex flex-wrap gap-2 lg:ml-auto">
                 <FilterChip
                   active={filter === "all"}
                   label="Todas"
-                  count={items.length}
                   onClick={() => setFilter("all")}
                 />
                 <FilterChip
                   active={filter === "text"}
                   label="Texto"
-                  count={textCount}
                   onClick={() => setFilter("text")}
                 />
                 <FilterChip
                   active={filter === "interactive"}
                   label="Interactivas"
-                  count={interactiveCount}
                   onClick={() => setFilter("interactive")}
                 />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {loading ? (
             <div className="flex justify-center py-16">
@@ -220,25 +228,13 @@ export function QuickRepliesManager() {
                 Aún no tienes respuestas rápidas
               </h3>
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Crea una para reutilizarla en tus conversaciones o empieza con
-                una de estas ideas.
+                Crea una para reutilizarla en tus conversaciones, o elige una
+                de las ideas para empezar (de texto o interactivas).
               </p>
               <Button className="mt-5" onClick={openCreate}>
                 <Plus className="mr-1 h-4 w-4" />
                 Crear mi primera respuesta
               </Button>
-              <div className="mt-6 flex flex-wrap justify-center gap-2">
-                {IDEAS.map((idea) => (
-                  <button
-                    key={idea.title}
-                    type="button"
-                    onClick={() => openFromIdea(idea)}
-                    className="rounded-full border border-border bg-muted px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                  >
-                    {idea.title}
-                  </button>
-                ))}
-              </div>
             </div>
           ) : filtered.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
@@ -316,18 +312,7 @@ export function QuickRepliesManager() {
           )}
         </div>
 
-        <aside className="space-y-4 xl:sticky xl:top-0 xl:self-start">
-          {items.length > 0 && (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h3 className="text-sm font-semibold text-foreground">Resumen</h3>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <StatTile label="Total" value={items.length} />
-                <StatTile label="Texto" value={textCount} />
-                <StatTile label="Interactivas" value={interactiveCount} />
-              </div>
-            </div>
-          )}
-
+        <aside className="space-y-4 xl:self-start">
           <div className="rounded-xl border border-border bg-card p-4">
             <h3 className="text-sm font-semibold text-foreground">
               Cómo usarlas
@@ -347,32 +332,51 @@ export function QuickRepliesManager() {
             </ol>
           </div>
 
-          {items.length > 0 && (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Lightbulb className="size-4 text-primary" />
-                Ideas para empezar
-              </h3>
-              <ul className="mt-3 space-y-2">
-                {IDEAS.map((idea) => (
-                  <li key={idea.title}>
-                    <button
-                      type="button"
-                      onClick={() => openFromIdea(idea)}
-                      className="w-full rounded-lg border border-border bg-muted/40 p-3 text-left transition-colors hover:border-primary/40"
-                    >
-                      <span className="block text-sm font-medium text-foreground">
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Lightbulb className="size-4 text-primary" />
+              Ideas para empezar
+            </h3>
+            <div className="mt-3 flex gap-2">
+              <FilterChip
+                active={ideaKind === "text"}
+                label="Texto"
+                onClick={() => setIdeaKind("text")}
+              />
+              <FilterChip
+                active={ideaKind === "interactive"}
+                label="Interactivas"
+                onClick={() => setIdeaKind("interactive")}
+              />
+            </div>
+            <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
+              {visibleIdeas.map((idea) => (
+                <li key={idea.title}>
+                  <button
+                    type="button"
+                    onClick={() => openFromIdea(idea)}
+                    className="w-full rounded-lg border border-border bg-muted/40 p-3 text-left transition-colors hover:border-primary/40"
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="block truncate text-sm font-medium text-foreground">
                         {idea.title}
                       </span>
-                      <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
-                        {idea.text}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                      {idea.kind === "interactive" && (
+                        <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
+                          {idea.payload.kind === "buttons" ? "Botones" : "Lista"}
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
+                      {idea.kind === "interactive"
+                        ? interactivePayloadPreviewText(idea.payload)
+                        : idea.text}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </aside>
       </div>
 
@@ -482,22 +486,187 @@ const STEPS = [
   "Se agrega al mensaje: revísala y envíala.",
 ];
 
-const IDEAS = [
+type Idea =
+  | { kind: "text"; title: string; text: string }
+  | { kind: "interactive"; title: string; payload: InteractiveMessagePayload };
+
+const IDEAS: Idea[] = [
+  // ---- Texto ----
   {
+    kind: "text",
     title: "Saludo de bienvenida",
     text: "¡Hola! Gracias por escribirnos. ¿En qué podemos ayudarte hoy?",
   },
   {
+    kind: "text",
     title: "Horario de atención",
     text: "Nuestro horario de atención es de lunes a viernes de 9:00 a 18:00 h. Te responderemos en cuanto abramos.",
   },
   {
+    kind: "text",
+    title: "Fuera de horario",
+    text: "Gracias por escribirnos. En este momento estamos fuera de horario; te responderemos el siguiente día hábil.",
+  },
+  {
+    kind: "text",
+    title: "Solicitar datos",
+    text: "Para ayudarte mejor, ¿nos compartes tu nombre completo y lo que estás buscando?",
+  },
+  {
+    kind: "text",
+    title: "Datos de pago",
+    text: "Puedes pagar por transferencia:\nBanco: ____\nCLABE: ____\nTitular: ____\nCuando pagues, envíanos tu comprobante por este medio.",
+  },
+  {
+    kind: "text",
+    title: "Pedido en camino",
+    text: "¡Tu pedido va en camino! Tu número de guía es: ____. Cualquier duda, aquí estamos.",
+  },
+  {
+    kind: "text",
     title: "Seguimiento",
     text: "¡Hola! Solo quería dar seguimiento a tu solicitud. ¿Te puedo ayudar con algo más?",
   },
   {
+    kind: "text",
     title: "Gracias por tu compra",
     text: "¡Gracias por tu compra! Si tienes cualquier duda, aquí estamos para ayudarte.",
+  },
+  {
+    kind: "text",
+    title: "Despedida",
+    text: "Gracias por tu preferencia. ¡Que tengas un excelente día!",
+  },
+  // ---- Interactivas ----
+  {
+    kind: "interactive",
+    title: "Menú de bienvenida",
+    payload: {
+      kind: "buttons",
+      body: "¡Hola! Gracias por escribirnos. ¿Qué te gustaría hacer?",
+      buttons: [
+        { id: "menu_catalogo", title: "Ver catálogo" },
+        { id: "menu_pedido", title: "Hacer un pedido" },
+        { id: "menu_asesor", title: "Hablar con asesor" },
+      ],
+    },
+  },
+  {
+    kind: "interactive",
+    title: "Confirmar pedido",
+    payload: {
+      kind: "buttons",
+      body: "¿Confirmamos tu pedido tal como lo platicamos?",
+      buttons: [
+        { id: "confirmar_si", title: "Sí, confirmar" },
+        { id: "confirmar_cambio", title: "Quiero cambiar algo" },
+        { id: "confirmar_cancelar", title: "Cancelar" },
+      ],
+    },
+  },
+  {
+    kind: "interactive",
+    title: "Encuesta de satisfacción",
+    payload: {
+      kind: "buttons",
+      body: "¿Cómo fue tu experiencia con nosotros?",
+      buttons: [
+        { id: "encuesta_excelente", title: "Excelente" },
+        { id: "encuesta_buena", title: "Buena" },
+        { id: "encuesta_mejorar", title: "Puede mejorar" },
+      ],
+    },
+  },
+  {
+    kind: "interactive",
+    title: "Método de pago",
+    payload: {
+      kind: "list",
+      body: "Elige cómo prefieres pagar:",
+      button_label: "Ver opciones",
+      sections: [
+        {
+          title: "Métodos de pago",
+          rows: [
+            {
+              id: "pago_transferencia",
+              title: "Transferencia",
+              description: "Te enviamos los datos bancarios",
+            },
+            {
+              id: "pago_tarjeta",
+              title: "Tarjeta",
+              description: "Crédito o débito",
+            },
+            {
+              id: "pago_efectivo",
+              title: "Efectivo",
+              description: "Al recibir tu pedido",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    kind: "interactive",
+    title: "Elegir horario",
+    payload: {
+      kind: "list",
+      body: "¿En qué horario te queda mejor?",
+      button_label: "Ver horarios",
+      sections: [
+        {
+          title: "Horarios disponibles",
+          rows: [
+            { id: "horario_manana", title: "Mañana (9 a 12 h)" },
+            { id: "horario_tarde", title: "Tarde (12 a 16 h)" },
+            { id: "horario_noche", title: "Noche (16 a 19 h)" },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    kind: "interactive",
+    title: "Menú de categorías",
+    payload: {
+      kind: "list",
+      body: "¿Sobre qué necesitas información?",
+      button_label: "Ver temas",
+      sections: [
+        {
+          title: "Temas",
+          rows: [
+            {
+              id: "tema_productos",
+              title: "Productos",
+              description: "Conoce lo que tenemos disponible",
+            },
+            {
+              id: "tema_promos",
+              title: "Promociones",
+              description: "Ofertas y descuentos vigentes",
+            },
+            {
+              id: "tema_envios",
+              title: "Envíos y entregas",
+              description: "Costos, tiempos y rastreo",
+            },
+            {
+              id: "tema_garantia",
+              title: "Garantía y cambios",
+              description: "Políticas de devolución",
+            },
+            {
+              id: "tema_asesor",
+              title: "Hablar con asesor",
+              description: "Te atendemos personalmente",
+            },
+          ],
+        },
+      ],
+    },
   },
 ];
 
@@ -514,12 +683,10 @@ function formatDate(iso: string) {
 function FilterChip({
   active,
   label,
-  count,
   onClick,
 }: {
   active: boolean;
   label: string;
-  count: number;
   onClick: () => void;
 }) {
   return (
@@ -530,22 +697,10 @@ function FilterChip({
         (active
           ? "border-primary bg-primary/10 text-primary"
           : "border-border bg-muted text-muted-foreground hover:text-foreground") +
-        " inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+        " inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors"
       }
     >
       {label}
-      <span className="rounded-full bg-background/60 px-1.5 text-[10px] tabular-nums">
-        {count}
-      </span>
     </button>
-  );
-}
-
-function StatTile({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-border bg-muted/40 px-2 py-2 text-center">
-      <p className="text-lg font-semibold tabular-nums text-foreground">{value}</p>
-      <p className="text-[11px] text-muted-foreground">{label}</p>
-    </div>
   );
 }
