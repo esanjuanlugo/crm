@@ -30,6 +30,17 @@ const pageTitles: Record<string, string> = {
   "/settings": "settings",
 };
 
+// Paginas que ya muestran su propio titulo: en la barra no se repite.
+const PAGES_WITH_OWN_TITLE = new Set([
+  "/dashboard",
+  "/notifications",
+  "/contacts",
+  "/broadcasts",
+  "/automations",
+  "/agents",
+  "/settings",
+]);
+
 function getPageTitleKey(pathname: string): string {
   if (pageTitles[pathname]) return pageTitles[pathname];
   const match = Object.entries(pageTitles).find(([path]) =>
@@ -69,9 +80,11 @@ export function Header({ onOpenSidebar }: HeaderProps) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="truncate text-base font-semibold text-foreground sm:text-lg">
-          {t(titleKey as string)}
-        </h1>
+        {PAGES_WITH_OWN_TITLE.has(pathname.replace(/\/+$/, "")) ? null : (
+          <h1 className="truncate text-base font-semibold text-foreground sm:text-lg">
+            {t(titleKey as string)}
+          </h1>
+        )}
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2">

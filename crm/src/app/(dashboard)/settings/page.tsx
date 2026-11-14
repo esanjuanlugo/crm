@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 
 import { SettingsOverview } from '@/components/settings/settings-overview';
 import { ProfileForm } from '@/components/settings/profile-form';
@@ -37,7 +36,6 @@ export default function SettingsPage() {
 function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const t = useTranslations('Settings');
 
   // The URL (`?tab=`) is the single source of truth for the active
   // section — deep-linkable, and it keeps the existing links in the
@@ -85,17 +83,9 @@ function SettingsPageInner() {
 
   return (
     <div className="mx-auto w-full max-w-6xl 2xl:max-w-[1800px] 3xl:max-w-[2400px]">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          {t('pageTitle')}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t('pageDesc')}
-        </p>
-      </div>
-
-      {/* El menu de secciones ahora esta en el menu lateral principal. */}
-      <div className="mt-6 min-w-0">{panel[section]}</div>
+      {/* Sin titulo general: cada seccion trae el suyo. El menu de
+          secciones esta en el menu lateral principal. */}
+      <div className="min-w-0">{panel[section]}</div>
     </div>
   );
 }
