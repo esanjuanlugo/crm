@@ -1567,6 +1567,9 @@
     },
     "sections": {
       "overview": "Overview",
+      "account": "Account",
+      "messages": "Messages",
+      "crm": "CRM data",
       "profile": "Your profile",
       "security": "Login & security",
       "appearance": "Appearance",

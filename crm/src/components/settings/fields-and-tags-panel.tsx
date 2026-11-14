@@ -20,12 +20,12 @@ export function FieldsAndTagsPanel() {
   const canEditSettings = useCan('edit-settings');
 
   return (
-    <section className="max-w-3xl 2xl:max-w-7xl 3xl:max-w-[1700px] animate-in fade-in-50 space-y-4 duration-200">
+    <section className="animate-in fade-in-50 space-y-4 duration-200">
       <SettingsPanelHead
         title={t('title')}
         description={t('description')}
       />
-      <div className="grid gap-4 2xl:grid-cols-2 2xl:items-start">
+      <div className="grid gap-4 xl:grid-cols-2 xl:items-start">
         <TagManager />
         {canEditSettings ? <CustomFieldsSettings /> : null}
       </div>

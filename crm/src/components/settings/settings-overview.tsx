@@ -8,7 +8,6 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 import { THEMES } from '@/lib/themes';
-import { CURRENCIES } from '@/lib/currency';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -145,8 +144,6 @@ export function SettingsOverview({
   const roleMeta = accountRole ? ROLE_META[accountRole] : null;
   const RoleIcon = roleMeta?.icon;
 
-  const currencyLabel =
-    CURRENCIES.find((c) => c.code === defaultCurrency)?.label ?? defaultCurrency;
   const themeName = THEMES.find((t) => t.id === theme)?.name ?? theme;
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -185,7 +182,7 @@ export function SettingsOverview({
             }`,
     },
     {
-      section: 'templates',
+      section: 'messages',
       loading: countsLoading,
       subtitle:
         counts?.templates == null
@@ -197,22 +194,17 @@ export function SettingsOverview({
             }`,
     },
     {
-      section: 'deals',
-      loading: false,
-      subtitle: `${defaultCurrency} — ${currencyLabel}`,
-    },
-    {
-      section: 'fields',
+      section: 'crm',
       loading: countsLoading,
       subtitle:
         counts?.tags == null && counts?.customFields == null
           ? t('tagsAndFields')
           : `${t('tagsCount', { count: counts?.tags ?? 0 })} · ${t('fieldsCount', {
               count: counts?.customFields ?? 0,
-            })}`,
+            })} · ${defaultCurrency}`,
     },
     {
-      section: 'appearance',
+      section: 'account',
       loading: false,
       subtitle: t('appearance', { mode: cap(mode), theme: themeName }),
     },

@@ -1625,6 +1625,9 @@
     },
     "sections": {
       "overview": "Resumen",
+      "account": "Cuenta",
+      "messages": "Mensajes",
+      "crm": "Datos del CRM",
       "profile": "Tu perfil",
       "security": "Inicio de sesión y seguridad",
       "appearance": "Apariencia",

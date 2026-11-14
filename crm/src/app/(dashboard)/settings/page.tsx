@@ -1,21 +1,18 @@
 'use client';
 
-import { Suspense, type ReactNode } from 'react';
+import { Suspense, useEffect, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { SettingsOverview } from '@/components/settings/settings-overview';
-import { ProfileForm } from '@/components/settings/profile-form';
-import { SecurityPanel } from '@/components/settings/security-panel';
-import { AppearancePanel } from '@/components/settings/appearance-panel';
+import { AccountPanel } from '@/components/settings/account-panel';
 import { WhatsAppConfig } from '@/components/settings/whatsapp-config';
-import { TemplateManager } from '@/components/settings/template-manager';
-import { QuickRepliesManager } from '@/components/settings/quick-replies-manager';
-import { FieldsAndTagsPanel } from '@/components/settings/fields-and-tags-panel';
-import { DealsSettings } from '@/components/settings/deals-settings';
+import { MessagesPanel } from '@/components/settings/messages-panel';
+import { CrmPanel } from '@/components/settings/crm-panel';
 import { MembersTab } from '@/components/settings/members-tab';
 import { ApiKeysSettings } from '@/components/settings/api-keys-settings';
 import {
+  resolveAnchor,
   resolveSection,
   type SettingsSection,
 } from '@/components/settings/settings-sections';
@@ -47,6 +44,19 @@ function SettingsPageInner() {
   // resolve onto their new home; unknown/empty → the Overview landing.
   const section = resolveSection(searchParams.get('tab'));
 
+  // Old links (?tab=security, ?tab=deals...) land on the merged section
+  // and scroll to the block they used to be.
+  const anchor = resolveAnchor(searchParams.get('tab'));
+  useEffect(() => {
+    if (!anchor) return;
+    const id = requestAnimationFrame(() => {
+      document
+        .getElementById('settings-' + anchor)
+        ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [section, anchor]);
+
   const go = (next: SettingsSection) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', next);
@@ -55,14 +65,10 @@ function SettingsPageInner() {
 
   const panel: Record<SettingsSection, ReactNode> = {
     overview: <SettingsOverview onSelect={go} />,
-    profile: <ProfileForm />,
-    security: <SecurityPanel />,
-    appearance: <AppearancePanel />,
+    account: <AccountPanel />,
     whatsapp: <WhatsAppConfig />,
-    templates: <TemplateManager />,
-    'quick-replies': <QuickRepliesManager />,
-    fields: <FieldsAndTagsPanel />,
-    deals: <DealsSettings />,
+    messages: <MessagesPanel />,
+    crm: <CrmPanel />,
     members: <MembersTab />,
     api: <ApiKeysSettings />,
   };

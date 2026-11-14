@@ -1,36 +1,33 @@
 import {
-  Coins,
   FileText,
   KeyRound,
   LayoutGrid,
-  Palette,
   PlugZap,
-  Shield,
   Tags,
   User,
   UsersRound,
-  Zap,
   type LucideIcon,
 } from 'lucide-react';
 
 /**
- * Settings information architecture for the redesigned page.
+ * Settings information architecture.
  *
- * The flat tab strip became a grouped left rail with a new Overview
- * landing. The URL query param stays `?tab=` (deep-linkable, and it
- * keeps the existing links in sidebar.tsx / header.tsx working) — we
- * just map the old values onto the new sections.
+ * Related settings are merged into fewer sections:
+ *   account  = profile + login & security + appearance
+ *   messages = templates + quick replies
+ *   crm      = fields & tags + deals & currency
+ *
+ * The URL query param stays `?tab=`. Old values (profile, security,
+ * appearance, templates, quick-replies, fields, tags, custom-fields,
+ * deals) still work: they resolve onto the merged section and scroll to
+ * the block they used to be (see LEGACY_TABS / resolveAnchor).
  */
 export const SETTINGS_SECTIONS = [
   'overview',
-  'profile',
-  'security',
-  'appearance',
+  'account',
   'whatsapp',
-  'templates',
-  'quick-replies',
-  'fields',
-  'deals',
+  'messages',
+  'crm',
   'members',
   'api',
 ] as const;
@@ -42,7 +39,7 @@ export const DEFAULT_SECTION: SettingsSection = 'overview';
 /** Sections hidden from the rail and not reachable via `?tab=`. */
 export const HIDDEN_SECTIONS: readonly SettingsSection[] = ['api'];
 
-/** Rail grouping. `adminOnly` items are hidden for non-admins. */
+/** Rail grouping. */
 export interface SectionMeta {
   id: SettingsSection;
   label: string;
@@ -52,14 +49,10 @@ export interface SectionMeta {
 
 export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   overview: { id: 'overview', label: 'Overview', icon: LayoutGrid, group: 'top' },
-  profile: { id: 'profile', label: 'Your profile', icon: User, group: 'account' },
-  security: { id: 'security', label: 'Login & security', icon: Shield, group: 'account' },
-  appearance: { id: 'appearance', label: 'Appearance', icon: Palette, group: 'account' },
+  account: { id: 'account', label: 'Account', icon: User, group: 'account' },
   whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
-  templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
-  'quick-replies': { id: 'quick-replies', label: 'Quick replies', icon: Zap, group: 'workspace' },
-  fields: { id: 'fields', label: 'Fields & tags', icon: Tags, group: 'workspace' },
-  deals: { id: 'deals', label: 'Deals & currency', icon: Coins, group: 'workspace' },
+  messages: { id: 'messages', label: 'Messages', icon: FileText, group: 'workspace' },
+  crm: { id: 'crm', label: 'CRM data', icon: Tags, group: 'workspace' },
   members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
   api: { id: 'api', label: 'API keys', icon: KeyRound, group: 'workspace' },
 };
@@ -70,18 +63,45 @@ export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[
   { label: 'Workspace', group: 'workspace' },
 ];
 
+/**
+ * Old `?tab=` values -> merged section + the block to scroll to. A null
+ * anchor means "first block of the section" (no scroll needed).
+ */
+const LEGACY_TABS: Record<string, { section: SettingsSection; anchor: string | null }> = {
+  profile: { section: 'account', anchor: null },
+  security: { section: 'account', anchor: 'security' },
+  appearance: { section: 'account', anchor: 'appearance' },
+  templates: { section: 'messages', anchor: null },
+  'quick-replies': { section: 'messages', anchor: 'quick-replies' },
+  fields: { section: 'crm', anchor: null },
+  tags: { section: 'crm', anchor: null },
+  'custom-fields': { section: 'crm', anchor: null },
+  deals: { section: 'crm', anchor: 'deals' },
+};
+
+function legacyOf(raw: string | null) {
+  return raw && Object.prototype.hasOwnProperty.call(LEGACY_TABS, raw)
+    ? LEGACY_TABS[raw]
+    : null;
+}
+
 function isSection(value: string | null): value is SettingsSection {
   return !!value && (SETTINGS_SECTIONS as readonly string[]).includes(value);
 }
 
 /**
- * Resolve a raw `?tab=` value to a section. Legacy tabs from the old
- * flat layout collapse onto their new home (Tags + Custom fields → the
- * merged "Fields & tags" section). Anything unknown falls back to the
- * Overview landing.
+ * Resolve a raw `?tab=` value to a section. Legacy tabs collapse onto the
+ * merged section that now contains them. Anything unknown falls back to
+ * the Overview landing.
  */
 export function resolveSection(raw: string | null): SettingsSection {
-  if (raw === 'tags' || raw === 'custom-fields') return 'fields';
+  const legacy = legacyOf(raw);
+  if (legacy) return legacy.section;
   if (isSection(raw) && !HIDDEN_SECTIONS.includes(raw)) return raw;
   return DEFAULT_SECTION;
+}
+
+/** Block id (without the `settings-` prefix) to scroll to for a legacy tab. */
+export function resolveAnchor(raw: string | null): string | null {
+  return legacyOf(raw)?.anchor ?? null;
 }
