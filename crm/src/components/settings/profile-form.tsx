@@ -305,11 +305,11 @@ export function ProfileForm() {
           </div>
 
           {/* Read-only block */}
-          <div className="rounded-lg border border-border bg-muted p-4">
+          <div className="@container rounded-lg border border-border bg-muted p-4">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t('accountDetails')}
             </p>
-            <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-3 text-sm @md:grid-cols-2">
               <div>
                 <dt className="text-muted-foreground">{t('role')}</dt>
                 <dd className="mt-0.5 font-mono text-foreground">
@@ -320,7 +320,7 @@ export function ProfileForm() {
                 <dt className="text-muted-foreground">{t('joined')}</dt>
                 <dd className="mt-0.5 text-foreground">{joined}</dd>
               </div>
-              <div className="sm:col-span-2">
+              <div className="@md:col-span-2">
                 <dt className="text-muted-foreground">{t('userId')}</dt>
                 <dd className="mt-0.5 break-all font-mono text-xs text-muted-foreground">
                   {user?.id ?? '—'}

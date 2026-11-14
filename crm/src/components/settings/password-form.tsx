@@ -95,7 +95,7 @@ export function PasswordForm() {
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="@container space-y-4">
           <div className="space-y-2">
             <Label htmlFor="current-password" className="text-foreground">
               {t('currentPassword')}
@@ -111,7 +111,7 @@ export function PasswordForm() {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 @md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="new-password" className="text-foreground">
                 {t('newPassword')}
