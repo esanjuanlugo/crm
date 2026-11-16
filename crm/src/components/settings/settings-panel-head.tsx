@@ -1,12 +1,8 @@
+
 import type { ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 
-/**
- * Section header shown at the top of every settings panel — a title,
- * a one-line description, and an optional right-aligned action (e.g.
- * "New template", "Invite member"). Mirrors the mockup's `.panel-head`.
- */
 export function SettingsPanelHead({
   title,
   description,
@@ -21,21 +17,44 @@ export function SettingsPanelHead({
   return (
     <div
       className={cn(
-        'mb-5 flex flex-col items-start gap-4',
+        // Layout responsive
+        'mb-5 flex w-full min-w-0 flex-col gap-3',
+
+        // Tablet y escritorio
+        'sm:flex-row sm:items-start sm:justify-between sm:gap-6',
+
+        // Espaciado adaptable
+        'sm:mb-6',
+
         className,
       )}
     >
-      <div className="min-w-0">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+      {/* Title and description */}
+      <div className="min-w-0 flex-1">
+        <h2 className="break-words text-base font-semibold tracking-tight text-foreground sm:text-lg">
           {title}
         </h2>
-        {description ? (
-          <p className="mt-1 max-w-[62ch] text-sm text-muted-foreground">
+
+        {description && (
+          <p className="mt-1 max-w-[62ch] break-words text-sm leading-relaxed text-muted-foreground">
             {description}
           </p>
-        ) : null}
+        )}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+
+      {/* Action */}
+      {action && (
+        <div
+          className={cn(
+            'flex w-full min-w-0 shrink-0 flex-wrap items-center gap-2',
+
+            // Alineación en pantallas grandes
+            'sm:w-auto sm:justify-end',
+          )}
+        >
+          {action}
+        </div>
+      )}
     </div>
   );
 }
