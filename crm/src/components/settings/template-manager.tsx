@@ -127,7 +127,7 @@ function emptyButton(type: TemplateButton['type']): TemplateButton {
   }
 }
 
-type IdeaTab = 'Utility' | 'Marketing';
+type IdeaTab = 'Utility' | 'Marketing' | 'Authentication';
 
 const TEMPLATE_IDEAS: {
   title: string;
@@ -136,6 +136,7 @@ const TEMPLATE_IDEAS: {
   body: string;
   samples: string[];
 }[] = [
+  // Utilidad: avisos sobre algo que el cliente ya pidio
   {
     title: 'Confirmaci\u00f3n de pedido',
     category: 'Utility',
@@ -151,6 +152,21 @@ const TEMPLATE_IDEAS: {
     samples: ['Ana', '15 de noviembre', '10:00'],
   },
   {
+    title: 'Pedido en camino',
+    category: 'Utility',
+    name: 'pedido_en_camino',
+    body: 'Hola {{1}}, tu pedido {{2}} ya va en camino. Tu n\u00famero de gu\u00eda es {{3}}.',
+    samples: ['Ana', '#1042', 'MX123456789'],
+  },
+  {
+    title: 'Pago recibido',
+    category: 'Utility',
+    name: 'pago_recibido',
+    body: 'Hola {{1}}, recibimos tu pago de {{2}} por {{3}}. \u00a1Gracias!',
+    samples: ['Ana', '$1,500 MXN', 'tu pedido #1042'],
+  },
+  // Marketing: promociones y mensajes para atraer clientes
+  {
     title: 'Promoci\u00f3n del mes',
     category: 'Marketing',
     name: 'promocion_mes',
@@ -163,6 +179,42 @@ const TEMPLATE_IDEAS: {
     name: 'bienvenida_cliente',
     body: 'Hola {{1}}, gracias por contactarnos. Cu\u00e9ntanos en qu\u00e9 podemos ayudarte.',
     samples: ['Ana'],
+  },
+  {
+    title: 'Lanzamiento de producto',
+    category: 'Marketing',
+    name: 'lanzamiento_producto',
+    body: 'Hola {{1}}, ya lleg\u00f3 {{2}}. Con\u00f3celo y pide el tuyo respondiendo a este mensaje.',
+    samples: ['Ana', 'nuestro nuevo cat\u00e1logo digital'],
+  },
+  {
+    title: 'Reactivar clientes',
+    category: 'Marketing',
+    name: 'reactivacion_cliente',
+    body: 'Hola {{1}}, hace tiempo que no sabemos de ti. Tenemos {{2}} esperando por ti. \u00bfPlaticamos?',
+    samples: ['Ana', 'una promoci\u00f3n especial'],
+  },
+  // Autenticacion: solo de referencia (se crean en el Administrador de Meta)
+  {
+    title: 'C\u00f3digo de verificaci\u00f3n',
+    category: 'Authentication',
+    name: 'codigo_verificacion',
+    body: '{{1}} es tu c\u00f3digo de verificaci\u00f3n. Por tu seguridad, no lo compartas con nadie.',
+    samples: ['123456'],
+  },
+  {
+    title: 'Inicio de sesi\u00f3n',
+    category: 'Authentication',
+    name: 'codigo_inicio_sesion',
+    body: '{{1}} es tu c\u00f3digo para iniciar sesi\u00f3n. Este c\u00f3digo caduca en 10 minutos.',
+    samples: ['123456'],
+  },
+  {
+    title: 'Recuperar contrase\u00f1a',
+    category: 'Authentication',
+    name: 'codigo_recuperar_contrasena',
+    body: 'Usa el c\u00f3digo {{1}} para restablecer tu contrase\u00f1a. No lo compartas con nadie.',
+    samples: ['123456'],
   },
 ];
 
@@ -797,7 +849,7 @@ export function TemplateManager() {
         </div>
 
         {/* Columna derecha: como usarlas + ideas para empezar */}
-        <aside className="space-y-4 xl:sticky xl:top-6">
+        <aside className="space-y-4">
           <Card>
             <CardContent className="space-y-3 pt-4">
               <h3 className="text-sm font-semibold text-foreground">
@@ -818,6 +870,33 @@ export function TemplateManager() {
 
           <Card>
             <CardContent className="space-y-3 pt-4">
+              <h3 className="text-sm font-semibold text-foreground">
+                {t('labelsTitle')}
+              </h3>
+              <ul className="space-y-3">
+                {(
+                  [
+                    ['Marketing', 'labelMarketing'],
+                    ['Utility', 'labelUtility'],
+                    ['Authentication', 'labelAuthentication'],
+                  ] as const
+                ).map(([cat, key]) => (
+                  <li key={cat} className="space-y-1">
+                    <Badge className={`text-xs border ${categoryColors[cat] || ''}`}>
+                      {cat}
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">{t(key)}</p>
+                  </li>
+                ))}
+              </ul>
+              <p className="border-t border-border/60 pt-3 text-xs leading-relaxed text-muted-foreground">
+                {t('labelsNote')}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="space-y-3 pt-4">
               <div className="flex items-center gap-2">
                 <Lightbulb className="size-4 text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">
@@ -825,7 +904,7 @@ export function TemplateManager() {
                 </h3>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                {(['Utility', 'Marketing'] as const).map((c) => (
+                {(['Utility', 'Marketing', 'Authentication'] as const).map((c) => (
                   <button
                     key={c}
                     type="button"
@@ -836,25 +915,46 @@ export function TemplateManager() {
                         : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                   >
-                    {c === 'Utility' ? t('ideaUtility') : t('ideaMarketing')}
+                    {c === 'Utility'
+                      ? t('ideaUtility')
+                      : c === 'Marketing'
+                        ? t('ideaMarketing')
+                        : t('ideaAuthentication')}
                   </button>
                 ))}
               </div>
-              <div className="space-y-2">
-                {TEMPLATE_IDEAS.filter((idea) => idea.category === ideaTab).map((idea) => (
-                  <button
-                    key={idea.name}
-                    type="button"
-                    onClick={() => openFromIdea(idea)}
-                    className="w-full rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-muted"
-                  >
-                    <p className="text-sm font-medium text-foreground">{idea.title}</p>
-                    <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                      <BodyPreview text={idea.body} />
-                    </p>
-                  </button>
-                ))}
+              <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
+                {TEMPLATE_IDEAS.filter((idea) => idea.category === ideaTab).map((idea) =>
+                  idea.category === 'Authentication' ? (
+                    <div
+                      key={idea.name}
+                      className="rounded-lg border border-border bg-muted/30 px-3 py-2.5"
+                    >
+                      <p className="text-sm font-medium text-foreground">{idea.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        <BodyPreview text={idea.body} />
+                      </p>
+                    </div>
+                  ) : (
+                    <button
+                      key={idea.name}
+                      type="button"
+                      onClick={() => openFromIdea(idea)}
+                      className="w-full rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-muted"
+                    >
+                      <p className="text-sm font-medium text-foreground">{idea.title}</p>
+                      <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
+                        <BodyPreview text={idea.body} />
+                      </p>
+                    </button>
+                  ),
+                )}
               </div>
+              {ideaTab === 'Authentication' && (
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t('ideaAuthNote')}
+                </p>
+              )}
             </CardContent>
           </Card>
         </aside>
