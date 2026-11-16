@@ -12,6 +12,9 @@ import {
   Pencil,
   RotateCcw,
   Upload,
+  Search,
+  FileText,
+  Lightbulb,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -24,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Card, CardContent } from '@/components/ui/card';
 import { SettingsPanelHead } from './settings-panel-head';
 import {
@@ -124,8 +127,50 @@ function emptyButton(type: TemplateButton['type']): TemplateButton {
   }
 }
 
+type IdeaTab = 'Utility' | 'Marketing';
+
+const TEMPLATE_IDEAS: {
+  title: string;
+  category: IdeaTab;
+  name: string;
+  body: string;
+  samples: string[];
+}[] = [
+  {
+    title: 'Confirmaci\u00f3n de pedido',
+    category: 'Utility',
+    name: 'confirmacion_pedido',
+    body: 'Hola {{1}}, recibimos tu pedido {{2}}. Te avisaremos cuando salga a entrega.',
+    samples: ['Ana', '#1042'],
+  },
+  {
+    title: 'Recordatorio de cita',
+    category: 'Utility',
+    name: 'recordatorio_cita',
+    body: 'Hola {{1}}, te recordamos tu cita el {{2}} a las {{3}}. Responde para confirmar.',
+    samples: ['Ana', '15 de noviembre', '10:00'],
+  },
+  {
+    title: 'Promoci\u00f3n del mes',
+    category: 'Marketing',
+    name: 'promocion_mes',
+    body: 'Hola {{1}}, este mes tenemos {{2}} en todos nuestros servicios. \u00a1Escr\u00edbenos para aprovecharlo!',
+    samples: ['Ana', '15% de descuento'],
+  },
+  {
+    title: 'Bienvenida a clientes',
+    category: 'Marketing',
+    name: 'bienvenida_cliente',
+    body: 'Hola {{1}}, gracias por contactarnos. Cu\u00e9ntanos en qu\u00e9 podemos ayudarte.',
+    samples: ['Ana'],
+  },
+];
+
+const CATEGORY_FILTERS = ['all', ...CATEGORIES] as const;
+
 export function TemplateManager() {
   const t = useTranslations('Settings.templates');
+  const locale = useLocale();
   const supabase = createClient();
   const { user, loading: authLoading } = useAuth();
 
@@ -149,6 +194,21 @@ export function TemplateManager() {
   // chat-media bucket and stores the public URL in header_media_url; the
   // submit route turns that into a Meta Resumable-Upload handle.
   const [uploadingHeader, setUploadingHeader] = useState(false);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] =
+    useState<(typeof CATEGORY_FILTERS)[number]>('all');
+  const [ideaTab, setIdeaTab] = useState<IdeaTab>('Utility');
+
+  const filteredTemplates = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return templates.filter(
+      (tpl) =>
+        (categoryFilter === 'all' || tpl.category === categoryFilter) &&
+        (!q ||
+          tpl.name.toLowerCase().includes(q) ||
+          (tpl.body_text || '').toLowerCase().includes(q)),
+    );
+  }, [templates, search, categoryFilter]);
   const headerFileRef = useRef<HTMLInputElement>(null);
 
   // Body variable indices — `[1, 2, 3]` for "{{1}} {{2}} {{3}}". We
@@ -254,6 +314,20 @@ export function TemplateManager() {
   function openCreate() {
     setEditingId(null);
     setForm(emptyForm);
+    setDialogOpen(true);
+  }
+
+  // Abre el formulario de nueva plantilla con una idea ya rellenada.
+  function openFromIdea(idea: (typeof TEMPLATE_IDEAS)[number]) {
+    setEditingId(null);
+    setForm({
+      ...emptyForm,
+      name: idea.name,
+      category: idea.category,
+      language: 'es_MX',
+      body_text: idea.body,
+      body_samples: idea.samples,
+    });
     setDialogOpen(true);
   }
 
@@ -486,8 +560,25 @@ export function TemplateManager() {
       <SettingsPanelHead
         title={t('title')}
         description={t('description')}
-        action={
-          <div className="flex flex-wrap items-center gap-2">
+      />
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
+        <div className="min-w-0 space-y-4">
+          {/* Barra: buscador + acciones a la izquierda, filtros a la derecha */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-full sm:w-80">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t('searchPlaceholder')}
+                className="pl-9"
+              />
+            </div>
+            <Button onClick={openCreate}>
+              <Plus className="size-4" />
+              {t('newTemplate')}
+            </Button>
             <Button
               variant="outline"
               onClick={handleSyncFromMeta}
@@ -497,136 +588,232 @@ export function TemplateManager() {
               <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? t('syncing') : t('syncFromMeta')}
             </Button>
-            <Button onClick={openCreate}>
-              <Plus className="size-4" />
-              {t('newTemplate')}
-            </Button>
+            <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
+              {CATEGORY_FILTERS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategoryFilter(c)}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    categoryFilter === c
+                      ? 'border-primary/50 bg-primary/10 text-primary'
+                      : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {c === 'all' ? t('filterAll') : c}
+                </button>
+              ))}
+            </div>
           </div>
-        }
-      />
 
-      {templates.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-muted-foreground text-sm">{t('noTemplates')}</p>
-            <p className="text-muted-foreground text-xs mt-1">
-              {t('createFirst')}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3 xl:grid-cols-2 3xl:grid-cols-3">
-          {templates.map((template) => {
-            const statusKey = template.status || 'DRAFT';
-            const status = templateStatusConfig[statusKey];
-            return (
-              <Card key={template.id}>
-                <CardContent className="flex flex-col justify-between gap-3 pt-4 sm:flex-row sm:items-start">
-                  <div className="space-y-2 min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-medium text-foreground">{template.name}</h3>
-                      <Badge
-                        className={`text-xs border ${categoryColors[template.category] || ''}`}
-                      >
-                        {template.category}
-                      </Badge>
-                      <Badge className={`text-xs border ${status.classes}`}>
-                        {status.label}
-                      </Badge>
-                      {template.language && (
-                        <span className="text-xs text-muted-foreground uppercase">
-                          {template.language}
-                        </span>
-                      )}
-                      {template.quality_score && (
-                        <span
-                          className={`text-[10px] uppercase font-medium ${
-                            template.quality_score === 'GREEN'
-                              ? 'text-emerald-400'
-                              : template.quality_score === 'YELLOW'
-                                ? 'text-yellow-400'
-                                : 'text-red-400'
-                          }`}
-                          title="Meta quality score"
-                        >
-                          {template.quality_score}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {template.body_text}
-                    </p>
-                    {template.footer_text && (
-                      <p className="text-xs text-muted-foreground italic">
-                        {template.footer_text}
-                      </p>
-                    )}
-                    {(template.rejection_reason || template.submission_error) && (
-                      <div className="flex items-start gap-1.5 text-xs text-red-400 bg-red-950/20 border border-red-900/40 rounded px-2 py-1.5">
-                        <AlertCircle className="size-3.5 mt-0.5 shrink-0" />
-                        <span>
-                          {template.rejection_reason || template.submission_error}
-                        </span>
+          {templates.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-muted-foreground text-sm">{t('noTemplates')}</p>
+                <p className="text-muted-foreground text-xs mt-1">
+                  {t('createFirst')}
+                </p>
+              </CardContent>
+            </Card>
+          ) : filteredTemplates.length === 0 ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12 text-center">
+                <p className="text-muted-foreground text-sm">{t('noResults')}</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+              {filteredTemplates.map((template) => {
+                const statusKey = template.status || 'DRAFT';
+                const status = templateStatusConfig[statusKey];
+                return (
+                  <Card key={template.id}>
+                    <CardContent className="flex h-full flex-col gap-3 pt-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          <FileText className="size-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate font-medium text-foreground">
+                            {template.name}
+                          </h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            <Badge
+                              className={`text-xs border ${categoryColors[template.category] || ''}`}
+                            >
+                              {template.category}
+                            </Badge>
+                            <Badge className={`text-xs border ${status.classes}`}>
+                              {status.label}
+                            </Badge>
+                            {template.language && (
+                              <span className="text-xs text-muted-foreground uppercase">
+                                {template.language}
+                              </span>
+                            )}
+                            {template.quality_score && (
+                              <span
+                                className={`text-[10px] uppercase font-medium ${
+                                  template.quality_score === 'GREEN'
+                                    ? 'text-emerald-400'
+                                    : template.quality_score === 'YELLOW'
+                                      ? 'text-yellow-400'
+                                      : 'text-red-400'
+                                }`}
+                                title="Meta quality score"
+                              >
+                                {template.quality_score}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-0.5">
+                          {statusKey === 'APPROVED' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(template)}
+                              title={t('editTitle')}
+                              aria-label={t('editLabel')}
+                              className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 w-8"
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                          )}
+                          {(statusKey === 'REJECTED' || statusKey === 'PAUSED') && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(template)}
+                              title={t('resubmitTitle')}
+                              aria-label={t('resubmitLabel')}
+                              className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 w-8"
+                            >
+                              <RotateCcw className="size-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setTemplateToDelete(template)}
+                            disabled={deletingId === template.id}
+                            aria-label={
+                              template.meta_template_id
+                                ? t('deleteMetaLocallyAria')
+                                : t('deleteLocallyAria')
+                            }
+                            title={
+                              template.meta_template_id
+                                ? t('deleteMetaLocallyTitle')
+                                : t('deleteLocallyTitle')
+                            }
+                            className="text-muted-foreground hover:text-red-400 hover:bg-red-950/30 h-8 w-8"
+                          >
+                            {deletingId === template.id ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-4" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 sm:ml-2 sm:shrink-0">
-                    {statusKey === 'APPROVED' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEdit(template)}
-                        title={t('editTitle')}
-                        aria-label={t('editLabel')}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 px-2"
-                      >
-                        <Pencil className="size-3.5" />
-                        {t('edit')}
-                      </Button>
-                    )}
-                    {(statusKey === 'REJECTED' || statusKey === 'PAUSED') && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEdit(template)}
-                        title={t('resubmitTitle')}
-                        aria-label={t('resubmitLabel')}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 px-2"
-                      >
-                        <RotateCcw className="size-3.5" />
-                        {t('resubmit')}
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setTemplateToDelete(template)}
-                      disabled={deletingId === template.id}
-                      aria-label={
-                        template.meta_template_id
-                          ? t('deleteMetaLocallyAria')
-                          : t('deleteLocallyAria')
-                      }
-                      title={
-                        template.meta_template_id
-                          ? t('deleteMetaLocallyTitle')
-                          : t('deleteLocallyTitle')
-                      }
-                      className="text-muted-foreground hover:text-red-400 hover:bg-red-950/30 h-8 w-8"
-                    >
-                      {deletingId === template.id ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="size-4" />
+
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {template.body_text}
+                      </p>
+                      {template.footer_text && (
+                        <p className="text-xs text-muted-foreground italic">
+                          {template.footer_text}
+                        </p>
                       )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                      {(template.rejection_reason || template.submission_error) && (
+                        <div className="flex items-start gap-1.5 text-xs text-red-400 bg-red-950/20 border border-red-900/40 rounded px-2 py-1.5">
+                          <AlertCircle className="size-3.5 mt-0.5 shrink-0" />
+                          <span>
+                            {template.rejection_reason || template.submission_error}
+                          </span>
+                        </div>
+                      )}
+                      <p className="mt-auto pt-2 text-xs text-muted-foreground">
+                        {t('createdOn', {
+                          date: new Date(template.created_at).toLocaleDateString(locale, {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          }),
+                        })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Columna derecha: como usarlas + ideas para empezar */}
+        <aside className="space-y-4 xl:sticky xl:top-6">
+          <Card>
+            <CardContent className="space-y-3 pt-4">
+              <h3 className="text-sm font-semibold text-foreground">
+                {t('howToTitle')}
+              </h3>
+              <ol className="space-y-2.5">
+                {(['howTo1', 'howTo2', 'howTo3'] as const).map((k, i) => (
+                  <li key={k} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold text-primary">
+                      {i + 1}
+                    </span>
+                    <span>{t(k)}</span>
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="space-y-3 pt-4">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="size-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  {t('ideasTitle')}
+                </h3>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(['Utility', 'Marketing'] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setIdeaTab(c)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      ideaTab === c
+                        ? 'border-primary/50 bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    {c === 'Utility' ? t('ideaUtility') : t('ideaMarketing')}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-2">
+                {TEMPLATE_IDEAS.filter((idea) => idea.category === ideaTab).map((idea) => (
+                  <button
+                    key={idea.name}
+                    type="button"
+                    onClick={() => openFromIdea(idea)}
+                    className="w-full rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-muted"
+                  >
+                    <p className="text-sm font-medium text-foreground">{idea.title}</p>
+                    <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
+                      {idea.body}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
 
       <Dialog
         open={dialogOpen}
