@@ -186,15 +186,14 @@ export function QuickRepliesManager() {
                   className="bg-muted pl-9 text-foreground"
                 />
               </div>
-
-               <Button
+            )}
+             <Button
               onClick={openCreate}
               className="w-full shrink-0 sm:w-auto sm:self-start lg:self-auto"
             >
               <Plus className="mr-1 h-4 w-4" />
               Nueva respuesta rápida
             </Button>
-            )}
             {items.length > 0 && (
               <div className="flex flex-wrap gap-2 lg:ml-auto">
                 <FilterChip
