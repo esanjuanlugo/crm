@@ -175,13 +175,6 @@ export function QuickRepliesManager() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] 3xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <Button
-              onClick={openCreate}
-              className="w-full shrink-0 sm:w-auto sm:self-start lg:self-auto"
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Nueva respuesta rápida
-            </Button>
             {items.length > 0 && (
               <div className="relative w-full lg:max-w-xs">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -193,6 +186,14 @@ export function QuickRepliesManager() {
                   className="bg-muted pl-9 text-foreground"
                 />
               </div>
+
+               <Button
+              onClick={openCreate}
+              className="w-full shrink-0 sm:w-auto sm:self-start lg:self-auto"
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Nueva respuesta rápida
+            </Button>
             )}
             {items.length > 0 && (
               <div className="flex flex-wrap gap-2 lg:ml-auto">
