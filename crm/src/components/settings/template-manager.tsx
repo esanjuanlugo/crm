@@ -168,6 +168,24 @@ const TEMPLATE_IDEAS: {
 
 const CATEGORY_FILTERS = ['all', ...CATEGORIES] as const;
 
+// Muestra el texto del mensaje resaltando las variables {{1}}, {{2}}...
+function BodyPreview({ text }: { text: string }) {
+  const parts = text.split(/(\{\{\d+\}\})/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        /^\{\{\d+\}\}$/.test(part) ? (
+          <span key={i} className="rounded bg-primary/15 px-1 font-medium text-primary">
+            {part}
+          </span>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 export function TemplateManager() {
   const t = useTranslations('Settings.templates');
   const locale = useLocale();
@@ -564,45 +582,54 @@ export function TemplateManager() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <div className="min-w-0 space-y-4">
-          {/* Barra: buscador + acciones a la izquierda, filtros a la derecha */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-full sm:w-80">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('searchPlaceholder')}
-                className="pl-9"
-              />
+          {/* Buscador + acciones; debajo, filtros con contador */}
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative w-full sm:w-80">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t('searchPlaceholder')}
+                  className="pl-9"
+                />
+              </div>
+              <Button onClick={openCreate}>
+                <Plus className="size-4" />
+                {t('newTemplate')}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSyncFromMeta}
+                disabled={syncing}
+                title={t('syncTitle')}
+              >
+                <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? t('syncing') : t('syncFromMeta')}
+              </Button>
             </div>
-            <Button onClick={openCreate}>
-              <Plus className="size-4" />
-              {t('newTemplate')}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleSyncFromMeta}
-              disabled={syncing}
-              title={t('syncTitle')}
-            >
-              <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? t('syncing') : t('syncFromMeta')}
-            </Button>
-            <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
-              {CATEGORY_FILTERS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCategoryFilter(c)}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                    categoryFilter === c
-                      ? 'border-primary/50 bg-primary/10 text-primary'
-                      : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  {c === 'all' ? t('filterAll') : c}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {CATEGORY_FILTERS.map((c) => {
+                const count =
+                  c === 'all'
+                    ? templates.length
+                    : templates.filter((x) => x.category === c).length;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCategoryFilter(c)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      categoryFilter === c
+                        ? 'border-primary/50 bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    {c === 'all' ? t('filterAll') : c}
+                    <span className="ml-1.5 text-[10px] opacity-70">{count}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -622,22 +649,29 @@ export function TemplateManager() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
               {filteredTemplates.map((template) => {
                 const statusKey = template.status || 'DRAFT';
                 const status = templateStatusConfig[statusKey];
                 return (
-                  <Card key={template.id}>
+                  <Card
+                    key={template.id}
+                    className="transition-colors hover:border-primary/40"
+                  >
                     <CardContent className="flex h-full flex-col gap-3 pt-4">
+                      {/* Cabecera: icono, nombre completo, estado y acciones */}
                       <div className="flex items-start gap-3">
                         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                           <FileText className="size-4" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="truncate font-medium text-foreground">
+                          <h3
+                            className="font-medium leading-snug text-foreground [overflow-wrap:anywhere]"
+                            title={template.name}
+                          >
                             {template.name}
                           </h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                             <Badge
                               className={`text-xs border ${categoryColors[template.category] || ''}`}
                             >
@@ -646,25 +680,6 @@ export function TemplateManager() {
                             <Badge className={`text-xs border ${status.classes}`}>
                               {status.label}
                             </Badge>
-                            {template.language && (
-                              <span className="text-xs text-muted-foreground uppercase">
-                                {template.language}
-                              </span>
-                            )}
-                            {template.quality_score && (
-                              <span
-                                className={`text-[10px] uppercase font-medium ${
-                                  template.quality_score === 'GREEN'
-                                    ? 'text-emerald-400'
-                                    : template.quality_score === 'YELLOW'
-                                      ? 'text-yellow-400'
-                                      : 'text-red-400'
-                                }`}
-                                title="Meta quality score"
-                              >
-                                {template.quality_score}
-                              </span>
-                            )}
                           </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-0.5">
@@ -718,14 +733,18 @@ export function TemplateManager() {
                         </div>
                       </div>
 
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {template.body_text}
-                      </p>
-                      {template.footer_text && (
-                        <p className="text-xs text-muted-foreground italic">
-                          {template.footer_text}
+                      {/* Vista previa del mensaje, como burbuja de chat */}
+                      <div className="rounded-xl rounded-tl-sm border border-border/60 bg-muted/40 px-3 py-2.5">
+                        <p className="line-clamp-5 whitespace-pre-line text-sm text-foreground/90">
+                          <BodyPreview text={template.body_text} />
                         </p>
-                      )}
+                        {template.footer_text && (
+                          <p className="mt-2 text-xs italic text-muted-foreground">
+                            {template.footer_text}
+                          </p>
+                        )}
+                      </div>
+
                       {(template.rejection_reason || template.submission_error) && (
                         <div className="flex items-start gap-1.5 text-xs text-red-400 bg-red-950/20 border border-red-900/40 rounded px-2 py-1.5">
                           <AlertCircle className="size-3.5 mt-0.5 shrink-0" />
@@ -734,15 +753,41 @@ export function TemplateManager() {
                           </span>
                         </div>
                       )}
-                      <p className="mt-auto pt-2 text-xs text-muted-foreground">
-                        {t('createdOn', {
-                          date: new Date(template.created_at).toLocaleDateString(locale, {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          }),
-                        })}
-                      </p>
+
+                      {/* Pie: fecha a la izquierda, idioma y calidad a la derecha */}
+                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                        <span>
+                          {t('createdOn', {
+                            date: new Date(template.created_at).toLocaleDateString(locale, {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            }),
+                          })}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          {template.quality_score && (
+                            <span
+                              className={`inline-flex items-center gap-1 text-[10px] font-medium uppercase ${
+                                template.quality_score === 'GREEN'
+                                  ? 'text-emerald-400'
+                                  : template.quality_score === 'YELLOW'
+                                    ? 'text-yellow-400'
+                                    : 'text-red-400'
+                              }`}
+                              title="Meta quality score"
+                            >
+                              <span className="size-1.5 rounded-full bg-current" />
+                              {template.quality_score}
+                            </span>
+                          )}
+                          {template.language && (
+                            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase">
+                              {template.language}
+                            </span>
+                          )}
+                        </span>
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -805,7 +850,7 @@ export function TemplateManager() {
                   >
                     <p className="text-sm font-medium text-foreground">{idea.title}</p>
                     <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                      {idea.body}
+                      <BodyPreview text={idea.body} />
                     </p>
                   </button>
                 ))}
