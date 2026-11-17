@@ -15,6 +15,7 @@ import {
   Search,
   FileText,
   Lightbulb,
+  Info,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -27,6 +28,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { useLocale, useTranslations } from 'next-intl';
 import { Card, CardContent } from '@/components/ui/card';
 import { SettingsPanelHead } from './settings-panel-head';
@@ -127,7 +133,7 @@ function emptyButton(type: TemplateButton['type']): TemplateButton {
   }
 }
 
-type IdeaTab = 'Utility' | 'Marketing' | 'Authentication';
+type IdeaTab = 'Utility' | 'Marketing';
 
 const TEMPLATE_IDEAS: {
   title: string;
@@ -194,31 +200,14 @@ const TEMPLATE_IDEAS: {
     body: 'Hola {{1}}, hace tiempo que no sabemos de ti. Tenemos {{2}} esperando por ti. \u00bfPlaticamos?',
     samples: ['Ana', 'una promoci\u00f3n especial'],
   },
-  // Autenticacion: solo de referencia (se crean en el Administrador de Meta)
-  {
-    title: 'C\u00f3digo de verificaci\u00f3n',
-    category: 'Authentication',
-    name: 'codigo_verificacion',
-    body: '{{1}} es tu c\u00f3digo de verificaci\u00f3n. Por tu seguridad, no lo compartas con nadie.',
-    samples: ['123456'],
-  },
-  {
-    title: 'Inicio de sesi\u00f3n',
-    category: 'Authentication',
-    name: 'codigo_inicio_sesion',
-    body: '{{1}} es tu c\u00f3digo para iniciar sesi\u00f3n. Este c\u00f3digo caduca en 10 minutos.',
-    samples: ['123456'],
-  },
-  {
-    title: 'Recuperar contrase\u00f1a',
-    category: 'Authentication',
-    name: 'codigo_recuperar_contrasena',
-    body: 'Usa el c\u00f3digo {{1}} para restablecer tu contrase\u00f1a. No lo compartas con nadie.',
-    samples: ['123456'],
-  },
 ];
 
 const CATEGORY_FILTERS = ['all', ...CATEGORIES] as const;
+
+// Ejemplo de referencia: las plantillas de Autenticacion se crean en el
+// Administrador de WhatsApp de Meta y se importan con "Sincronizar con Meta".
+const AUTH_EXAMPLE =
+  '{{1}} es tu c\u00f3digo de verificaci\u00f3n. Por tu seguridad, no lo compartas con nadie.';
 
 // Muestra el texto del mensaje resaltando las variables {{1}}, {{2}}...
 function BodyPreview({ text }: { text: string }) {
@@ -671,6 +660,17 @@ export function TemplateManager() {
                     key={c}
                     type="button"
                     onClick={() => setCategoryFilter(c)}
+                    title={
+                      c === 'all'
+                        ? undefined
+                        : t(
+                            c === 'Marketing'
+                              ? 'labelMarketing'
+                              : c === 'Utility'
+                                ? 'labelUtility'
+                                : 'labelAuthentication',
+                          )
+                    }
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                       categoryFilter === c
                         ? 'border-primary/50 bg-primary/10 text-primary'
@@ -682,6 +682,55 @@ export function TemplateManager() {
                   </button>
                 );
               })}
+              <Popover>
+                <PopoverTrigger className="ml-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-muted data-popup-open:text-foreground">
+                  <Info className="size-3.5" />
+                  {t('labelsHelp')}
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  sideOffset={6}
+                  className="w-96 max-w-[calc(100vw-2rem)] gap-3 p-4"
+                >
+                  <h4 className="text-sm font-semibold text-foreground">
+                    {t('labelsTitle')}
+                  </h4>
+                  <ul className="space-y-3">
+                    {(
+                      [
+                        ['Marketing', 'labelMarketing'],
+                        ['Utility', 'labelUtility'],
+                        ['Authentication', 'labelAuthentication'],
+                      ] as const
+                    ).map(([cat, key]) => (
+                      <li key={cat} className="flex items-start gap-3">
+                        <Badge
+                          className={`mt-0.5 shrink-0 text-xs border ${categoryColors[cat] || ''}`}
+                        >
+                          {cat}
+                        </Badge>
+                        <div className="min-w-0 space-y-1.5">
+                          <p className="text-sm text-muted-foreground">{t(key)}</p>
+                          {cat === 'Authentication' && (
+                            <>
+                              <p className="rounded-md bg-muted/50 px-2 py-1.5 text-xs text-foreground/80">
+                                <span className="font-medium">{t('exampleLabel')}: </span>
+                                <BodyPreview text={AUTH_EXAMPLE} />
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {t('ideaAuthNote')}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="border-t border-border/60 pt-3 text-xs leading-relaxed text-muted-foreground">
+                    {t('labelsNote')}
+                  </p>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -870,33 +919,6 @@ export function TemplateManager() {
 
           <Card>
             <CardContent className="space-y-3 pt-4">
-              <h3 className="text-sm font-semibold text-foreground">
-                {t('labelsTitle')}
-              </h3>
-              <ul className="space-y-3">
-                {(
-                  [
-                    ['Marketing', 'labelMarketing'],
-                    ['Utility', 'labelUtility'],
-                    ['Authentication', 'labelAuthentication'],
-                  ] as const
-                ).map(([cat, key]) => (
-                  <li key={cat} className="space-y-1">
-                    <Badge className={`text-xs border ${categoryColors[cat] || ''}`}>
-                      {cat}
-                    </Badge>
-                    <p className="text-sm text-muted-foreground">{t(key)}</p>
-                  </li>
-                ))}
-              </ul>
-              <p className="border-t border-border/60 pt-3 text-xs leading-relaxed text-muted-foreground">
-                {t('labelsNote')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="space-y-3 pt-4">
               <div className="flex items-center gap-2">
                 <Lightbulb className="size-4 text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">
@@ -904,7 +926,7 @@ export function TemplateManager() {
                 </h3>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                {(['Utility', 'Marketing', 'Authentication'] as const).map((c) => (
+                {(['Utility', 'Marketing'] as const).map((c) => (
                   <button
                     key={c}
                     type="button"
@@ -915,46 +937,25 @@ export function TemplateManager() {
                         : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                   >
-                    {c === 'Utility'
-                      ? t('ideaUtility')
-                      : c === 'Marketing'
-                        ? t('ideaMarketing')
-                        : t('ideaAuthentication')}
+                    {c === 'Utility' ? t('ideaUtility') : t('ideaMarketing')}
                   </button>
                 ))}
               </div>
               <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
-                {TEMPLATE_IDEAS.filter((idea) => idea.category === ideaTab).map((idea) =>
-                  idea.category === 'Authentication' ? (
-                    <div
-                      key={idea.name}
-                      className="rounded-lg border border-border bg-muted/30 px-3 py-2.5"
-                    >
-                      <p className="text-sm font-medium text-foreground">{idea.title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        <BodyPreview text={idea.body} />
-                      </p>
-                    </div>
-                  ) : (
-                    <button
-                      key={idea.name}
-                      type="button"
-                      onClick={() => openFromIdea(idea)}
-                      className="w-full rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-muted"
-                    >
-                      <p className="text-sm font-medium text-foreground">{idea.title}</p>
-                      <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                        <BodyPreview text={idea.body} />
-                      </p>
-                    </button>
-                  ),
-                )}
+                {TEMPLATE_IDEAS.filter((idea) => idea.category === ideaTab).map((idea) => (
+                  <button
+                    key={idea.name}
+                    type="button"
+                    onClick={() => openFromIdea(idea)}
+                    className="w-full rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-muted"
+                  >
+                    <p className="text-sm font-medium text-foreground">{idea.title}</p>
+                    <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
+                      <BodyPreview text={idea.body} />
+                    </p>
+                  </button>
+                ))}
               </div>
-              {ideaTab === 'Authentication' && (
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {t('ideaAuthNote')}
-                </p>
-              )}
             </CardContent>
           </Card>
         </aside>

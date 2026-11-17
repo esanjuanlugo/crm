@@ -1377,6 +1377,8 @@
       "labelUtility": "Updates about something the customer already requested: order confirmation, appointment reminder, delivery status, payment received.",
       "labelAuthentication": "One-time verification codes to log in or confirm an identity.",
       "labelsNote": "Pick the one that matches the content: if it does not, Meta may change the category or reject the template.",
+      "labelsHelp": "What do they mean?",
+      "exampleLabel": "Example",
       "noTemplates": "No templates yet.",
       "createFirst": "Create your first message template to get started.",
       "editTitle": "Editing triggers Meta re-review — status flips to PENDING.",

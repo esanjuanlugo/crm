@@ -1377,6 +1377,8 @@
       "labelUtility": "Updates about something the customer already requested: order confirmation, appointment reminder, delivery status, payment received.",
       "labelAuthentication": "One-time verification codes to log in or confirm an identity.",
       "labelsNote": "Pick the one that matches the content: if it does not, Meta may change the category or reject the template.",
+      "labelsHelp": "What do they mean?",
+      "exampleLabel": "Example",
       "noTemplates": "아직 템플릿이 없습니다.",
       "createFirst": "시작할 첫 메시지 템플릿을 만드세요.",
       "editTitle": "수정하면 Meta 재검토가 트리거되어 상태가 대기 중으로 바뀝니다.",

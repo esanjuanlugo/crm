@@ -1445,6 +1445,8 @@
       "labelUtility": "Avisos sobre algo que el cliente ya pidió o contrató: confirmación de pedido, recordatorio de cita, estado del envío, pago recibido.",
       "labelAuthentication": "Códigos de verificación de un solo uso para iniciar sesión o confirmar una identidad.",
       "labelsNote": "Elige la que corresponda al contenido: si no coincide, Meta puede cambiar la categoría o rechazar la plantilla.",
+      "labelsHelp": "¿Qué significa cada una?",
+      "exampleLabel": "Ejemplo",
       "noTemplates": "Aún no hay plantillas.",
       "createFirst": "Crea tu primera plantilla de mensajes para comenzar.",
       "editTitle": "Editar la plantilla hace que Meta vuelva a revisarla; el estado cambia a PENDING.",
