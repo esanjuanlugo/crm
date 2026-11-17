@@ -128,7 +128,18 @@
       "thisWeek": "This week:",
       "lastWeek": "Last week:",
       "noReplies": "No replies recorded yet",
-      "noRepliesHint": "This chart fills in as you reply to customer messages."
+      "noRepliesHint": "This chart fills in as you reply to customer messages.",
+      "samples": "{count} replies",
+      "avgMinutes": "Average minutes",
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
     },
     "emptyState": {
       "title": "Not enough data yet"

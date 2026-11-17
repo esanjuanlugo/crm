@@ -187,6 +187,7 @@
       "lastWeek": "La semana pasada:",
       "noReplies": "Aún no hay respuestas registradas",
       "noRepliesHint": "Este gráfico se completa a medida que respondes a los mensajes de los clientes.",
+      "samples": "{count} respuestas",
       "avgMinutes": "Promedio de minutos",
       "days": {
         "mon": "Lun",

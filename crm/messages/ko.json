@@ -128,7 +128,18 @@
       "thisWeek": "이번 주:",
       "lastWeek": "지난 주:",
       "noReplies": "아직 기록된 응답이 없습니다",
-      "noRepliesHint": "고객 메시지에 답변하면 이 차트가 채워집니다."
+      "noRepliesHint": "고객 메시지에 답변하면 이 차트가 채워집니다.",
+      "samples": "{count} replies",
+      "avgMinutes": "Average minutes",
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
     },
     "emptyState": {
       "title": "아직 데이터가 충분하지 않습니다"

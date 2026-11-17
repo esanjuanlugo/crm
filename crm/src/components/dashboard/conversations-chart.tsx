@@ -120,7 +120,22 @@ function LineSvg({
   const svgRef = useRef<SVGSVGElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
 
-  const chartW = VB_W - PADDING.left - PADDING.right
+  // El viewBox sigue el ancho real del contenedor: la grafica se estira
+  // a todo el ancho (antes quedaba centrada y con margenes vacios) y el
+  // texto conserva su tamano.
+  const [vbW, setVbW] = useState(VB_W)
+  useEffect(() => {
+    const wrap = wrapRef.current
+    if (!wrap) return
+    const ro = new ResizeObserver((entries) => {
+      const w = Math.round(entries[0].contentRect.width)
+      if (w > 0) setVbW(Math.max(320, w))
+    })
+    ro.observe(wrap)
+    return () => ro.disconnect()
+  }, [])
+
+  const chartW = vbW - PADDING.left - PADDING.right
   const chartH = VB_H - PADDING.top - PADDING.bottom
 
   // x step can be fractional for 90-day views; points are positioned
@@ -133,6 +148,12 @@ function LineSvg({
 
   const incomingPath = data.map((p, i) => `${i === 0 ? 'M' : 'L'}${xFor(i)},${yFor(p.incoming)}`).join(' ')
   const outgoingPath = data.map((p, i) => `${i === 0 ? 'M' : 'L'}${xFor(i)},${yFor(p.outgoing)}`).join(' ')
+
+  const baseY = PADDING.top + chartH
+  const areaFor = (path: string) =>
+    data.length > 0
+      ? `${path} L${xFor(data.length - 1)},${baseY} L${xFor(0)},${baseY} Z`
+      : ''
 
   // Mouse-move: use the SVG's current screen-CTM to map clientX
   // back to viewBox coordinates. The previous rect-based math
@@ -154,7 +175,7 @@ function LineSvg({
       pt.y = e.clientY
       const local = pt.matrixTransform(ctm.inverse())
       const xVb = local.x
-      if (xVb < PADDING.left - 8 || xVb > VB_W - PADDING.right + 8) {
+      if (xVb < PADDING.left - 8 || xVb > vbW - PADDING.right + 8) {
         setHover(null)
         return
       }
@@ -184,7 +205,7 @@ function LineSvg({
       svg.removeEventListener('mouseleave', onLeave)
     }
     // xFor + yFor close over stepX, so stepX covers them.
-  }, [data, stepX])
+  }, [data, stepX, vbW])
 
   const hovered = hover !== null ? data[hover.idx] : null
   const hoverX = hover !== null ? xFor(hover.idx) : 0
@@ -197,11 +218,22 @@ function LineSvg({
     <div ref={wrapRef} className="relative w-full">
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${VB_W} ${VB_H}`}
+        viewBox={`0 0 ${vbW} ${VB_H}`}
         className="h-[240px] w-full"
         role="img"
         aria-label={t('ariaLabel')}
       >
+        <defs>
+          <linearGradient id="conv-in" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="conv-out" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
         {/* Y-axis gridlines + labels */}
         {ticks.map((t) => {
           const y = yFor(t)
@@ -209,7 +241,7 @@ function LineSvg({
             <g key={t}>
               <line
                 x1={PADDING.left}
-                x2={VB_W - PADDING.right}
+                x2={vbW - PADDING.right}
                 y1={y}
                 y2={y}
                 stroke="var(--border)"
@@ -242,6 +274,9 @@ function LineSvg({
             </text>
           ) : null,
         )}
+
+        <path d={areaFor(incomingPath)} fill="url(#conv-in)" stroke="none" />
+        <path d={areaFor(outgoingPath)} fill="url(#conv-out)" stroke="none" />
 
         {/* Outgoing polyline (violet) */}
         <path
