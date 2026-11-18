@@ -142,6 +142,9 @@ export function AiConfig() {
     if (isDefaultModel) setModel(AI_PROVIDER_DEFAULT_MODEL[next]);
   };
 
+  // La clave de embeddings es una clave de OpenAI: solo se muestra con OpenAI.
+  const showEmbeddingsKey = provider === 'openai';
+
   const customFields = () =>
     provider === 'custom'
       ? { provider_name: providerName.trim(), base_url: baseUrl.trim() }
@@ -415,37 +418,39 @@ export function AiConfig() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="ai-embeddings-key">
-                {t('embeddingsKey')}{' '}
-                <span className="font-normal text-muted-foreground">
-                  {t('optionalSemanticSearch')}
-                </span>
-              </Label>
-              <Input
-                id="ai-embeddings-key"
-                type="password"
-                value={embeddingsKey}
-                onChange={(e) => {
-                  setEmbeddingsKey(e.target.value);
-                  setEmbeddingsKeyEdited(true);
-                }}
-                onFocus={() => {
-                  if (!embeddingsKeyEdited && hasStoredEmbeddingsKey) {
-                    setEmbeddingsKey('');
+            {showEmbeddingsKey && (
+              <div className="space-y-2">
+                <Label htmlFor="ai-embeddings-key">
+                  {t('embeddingsKey')}{' '}
+                  <span className="font-normal text-muted-foreground">
+                    {t('optionalSemanticSearch')}
+                  </span>
+                </Label>
+                <Input
+                  id="ai-embeddings-key"
+                  type="password"
+                  value={embeddingsKey}
+                  onChange={(e) => {
+                    setEmbeddingsKey(e.target.value);
                     setEmbeddingsKeyEdited(true);
-                  }
-                }}
-                placeholder="sk-... (OpenAI)"
-                disabled={disabled}
-                autoComplete="off"
-              />
-              <p className="text-xs text-muted-foreground">
-                {t('embeddingsHint', {
-                  sameKeyText: provider === 'openai' ? t('sameKeyText') : '',
-                })}
-              </p>
-            </div>
+                  }}
+                  onFocus={() => {
+                    if (!embeddingsKeyEdited && hasStoredEmbeddingsKey) {
+                      setEmbeddingsKey('');
+                      setEmbeddingsKeyEdited(true);
+                    }
+                  }}
+                  placeholder="sk-... (OpenAI)"
+                  disabled={disabled}
+                  autoComplete="off"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('embeddingsHint', {
+                    sameKeyText: provider === 'openai' ? t('sameKeyText') : '',
+                  })}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
