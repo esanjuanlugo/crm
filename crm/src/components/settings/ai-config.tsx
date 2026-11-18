@@ -274,7 +274,7 @@ export function AiConfig() {
   const disabled = !canEdit || saving;
 
   return (
-    <div>
+    <div className="max-w-4xl">
       <SettingsPanelHead
         title={t('title')}
         description={t('description')}
@@ -297,7 +297,7 @@ export function AiConfig() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-[14rem_1fr]">
               <div className="space-y-2">
                 <Label>{t('provider')}</Label>
                 <Select
@@ -335,7 +335,7 @@ export function AiConfig() {
             </div>
 
             {provider === 'custom' && (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-[14rem_1fr]">
                 <div className="space-y-2">
                   <Label htmlFor="ai-provider-name">{t('providerName')}</Label>
                   <Input
@@ -506,55 +506,57 @@ export function AiConfig() {
               />
             </div>
 
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <Label htmlFor="ai-max">{t('maxAutoReplies')}</Label>
-                <p className="text-xs text-muted-foreground">
-                  {t('maxAutoRepliesDesc')}
-                </p>
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="space-y-2">
+                <div>
+                  <Label htmlFor="ai-max">{t('maxAutoReplies')}</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {t('maxAutoRepliesDesc')}
+                  </p>
+                </div>
+                <Input
+                  id="ai-max"
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={maxPerConversation}
+                  onChange={(e) =>
+                    setMaxPerConversation(
+                      Math.min(20, Math.max(1, Number(e.target.value) || 1)),
+                    )
+                  }
+                  disabled={disabled || !autoReplyEnabled}
+                  className="w-20"
+                />
               </div>
-              <Input
-                id="ai-max"
-                type="number"
-                min={1}
-                max={20}
-                value={maxPerConversation}
-                onChange={(e) =>
-                  setMaxPerConversation(
-                    Math.min(20, Math.max(1, Number(e.target.value) || 1)),
-                  )
-                }
-                disabled={disabled || !autoReplyEnabled}
-                className="w-20"
-              />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="ai-handoff">{t('handoffTo')}</Label>
-              <p className="text-xs text-muted-foreground">
-                {t('handoffToDesc')}
-              </p>
-              <Select
-                value={handoffAgentId || HANDOFF_QUEUE}
-                onValueChange={(v) =>
-                  setHandoffAgentId(!v || v === HANDOFF_QUEUE ? '' : v)
-                }
-                disabled={disabled || !autoReplyEnabled}
-              >
-                <SelectTrigger id="ai-handoff">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={HANDOFF_QUEUE}>
-                    {t('handoffQueue')}
-                  </SelectItem>
-                  {members.map((m) => (
-                    <SelectItem key={m.user_id} value={m.user_id}>
-                      {memberLabel(m)}
+              <div className="space-y-2">
+                <Label htmlFor="ai-handoff">{t('handoffTo')}</Label>
+                <p className="text-xs text-muted-foreground">
+                  {t('handoffToDesc')}
+                </p>
+                <Select
+                  value={handoffAgentId || HANDOFF_QUEUE}
+                  onValueChange={(v) =>
+                    setHandoffAgentId(!v || v === HANDOFF_QUEUE ? '' : v)
+                  }
+                  disabled={disabled || !autoReplyEnabled}
+                >
+                  <SelectTrigger id="ai-handoff">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={HANDOFF_QUEUE}>
+                      {t('handoffQueue')}
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    {members.map((m) => (
+                      <SelectItem key={m.user_id} value={m.user_id}>
+                        {memberLabel(m)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -569,7 +571,7 @@ export function AiConfig() {
           }
         />
 
-        <div className="flex items-center justify-between">
+        <div className="sticky bottom-4 z-10 flex items-center justify-between rounded-xl border border-border bg-background/80 px-4 py-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
           {configured ? (
             <Button
               variant="ghost"
