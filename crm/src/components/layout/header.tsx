@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, Menu, Shield, User } from "lucide-react";
+import { ChevronDown, LogOut, Menu, Search, Shield, User } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -56,11 +56,18 @@ interface HeaderProps {
   onOpenSidebar?: () => void;
 }
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 export function Header({ onOpenSidebar }: HeaderProps) {
   const t = useTranslations("Header");
+  const locale = useLocale();
   const pathname = usePathname();
+  const searchLabel = locale === "es" ? "Buscar..." : "Search...";
+  // Abre la paleta de comandos (misma que Ctrl+K).
+  const openPalette = () =>
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "k", ctrlKey: true }),
+    );
   const { profile, signOut } = useAuth();
   const titleKey = getPageTitleKey(pathname);
 
@@ -70,7 +77,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
     "U";
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-background px-4 lg:px-6">
+    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 lg:px-6">
       <div className="flex min-w-0 items-center gap-2">
         {/* Hamburger — mobile only. 44×44 hit target per Apple HIG. */}
         <button
@@ -88,30 +95,53 @@ export function Header({ onOpenSidebar }: HeaderProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-1 sm:gap-2">
-        <NotificationBell />
-        <CurrencyMenu />
-        <AppearanceMenu />
+      <div className="flex items-center gap-2 sm:gap-3">
+        <button
+          type="button"
+          onClick={openPalette}
+          aria-label={searchLabel}
+          className="hidden h-9 items-center gap-2 rounded-lg border border-border bg-muted/40 pl-3 pr-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex md:w-56 lg:w-64"
+        >
+          <Search className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-left">{searchLabel}</span>
+          <kbd className="rounded border border-border bg-background px-1.5 py-0.5 font-sans text-[10px] font-medium">
+            Ctrl K
+          </kbd>
+        </button>
+
+        <div className="flex items-center gap-0.5 rounded-xl border border-border bg-muted/40 p-0.5">
+          <NotificationBell />
+          <CurrencyMenu className="h-9 rounded-lg" />
+          <AppearanceMenu className="h-9 w-9 rounded-lg" />
+        </div>
+
+        <div className="hidden h-6 w-px bg-border sm:block" />
 
         <DropdownMenu>
         <DropdownMenuTrigger
-          className="flex items-center gap-2 rounded-md px-1 py-1 transition-colors hover:bg-muted/70 focus:bg-muted/70 focus:outline-none data-popup-open:bg-muted/70 sm:gap-3 sm:pl-1 sm:pr-3"
+          className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-1 transition-colors hover:bg-muted/70 focus:bg-muted/70 focus:outline-none data-popup-open:bg-muted/70 sm:gap-2.5 sm:pr-2"
           aria-label={t("openAccountMenu")}
         >
-          <Avatar className="size-8">
+          <Avatar className="size-8 ring-2 ring-primary/30">
             {profile?.avatar_url ? (
               <AvatarImage
                 src={profile.avatar_url}
                 alt={profile.full_name ?? t("defaultAvatar")}
               />
             ) : null}
-            <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
+            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-sm font-semibold text-primary-foreground">
               {initial}
             </AvatarFallback>
           </Avatar>
-          <span className="hidden text-sm font-medium text-foreground sm:inline">
-            {profile?.full_name ?? t("defaultUser")}
+          <span className="hidden min-w-0 flex-col items-start text-left leading-tight sm:flex">
+            <span className="max-w-40 truncate text-sm font-medium text-foreground">
+              {profile?.full_name ?? t("defaultUser")}
+            </span>
+            <span className="max-w-40 truncate text-[11px] text-muted-foreground">
+              {profile?.email ?? ""}
+            </span>
           </span>
+          <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
