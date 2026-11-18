@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Notification } from "@/types";
 
@@ -12,8 +12,15 @@ import type { Notification } from "@/types";
  * user_id`, so no explicit filter is needed here — same pattern as
  * `useTotalUnread` for conversations.
  */
-export function useUnreadNotifications(): number {
+export function useUnreadNotifications(options?: {
+  /** Se llama cuando llega (en vivo) una notificacion nueva sin leer. */
+  onInsert?: (row: Notification) => void;
+}): number {
   const [count, setCount] = useState(0);
+  const onInsertRef = useRef(options?.onInsert);
+  useEffect(() => {
+    onInsertRef.current = options?.onInsert;
+  });
 
   useEffect(() => {
     const supabase = createClient();
@@ -31,14 +38,17 @@ export function useUnreadNotifications(): number {
     })();
 
     const channel = supabase
-      .channel("notifications-unread-count")
+      .channel("notifications-unread-count-" + Math.random().toString(36).slice(2))
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications" },
         (payload) => {
           if (payload.eventType === "INSERT") {
             const row = payload.new as Notification;
-            if (!row.read_at) setCount((n) => n + 1);
+            if (!row.read_at) {
+              setCount((n) => n + 1);
+              onInsertRef.current?.(row);
+            }
           } else if (payload.eventType === "UPDATE") {
             // Updates here only ever set read_at (marking a notification
             // read). Derive purely from the new row so we don't rely on
