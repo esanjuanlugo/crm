@@ -309,9 +309,9 @@ export function AiConfig() {
         </p>
       )}
 
-      <div className="grid items-start gap-6 xl:grid-cols-2 2xl:grid-cols-3">
-        <div className="flex flex-col gap-6 2xl:contents">
-          <Card>
+      <div className="grid items-start gap-6 xl:grid-cols-2 min-[2200px]:grid-cols-3">
+        <div className="flex flex-col gap-6 min-[2200px]:contents">
+          <Card className="@container">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Sparkles className="h-4 w-4 text-primary" /> {t('providerAndKey')}
@@ -321,7 +321,7 @@ export function AiConfig() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-[14rem_1fr]">
+              <div className="grid gap-4 @xl:grid-cols-[14rem_1fr]">
                 <div className="space-y-2">
                   <Label>{t('provider')}</Label>
                   <Select
@@ -359,7 +359,7 @@ export function AiConfig() {
               </div>
 
               {provider === 'custom' && (
-                <div className="grid gap-4 sm:grid-cols-[14rem_1fr]">
+                <div className="grid gap-4 @xl:grid-cols-[14rem_1fr]">
                   <div className="space-y-2">
                     <Label htmlFor="ai-provider-name">{t('providerName')}</Label>
                     <Input
@@ -477,7 +477,7 @@ export function AiConfig() {
               )}
             </CardContent>
           </Card>
-          <div className="2xl:order-3">
+          <div className="min-[2200px]:order-3">
             <AiKnowledgeCard
               accountId={accountId}
               canEdit={canEdit}
@@ -489,8 +489,8 @@ export function AiConfig() {
             />
           </div>
         </div>
-        <div className="2xl:order-2">
-          <Card>
+        <div className="min-[2200px]:order-2">
+          <Card className="@container">
             <CardHeader>
               <CardTitle className="text-base">{t('behaviour')}</CardTitle>
               <CardDescription>
@@ -542,7 +542,7 @@ export function AiConfig() {
                 />
               </div>
 
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-6 @xl:grid-cols-2">
                 <div className="space-y-2">
                   <div>
                     <Label htmlFor="ai-max">{t('maxAutoReplies')}</Label>
