@@ -575,7 +575,7 @@
     "page": {
       "selectPipeline": "Seleccionar embudo",
       "noPipelinesYet": "Aún no hay embudos",
-      "managePipelines": "Administrar embudos",
+      "managePipelines": "Configurar embudo",
       "addPipeline": "Agregar embudo",
       "addDeal": "Agregar oportunidad",
       "createToStartTracking": "Crea un embudo para comenzar a dar seguimiento a las oportunidades",
