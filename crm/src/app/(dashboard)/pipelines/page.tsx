@@ -353,30 +353,28 @@ export default function PipelinesPage() {
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator className="bg-border" />
-              {selectedPipeline && (
-                <DropdownMenuItem
-                  onClick={() => setSettingsOpen(true)}
-                  className="text-popover-foreground"
-                >
-                  <Settings className="mr-2 h-3.5 w-3.5" />
-                  {t("managePipelines")}
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem
+                disabled={!canEditSettings}
+                onClick={() => setNewPipelineOpen(true)}
+                className="text-popover-foreground"
+              >
+                <Plus className="mr-2 h-3.5 w-3.5" />
+                {t("addPipeline")}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
         <div className="flex items-center gap-2">
-          <GatedButton
+          <Button
             variant="outline"
-            canAct={canEditSettings}
-            gateReason="create pipelines"
-            onClick={() => setNewPipelineOpen(true)}
+            disabled={!selectedPipeline}
+            onClick={() => setSettingsOpen(true)}
             className="border-border bg-card text-foreground hover:bg-muted"
           >
-            <Plus className="mr-1 h-4 w-4" />
-            {t("addPipeline")}
-          </GatedButton>
+            <Settings className="mr-1 h-4 w-4" />
+            {t("managePipelines")}
+          </Button>
           <GatedButton
             canAct={canCreateDeals}
             gateReason="create deals"
