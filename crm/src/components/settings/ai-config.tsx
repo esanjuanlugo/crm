@@ -2,14 +2,26 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Sparkles, CheckCircle2, Trash2, Eye, EyeOff } from 'lucide-react';
+import {
+  Loader2,
+  Sparkles,
+  CheckCircle2,
+  Trash2,
+  Eye,
+  EyeOff,
+  Power,
+  PenLine,
+  Zap,
+  Plus,
+  Minus,
+  Check,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { canEditSettings } from '@/lib/auth/roles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import {
   Card,
   CardContent,
@@ -30,7 +42,8 @@ import { AI_PROVIDER_DEFAULT_MODEL } from '@/lib/ai/defaults';
 import type { AiProvider } from '@/lib/ai/types';
 import type { AccountMember } from '@/types';
 import { fetchAccountMembers, memberLabel } from '@/lib/account/members';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 
 const MASKED_KEY = '••••••••••••••••';
 
@@ -50,10 +63,140 @@ const KEY_PLACEHOLDER: Record<AiProvider, string> = {
   custom: '',
 };
 
+type AiMode = 'off' | 'draft' | 'auto';
+
+const COPY_ES = {
+  summaryTitle: 'Resumen',
+  summaryReady: 'Todo listo. Guarda los cambios para aplicarlos.',
+  summaryPending: 'Completa los pasos pendientes para empezar.',
+  rowConnection: 'Conexión',
+  rowContext: 'Contexto del negocio',
+  rowMode: 'Modo de trabajo',
+  rowHandoff: 'Pasa a una persona',
+  missingKey: 'Falta la clave API',
+  defined: 'Definido',
+  empty: 'Sin definir',
+  queueShort: 'Cola sin asignar',
+  repliesUnit: 'respuestas',
+  step1Title: 'Conecta tu IA',
+  step1Desc:
+    'Elige tu proveedor y pega tu clave API. Se guarda cifrada y nunca vuelve a mostrarse.',
+  keySaved: 'Clave guardada',
+  advancedTitle: 'Búsqueda semántica en tu base de conocimientos',
+  advancedOptional: 'Opcional',
+  step2Title: 'Cuéntale sobre tu negocio',
+  step2Desc:
+    'Productos, tono de voz y lo que puede o no prometer. Se usa en los borradores y en las respuestas automáticas.',
+  tipsLabel: 'Toca para añadir un punto de partida:',
+  tips: [
+    { label: 'Qué vendes', text: 'Qué vendemos: ' },
+    { label: 'Tono de voz', text: 'Tono de voz: amable, claro y conciso.' },
+    {
+      label: 'Qué no prometer',
+      text: 'Nunca indiques precios, fechas de entrega ni descuentos; deriva esos casos a una persona.',
+    },
+    { label: 'Horarios', text: 'Horario de atención: ' },
+  ],
+  step3Title: '¿Cómo quieres que trabaje?',
+  step3Desc:
+    'Elige cuánto participa la IA en tus conversaciones. Puedes cambiarlo cuando quieras.',
+  modeOff: 'Apagado',
+  modeOffDesc: 'La IA no participa. Tus conversaciones siguen siendo 100 % manuales.',
+  modeDraft: 'Solo borradores',
+  modeDraftDesc:
+    'Tú decides: la IA sugiere una respuesta con el botón «Borrador con IA» y tú la envías.',
+  modeAuto: 'Responde sola',
+  modeAutoDesc:
+    'Contesta los mensajes nuevos y pasa la conversación a una persona cuando no puede ayudar.',
+  limitsTitle: 'Cuándo pasa a una persona',
+};
+
+const COPY_EN: typeof COPY_ES = {
+  summaryTitle: 'Summary',
+  summaryReady: 'All set. Save your changes to apply them.',
+  summaryPending: 'Complete the pending steps to get started.',
+  rowConnection: 'Connection',
+  rowContext: 'Business context',
+  rowMode: 'Work mode',
+  rowHandoff: 'Hands off to a person',
+  missingKey: 'API key missing',
+  defined: 'Defined',
+  empty: 'Not set',
+  queueShort: 'Unassigned queue',
+  repliesUnit: 'replies',
+  step1Title: 'Connect your AI',
+  step1Desc:
+    'Choose your provider and paste your API key. It is stored encrypted and never shown again.',
+  keySaved: 'Key saved',
+  advancedTitle: 'Semantic search in your knowledge base',
+  advancedOptional: 'Optional',
+  step2Title: 'Tell it about your business',
+  step2Desc:
+    'Products, tone of voice and what it can or cannot promise. Used for drafts and automatic replies.',
+  tipsLabel: 'Tap to add a starting point:',
+  tips: [
+    { label: 'What you sell', text: 'What we sell: ' },
+    { label: 'Tone of voice', text: 'Tone of voice: friendly, clear and concise.' },
+    {
+      label: 'What not to promise',
+      text: 'Never quote prices, delivery dates or discounts; hand those cases to a person.',
+    },
+    { label: 'Hours', text: 'Opening hours: ' },
+  ],
+  step3Title: 'How should it work?',
+  step3Desc:
+    'Choose how much the AI takes part in your conversations. You can change it any time.',
+  modeOff: 'Off',
+  modeOffDesc: 'The AI does not take part. Your conversations stay 100% manual.',
+  modeDraft: 'Drafts only',
+  modeDraftDesc:
+    'You decide: the AI suggests a reply with the "AI draft" button and you send it.',
+  modeAuto: 'Replies on its own',
+  modeAutoDesc:
+    'Answers new messages and hands the conversation to a person when it cannot help.',
+  limitsTitle: 'When it hands off to a person',
+};
+
+function StepBadge({ n }: { n: number }) {
+  return (
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+      {n}
+    </span>
+  );
+}
+
+function StatusRow({
+  ok,
+  label,
+  value,
+}: {
+  ok: boolean;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <span
+        className={cn(
+          'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
+          ok ? 'bg-emerald-500/15 text-emerald-500' : 'bg-muted text-muted-foreground',
+        )}
+      >
+        {ok ? <Check className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="truncate text-sm font-medium text-foreground">{value}</p>
+      </div>
+    </div>
+  );
+}
+
 export function AiConfig() {
   const { accountId, accountRole, profileLoading } = useAuth();
   const canEdit = accountRole ? canEditSettings(accountRole) : false;
   const t = useTranslations('Settings.aiConfig');
+  const locale = useLocale();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -141,9 +284,6 @@ export function AiConfig() {
       model.trim() === '';
     if (isDefaultModel) setModel(AI_PROVIDER_DEFAULT_MODEL[next]);
   };
-
-  // La clave de embeddings es una clave de OpenAI: solo se muestra con OpenAI.
-  const showEmbeddingsKey = provider === 'openai';
 
   const customFields = () =>
     provider === 'custom'
@@ -265,42 +405,80 @@ export function AiConfig() {
   if (loading || profileLoading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('loadFailed')} {/* Re-using label or a global one, wait, loading is better. Let's use useTranslations from overview or just hardcode Loading... actually I should add loading to aiConfig */}
-        {/* Wait, I didn't add loading to aiConfig. I'll just use loading. */}
+        <Loader2 className="h-5 w-5 animate-spin" />
       </div>
     );
   }
 
   const disabled = !canEdit || saving;
+  const L = locale === 'es' ? COPY_ES : COPY_EN;
+
+  const mode: AiMode = !isActive ? 'off' : autoReplyEnabled ? 'auto' : 'draft';
+  const changeMode = (next: AiMode) => {
+    setIsActive(next !== 'off');
+    setAutoReplyEnabled(next === 'auto');
+  };
+
+  const keyReady = hasStoredKey || (keyEdited && apiKey.trim().length > 0);
+  const hasContext = systemPrompt.trim().length > 0;
+  const stepsDone = [keyReady, hasContext, mode !== 'off'].filter(Boolean).length;
+
+  const providerShown =
+    provider === 'custom'
+      ? providerName.trim() || t('providerCustom')
+      : PROVIDER_LABEL[provider];
+  const handoffMember = members.find((m) => m.user_id === handoffAgentId);
+  const handoffShort = handoffMember ? memberLabel(handoffMember) : L.queueShort;
+
+  const providerOptions: { id: AiProvider; label: string }[] = [
+    { id: 'openai', label: PROVIDER_LABEL.openai },
+    { id: 'anthropic', label: PROVIDER_LABEL.anthropic },
+    { id: 'custom', label: t('providerCustom') },
+  ];
+
+  const modeOptions = [
+    { id: 'off' as AiMode, icon: Power, title: L.modeOff, desc: L.modeOffDesc },
+    { id: 'draft' as AiMode, icon: PenLine, title: L.modeDraft, desc: L.modeDraftDesc },
+    { id: 'auto' as AiMode, icon: Zap, title: L.modeAuto, desc: L.modeAutoDesc },
+  ];
+  const modeTitle = modeOptions.find((m) => m.id === mode)?.title ?? '';
+
+  const addTip = (text: string) =>
+    setSystemPrompt((prev) => {
+      const base = prev.trimEnd();
+      return (base ? base + String.fromCharCode(10) : '') + text;
+    });
+
+  const actionButtons = (
+    <>
+      {configured && (
+        <Button
+          variant="ghost"
+          onClick={handleRemove}
+          disabled={!canEdit || removing}
+          className="text-destructive hover:text-destructive"
+        >
+          {removing ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="mr-2 h-4 w-4" />
+          )}
+          {t('remove')}
+        </Button>
+      )}
+      <Button onClick={handleSave} disabled={disabled}>
+        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {t('save')}
+      </Button>
+    </>
+  );
 
   return (
-    <div>
+    <div className="min-w-0">
       <SettingsPanelHead
         title={t('title')}
         description={t('description')}
-        action={
-          <>
-            {configured && (
-              <Button
-                variant="ghost"
-                onClick={handleRemove}
-                disabled={!canEdit || removing}
-                className="text-destructive hover:text-destructive"
-              >
-                {removing ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="mr-2 h-4 w-4" />
-                )}
-                {t('remove')}
-              </Button>
-            )}
-            <Button onClick={handleSave} disabled={disabled}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('save')}
-            </Button>
-          </>
-        }
+        action={<div className="flex items-center gap-2 xl:hidden">{actionButtons}</div>}
       />
 
       {!canEdit && (
@@ -309,52 +487,82 @@ export function AiConfig() {
         </p>
       )}
 
-      <div className="grid items-start gap-6 xl:grid-cols-2 min-[2200px]:grid-cols-3">
-        <div className="flex flex-col gap-6 min-[2200px]:contents">
-          <Card className="@container">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+        {/* Resumen / estado */}
+        <aside className="min-w-0 xl:sticky xl:top-20 xl:order-2">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Sparkles className="h-4 w-4 text-primary" /> {t('providerAndKey')}
+                <Sparkles className="h-4 w-4 text-primary" /> {L.summaryTitle}
               </CardTitle>
               <CardDescription>
-                {t('encryptionNotice')}
+                {stepsDone === 3 ? L.summaryReady : L.summaryPending}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 @xl:grid-cols-[14rem_1fr]">
-                <div className="space-y-2">
-                  <Label>{t('provider')}</Label>
-                  <Select
-                    value={provider}
-                    onValueChange={(v) => handleProviderChange(v as AiProvider)}
-                    disabled={disabled}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="openai">{PROVIDER_LABEL.openai}</SelectItem>
-                      <SelectItem value="anthropic">
-                        {PROVIDER_LABEL.anthropic}
-                      </SelectItem>
-                      <SelectItem value="custom">{t('providerCustom')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ai-model">{t('model')}</Label>
-                  <Input
-                    id="ai-model"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    placeholder={
-                      provider === 'custom'
-                        ? t('customModelPlaceholder')
-                        : AI_PROVIDER_DEFAULT_MODEL[provider]
-                    }
-                    disabled={disabled}
+            <CardContent className="space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                <StatusRow
+                  ok={keyReady}
+                  label={L.rowConnection}
+                  value={keyReady ? providerShown + ' · ' + model : L.missingKey}
+                />
+                <StatusRow
+                  ok={hasContext}
+                  label={L.rowContext}
+                  value={hasContext ? L.defined : L.empty}
+                />
+                <StatusRow ok={mode !== 'off'} label={L.rowMode} value={modeTitle} />
+                {mode === 'auto' && (
+                  <StatusRow
+                    ok
+                    label={L.rowHandoff}
+                    value={maxPerConversation + ' ' + L.repliesUnit + ' · ' + handoffShort}
                   />
+                )}
+              </div>
+              <div className="hidden flex-col-reverse gap-2 xl:flex [&>button]:w-full">
+                {actionButtons}
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
+
+        {/* Pasos */}
+        <div className="grid min-w-0 gap-6 xl:order-1 min-[1900px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          {/* 1. Conecta tu IA */}
+          <Card className="@container min-[1900px]:col-start-1 min-[1900px]:row-start-1">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-base">
+                <StepBadge n={1} /> {L.step1Title}
+              </CardTitle>
+              <CardDescription>{L.step1Desc}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-2">
+                <Label>{t('provider')}</Label>
+                <div
+                  role="radiogroup"
+                  aria-label={t('provider')}
+                  className="grid gap-2 @md:grid-cols-3"
+                >
+                  {providerOptions.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={provider === p.id}
+                      disabled={disabled}
+                      onClick={() => handleProviderChange(p.id)}
+                      className={cn(
+                        'flex items-center justify-center rounded-lg border px-3 py-2.5 text-center text-sm font-medium transition-colors disabled:opacity-60',
+                        provider === p.id
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                      )}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -381,17 +589,37 @@ export function AiConfig() {
                       disabled={disabled}
                       autoComplete="off"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      {t('baseUrlHint')}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t('baseUrlHint')}</p>
                   </div>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="ai-key">{t('apiKey')}</Label>
+                <Label htmlFor="ai-model">{t('model')}</Label>
+                <Input
+                  id="ai-model"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  placeholder={
+                    provider === 'custom'
+                      ? t('customModelPlaceholder')
+                      : AI_PROVIDER_DEFAULT_MODEL[provider]
+                  }
+                  disabled={disabled}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="ai-key">{t('apiKey')}</Label>
+                  {hasStoredKey && !keyEdited && (
+                    <span className="flex items-center gap-1 text-xs text-emerald-500">
+                      <Check className="h-3 w-3" /> {L.keySaved}
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-2">
-                  <div className="relative flex-1">
+                  <div className="relative min-w-0 flex-1">
                     <Input
                       id="ai-key"
                       type={showKey ? 'text' : 'password'}
@@ -442,42 +670,222 @@ export function AiConfig() {
                 </div>
               </div>
 
-              {showEmbeddingsKey && (
-                <div className="space-y-2">
-                  <Label htmlFor="ai-embeddings-key">
-                    {t('embeddingsKey')}{' '}
-                    <span className="font-normal text-muted-foreground">
-                      {t('optionalSemanticSearch')}
+              {provider === 'openai' && (
+                <details className="group rounded-lg border border-border">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium [&::-webkit-details-marker]:hidden">
+                    <span>{L.advancedTitle}</span>
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {L.advancedOptional}
                     </span>
-                  </Label>
-                  <Input
-                    id="ai-embeddings-key"
-                    type="password"
-                    value={embeddingsKey}
-                    onChange={(e) => {
-                      setEmbeddingsKey(e.target.value);
-                      setEmbeddingsKeyEdited(true);
-                    }}
-                    onFocus={() => {
-                      if (!embeddingsKeyEdited && hasStoredEmbeddingsKey) {
-                        setEmbeddingsKey('');
+                  </summary>
+                  <div className="space-y-2 border-t border-border p-3">
+                    <Label htmlFor="ai-embeddings-key">{t('embeddingsKey')}</Label>
+                    <Input
+                      id="ai-embeddings-key"
+                      type="password"
+                      value={embeddingsKey}
+                      onChange={(e) => {
+                        setEmbeddingsKey(e.target.value);
                         setEmbeddingsKeyEdited(true);
-                      }
-                    }}
-                    placeholder="sk-... (OpenAI)"
-                    disabled={disabled}
-                    autoComplete="off"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {t('embeddingsHint', {
-                      sameKeyText: provider === 'openai' ? t('sameKeyText') : '',
-                    })}
-                  </p>
+                      }}
+                      onFocus={() => {
+                        if (!embeddingsKeyEdited && hasStoredEmbeddingsKey) {
+                          setEmbeddingsKey('');
+                          setEmbeddingsKeyEdited(true);
+                        }
+                      }}
+                      placeholder="sk-... (OpenAI)"
+                      disabled={disabled}
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t('embeddingsHint', { sameKeyText: t('sameKeyText') })}
+                    </p>
+                  </div>
+                </details>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 2. Tu negocio */}
+          <Card className="@container min-[1900px]:col-start-2 min-[1900px]:row-start-1">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-base">
+                <StepBadge n={2} /> {L.step2Title}
+              </CardTitle>
+              <CardDescription>{L.step2Desc}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Label htmlFor="ai-prompt">{t('businessContext')}</Label>
+              <Textarea
+                id="ai-prompt"
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
+                placeholder={t('promptPlaceholder')}
+                rows={8}
+                className="min-h-40"
+                disabled={disabled}
+              />
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">{L.tipsLabel}</p>
+                <div className="flex flex-wrap gap-2">
+                  {L.tips.map((tip) => (
+                    <button
+                      key={tip.label}
+                      type="button"
+                      onClick={() => addTip(tip.text)}
+                      disabled={disabled}
+                      className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary disabled:opacity-60"
+                    >
+                      <Plus className="h-3 w-3" /> {tip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 3. Modo de trabajo */}
+          <Card className="@container min-[1900px]:col-start-1 min-[1900px]:row-start-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-base">
+                <StepBadge n={3} /> {L.step3Title}
+              </CardTitle>
+              <CardDescription>{L.step3Desc}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div
+                role="radiogroup"
+                aria-label={L.step3Title}
+                className="grid gap-3 @2xl:grid-cols-3"
+              >
+                {modeOptions.map((m) => {
+                  const Icon = m.icon;
+                  const active = mode === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      disabled={disabled}
+                      onClick={() => changeMode(m.id)}
+                      className={cn(
+                        'relative flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors disabled:opacity-60',
+                        active
+                          ? 'border-primary bg-primary/10 ring-1 ring-primary/40'
+                          : 'border-border hover:bg-muted/50',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'flex h-9 w-9 items-center justify-center rounded-lg',
+                          active
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground',
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {m.title}
+                      </span>
+                      <span className="text-xs leading-relaxed text-muted-foreground">
+                        {m.desc}
+                      </span>
+                      {active && (
+                        <Check className="absolute right-3 top-3 h-4 w-4 text-primary" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {mode === 'auto' && (
+                <div className="space-y-4 rounded-xl border border-border bg-muted/30 p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {L.limitsTitle}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t('autoReplyDesc')}
+                    </p>
+                  </div>
+                  <div className="grid gap-5 @xl:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="ai-max">{t('maxAutoReplies')}</Label>
+                      <p className="text-xs text-muted-foreground">
+                        {t('maxAutoRepliesDesc')}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          aria-label="-"
+                          onClick={() => setMaxPerConversation((v) => Math.max(1, v - 1))}
+                          disabled={disabled || maxPerConversation <= 1}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <Input
+                          id="ai-max"
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={maxPerConversation}
+                          onChange={(e) =>
+                            setMaxPerConversation(
+                              Math.min(20, Math.max(1, Number(e.target.value) || 1)),
+                            )
+                          }
+                          disabled={disabled}
+                          className="w-16 text-center"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          aria-label="+"
+                          onClick={() => setMaxPerConversation((v) => Math.min(20, v + 1))}
+                          disabled={disabled || maxPerConversation >= 20}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="ai-handoff">{t('handoffTo')}</Label>
+                      <p className="text-xs text-muted-foreground">{t('handoffToDesc')}</p>
+                      <Select
+                        value={handoffAgentId || HANDOFF_QUEUE}
+                        onValueChange={(v) =>
+                          setHandoffAgentId(!v || v === HANDOFF_QUEUE ? '' : v)
+                        }
+                        disabled={disabled}
+                      >
+                        <SelectTrigger id="ai-handoff">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={HANDOFF_QUEUE}>{t('handoffQueue')}</SelectItem>
+                          {members.map((m) => (
+                            <SelectItem key={m.user_id} value={m.user_id}>
+                              {memberLabel(m)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
           </Card>
-          <div className="min-[2200px]:order-3">
+
+          {/* Base de conocimientos */}
+          <div className="min-w-0 min-[1900px]:col-start-2 min-[1900px]:row-start-2 [&>*]:h-full">
             <AiKnowledgeCard
               accountId={accountId}
               canEdit={canEdit}
@@ -488,114 +896,6 @@ export function AiConfig() {
               }
             />
           </div>
-        </div>
-        <div className="min-[2200px]:order-2">
-          <Card className="@container">
-            <CardHeader>
-              <CardTitle className="text-base">{t('behaviour')}</CardTitle>
-              <CardDescription>
-                {t('behaviourDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="ai-prompt">{t('businessContext')}</Label>
-                <Textarea
-                  id="ai-prompt"
-                  value={systemPrompt}
-                  onChange={(e) => setSystemPrompt(e.target.value)}
-                  placeholder={t('promptPlaceholder')}
-                  rows={5}
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {t('enableAssistant')}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t('enableAssistantDesc')}
-                  </p>
-                </div>
-                <Switch
-                  checked={isActive}
-                  onCheckedChange={setIsActive}
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {t('autoReply')}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t('autoReplyDesc')}
-                  </p>
-                </div>
-                <Switch
-                  checked={autoReplyEnabled}
-                  onCheckedChange={setAutoReplyEnabled}
-                  disabled={disabled || !isActive}
-                />
-              </div>
-
-              <div className="grid gap-6 @xl:grid-cols-2">
-                <div className="space-y-2">
-                  <div>
-                    <Label htmlFor="ai-max">{t('maxAutoReplies')}</Label>
-                    <p className="text-xs text-muted-foreground">
-                      {t('maxAutoRepliesDesc')}
-                    </p>
-                  </div>
-                  <Input
-                    id="ai-max"
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={maxPerConversation}
-                    onChange={(e) =>
-                      setMaxPerConversation(
-                        Math.min(20, Math.max(1, Number(e.target.value) || 1)),
-                      )
-                    }
-                    disabled={disabled || !autoReplyEnabled}
-                    className="w-20"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ai-handoff">{t('handoffTo')}</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {t('handoffToDesc')}
-                  </p>
-                  <Select
-                    value={handoffAgentId || HANDOFF_QUEUE}
-                    onValueChange={(v) =>
-                      setHandoffAgentId(!v || v === HANDOFF_QUEUE ? '' : v)
-                    }
-                    disabled={disabled || !autoReplyEnabled}
-                  >
-                    <SelectTrigger id="ai-handoff">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={HANDOFF_QUEUE}>
-                        {t('handoffQueue')}
-                      </SelectItem>
-                      {members.map((m) => (
-                        <SelectItem key={m.user_id} value={m.user_id}>
-                          {memberLabel(m)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
