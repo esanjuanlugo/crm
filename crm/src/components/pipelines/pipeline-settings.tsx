@@ -28,11 +28,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import {
   Trash2,
   Plus,
   GripVertical,
   AlertTriangle,
+  Check,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -201,15 +204,22 @@ export function PipelineSettings({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-popover border-border max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg bg-popover border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-popover-foreground">{t("managePipeline")}</DialogTitle>
+          <DialogTitle className="flex items-center gap-3 text-base text-popover-foreground">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+              <Settings className="h-4 w-4" />
+            </span>
+            {t("managePipeline")}
+          </DialogTitle>
         </DialogHeader>
 
         {showDeleteConfirm ? (
           <div className="py-4">
-            <div className="flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
-              <AlertTriangle className="h-5 w-5 shrink-0 text-red-400" />
+            <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500/15">
+                <AlertTriangle className="h-5 w-5 text-red-400" />
+              </span>
               <div>
                 <p className="text-sm font-medium text-red-400">
                   {t("deletePipeline")}
@@ -240,16 +250,23 @@ export function PipelineSettings({
           <>
             <div className="grid gap-4 py-2">
               <div className="grid gap-2">
-                <Label className="text-muted-foreground">{t("pipelineName")}</Label>
+                <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("pipelineName")}
+                </Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="border-border bg-muted text-foreground"
+                  className="h-10 border-border bg-muted/60 text-base font-medium text-foreground"
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label className="text-muted-foreground">{t("stages")}</Label>
+                <Label className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("stages")}
+                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold normal-case tracking-normal text-foreground">
+                    {localStages.length}
+                  </span>
+                </Label>
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -264,6 +281,7 @@ export function PipelineSettings({
                         <SortableStageRow
                           key={stage.id}
                           stage={stage}
+                          index={index}
                           onNameChange={(v) => {
                             const updated = [...localStages];
                             updated[index] = { ...updated[index], name: v };
@@ -283,52 +301,55 @@ export function PipelineSettings({
                   </SortableContext>
                 </DndContext>
 
-                {/* Add new stage */}
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {STAGE_COLORS.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setNewStageColor(color)}
-                      className="h-5 w-5 rounded-full border-2 transition-transform hover:scale-110"
-                      style={{
-                        backgroundColor: color,
-                        borderColor:
-                          newStageColor === color
-                            ? "var(--foreground)"
-                            : "transparent",
+                {/* Agregar etapa */}
+                <div className="space-y-3 rounded-xl border border-dashed border-border/70 p-3">
+                  <div className="flex flex-wrap gap-1.5">
+                    {STAGE_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setNewStageColor(color)}
+                        className={cn(
+                          "flex h-6 w-6 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-popover transition-transform hover:scale-110",
+                          newStageColor === color ? "ring-foreground" : "ring-transparent",
+                        )}
+                        style={{ backgroundColor: color }}
+                        aria-label={"Pick color " + color}
+                      >
+                        {newStageColor === color && (
+                          <Check className="h-3 w-3 text-white" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={newStageName}
+                      onChange={(e) => setNewStageName(e.target.value)}
+                      placeholder={t("newStageNamePlaceholder")}
+                      className="border-border bg-muted/60 text-sm text-foreground"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleAddStage();
                       }}
-                      aria-label={`Pick color ${color}`}
                     />
-                  ))}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={newStageName}
-                    onChange={(e) => setNewStageName(e.target.value)}
-                    placeholder={t("newStageNamePlaceholder")}
-                    className="border-border bg-muted text-sm text-foreground"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleAddStage();
-                    }}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddStage}
-                    disabled={!newStageName.trim()}
-                    className="shrink-0 border-border bg-transparent text-muted-foreground hover:bg-muted"
-                  >
-                    <Plus className="mr-1 h-3 w-3" />
-                    {t("add")}
-                  </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddStage}
+                      disabled={!newStageName.trim()}
+                      className="shrink-0 border-primary/40 bg-transparent text-primary hover:bg-primary/10 hover:text-primary"
+                    >
+                      <Plus className="mr-1 h-3 w-3" />
+                      {t("add")}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={onCreateNewPipeline}
-                className="w-full border-border bg-transparent text-muted-foreground hover:bg-muted"
+                className="w-full text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <Plus className="mr-1 h-3 w-3" />
                 {t("createNewPipeline")}
@@ -337,9 +358,11 @@ export function PipelineSettings({
 
             <DialogFooter className="border-border bg-popover/50">
               <Button
+                variant="ghost"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="mr-auto bg-red-600 text-white hover:bg-red-700"
+                className="mr-auto text-red-400 hover:bg-red-500/10 hover:text-red-300"
               >
+                <Trash2 className="mr-1.5 h-4 w-4" />
                 {t("deletePipeline")}
               </Button>
               <Button
@@ -366,6 +389,7 @@ export function PipelineSettings({
 
 function SortableStageRow({
   stage,
+  index,
   onNameChange,
   onColorChange,
   onRemove,
@@ -373,6 +397,7 @@ function SortableStageRow({
   t,
 }: {
   stage: PipelineStage;
+  index: number;
   onNameChange: (v: string) => void;
   onColorChange: (v: string) => void;
   onRemove: () => void;
@@ -393,30 +418,36 @@ function SortableStageRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 rounded-lg border border-border bg-muted p-2"
+      className={cn(
+        "group flex items-center gap-2 rounded-xl border border-border/60 bg-muted/40 p-2 pl-1.5 transition-colors hover:bg-muted/70",
+        isDragging && "shadow-lg ring-1 ring-primary/40",
+      )}
     >
       <button
         type="button"
         {...attributes}
         {...listeners}
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
+        className="flex h-8 w-6 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground active:cursor-grabbing"
         aria-label={t("dragToReorder")}
       >
         <GripVertical className="h-4 w-4" />
       </button>
+      <span className="w-4 shrink-0 text-center text-[11px] font-semibold text-muted-foreground">
+        {index + 1}
+      </span>
       <ColorSwatch value={stage.color} onChange={onColorChange} colors={colors} t={t} />
       <Input
         value={stage.name}
         onChange={(e) => onNameChange(e.target.value)}
-        className="h-7 flex-1 border-transparent bg-transparent text-sm text-foreground focus:border-border"
+        className="h-8 flex-1 border-transparent bg-transparent text-sm font-medium text-foreground focus:border-border"
       />
       <Button
         variant="ghost"
         size="icon-xs"
         onClick={onRemove}
-        className="text-muted-foreground hover:text-red-400"
+        className="text-muted-foreground hover:bg-red-500/10 hover:text-red-400"
       >
-        <Trash2 className="h-3 w-3" />
+        <Trash2 className="h-3.5 w-3.5" />
       </Button>
     </div>
   );
@@ -440,14 +471,14 @@ function ColorSwatch({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="h-4 w-4 rounded-full border border-border"
+        className="h-5 w-5 rounded-full border-2 border-white/20 shadow-sm transition-transform hover:scale-110"
         style={{ backgroundColor: value }}
         aria-label={t("changeColor")}
       />
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-6 z-20 flex flex-wrap gap-1 rounded-lg border border-border bg-popover p-2 shadow-lg w-36">
+          <div className="absolute left-0 top-7 z-20 grid w-40 grid-cols-5 gap-2 rounded-xl border border-border bg-popover p-3 shadow-xl">
             {colors.map((c) => (
               <button
                 key={c}
@@ -456,13 +487,14 @@ function ColorSwatch({
                   onChange(c);
                   setOpen(false);
                 }}
-                className="h-5 w-5 rounded-full border-2 transition-transform hover:scale-110"
-                style={{
-                  backgroundColor: c,
-                  borderColor:
-                    c === value ? "var(--foreground)" : "transparent",
-                }}
-              />
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-popover transition-transform hover:scale-110",
+                  c === value ? "ring-foreground" : "ring-transparent",
+                )}
+                style={{ backgroundColor: c }}
+              >
+                {c === value && <Check className="h-3 w-3 text-white" />}
+              </button>
             ))}
           </div>
         </>
