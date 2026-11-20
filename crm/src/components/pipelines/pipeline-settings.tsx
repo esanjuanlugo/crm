@@ -345,15 +345,6 @@ export function PipelineSettings({
                   </div>
                 </div>
               </div>
-
-              <Button
-                variant="ghost"
-                onClick={onCreateNewPipeline}
-                className="w-full text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Plus className="mr-1 h-3 w-3" />
-                {t("createNewPipeline")}
-              </Button>
             </div>
 
             <DialogFooter className="border-border bg-popover/50">
