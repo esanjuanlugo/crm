@@ -14,15 +14,17 @@ import type {
   Profile,
 } from "@/types";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   Check,
   X,
@@ -30,6 +32,7 @@ import {
   MessageSquare,
   DollarSign,
   Loader2,
+  Briefcase,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -245,36 +248,45 @@ export function DealForm({
     onSaved();
   }
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="bg-popover border-border text-popover-foreground sm:max-w-lg w-full p-0"
-      >
-        <div className="flex h-full flex-col">
-          <SheetHeader className="border-b border-border/50 p-4">
-            <SheetTitle className="text-popover-foreground">
-              {deal ? t("editDeal") : t("newDeal")}
-            </SheetTitle>
-          </SheetHeader>
+  const labelClass =
+    "text-xs font-medium uppercase tracking-wide text-muted-foreground";
+  const fieldClass = "h-10 border-border bg-muted/60 text-foreground";
+  const selectClass =
+    "h-10 w-full rounded-lg border border-border bg-muted/60 px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary";
+  const stageColor = stages.find((s) => s.id === stageId)?.color;
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            <div className="grid gap-2">
-              <Label className="text-muted-foreground">{t("title")}</Label>
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex flex-col gap-0 overflow-hidden border-border bg-popover p-0 text-popover-foreground sm:max-w-2xl">
+        <DialogHeader className="border-b border-border/50 px-5 py-4 pr-12">
+          <DialogTitle className="flex items-center gap-3 text-base text-popover-foreground">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+              <Briefcase className="h-4 w-4" />
+            </span>
+            {deal ? t("editDeal") : t("newDeal")}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+          <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
+            {/* Titulo */}
+            <div className="grid gap-2 sm:col-span-2">
+              <Label className={labelClass}>{t("title")}</Label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t("titlePlaceholder")}
-                className="border-border bg-muted text-foreground"
+                className="h-11 border-border bg-muted/60 text-base font-medium text-foreground"
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label className="text-muted-foreground">{t("contact")}</Label>
+            {/* Contacto */}
+            <div className="grid content-start gap-2">
+              <Label className={labelClass}>{t("contact")}</Label>
               <select
                 value={contactId}
                 onChange={(e) => setContactId(e.target.value)}
-                className="h-9 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className={selectClass}
               >
                 <option value="">{t("selectContact")}</option>
                 {contacts.map((c) => (
@@ -287,7 +299,7 @@ export function DealForm({
               {linkedConversation && (
                 <Link
                   href="/inbox"
-                  className="mt-1 inline-flex items-center gap-1.5 self-start rounded-md bg-primary/10 px-2 py-1 text-xs text-primary hover:bg-primary/20"
+                  className="inline-flex items-center gap-1.5 self-start rounded-md bg-primary/10 px-2 py-1 text-xs text-primary hover:bg-primary/20"
                 >
                   <MessageSquare className="h-3 w-3" />
                   {t("linkToConversation")}
@@ -295,67 +307,13 @@ export function DealForm({
               )}
             </div>
 
-            <div className="grid grid-cols-[1fr_110px] gap-3">
-              <div className="grid gap-2">
-                <Label className="text-muted-foreground">{t("value")}</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type="number"
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    placeholder="0"
-                    className="border-border bg-muted pl-7 text-foreground"
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-muted-foreground">{t("currency")}</Label>
-                <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="h-9 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary"
-                >
-                  {CURRENCIES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.code}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <Label className="text-muted-foreground">{t("expectedCloseDate")}</Label>
-              <Input
-                type="date"
-                value={expectedCloseDate}
-                onChange={(e) => setExpectedCloseDate(e.target.value)}
-                className="border-border bg-muted text-foreground"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label className="text-muted-foreground">{t("stage")}</Label>
-              <select
-                value={stageId}
-                onChange={(e) => setStageId(e.target.value)}
-                className="h-9 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary"
-              >
-                {stages.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label className="text-muted-foreground">{t("assignedTo")}</Label>
+            {/* Asignado a */}
+            <div className="grid content-start gap-2">
+              <Label className={labelClass}>{t("assignedTo")}</Label>
               <select
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value)}
-                className="h-9 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary"
+                className={selectClass}
               >
                 <option value="">{t("unassigned")}</option>
                 {profiles.map((p) => (
@@ -366,21 +324,85 @@ export function DealForm({
               </select>
             </div>
 
-            <div className="grid gap-2">
-              <Label className="text-muted-foreground">{t("notes")}</Label>
+            {/* Etapa (con el color de la etapa) */}
+            <div className="grid content-start gap-2">
+              <Label className={labelClass}>{t("stage")}</Label>
+              <div className="relative">
+                <span
+                  className="pointer-events-none absolute left-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full"
+                  style={{ backgroundColor: stageColor }}
+                />
+                <select
+                  value={stageId}
+                  onChange={(e) => setStageId(e.target.value)}
+                  className={cn(selectClass, "pl-8")}
+                >
+                  {stages.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Fecha estimada de cierre */}
+            <div className="grid content-start gap-2">
+              <Label className={labelClass}>{t("expectedCloseDate")}</Label>
+              <Input
+                type="date"
+                value={expectedCloseDate}
+                onChange={(e) => setExpectedCloseDate(e.target.value)}
+                className={fieldClass}
+              />
+            </div>
+
+            {/* Valor y moneda */}
+            <div className="grid grid-cols-[1fr_7rem] gap-3 sm:col-span-2">
+              <div className="grid gap-2">
+                <Label className={labelClass}>{t("value")}</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    placeholder="0"
+                    className="h-10 border-border bg-muted/60 pl-8 text-foreground"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label className={labelClass}>{t("currency")}</Label>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className={selectClass}
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Notas */}
+            <div className="grid gap-2 sm:col-span-2">
+              <Label className={labelClass}>{t("notes")}</Label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder={t("notesPlaceholder")}
-                className="min-h-[100px] border-border bg-muted text-foreground"
+                className="min-h-24 border-border bg-muted/60 text-foreground"
               />
             </div>
 
+            {/* Estado (solo al editar) */}
             {deal && (
-              <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-3">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  {t("status")}
-                </p>
+              <div className="space-y-3 rounded-xl border border-border/60 bg-muted/40 p-4 sm:col-span-2">
+                <p className={labelClass}>{t("status")}</p>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -399,9 +421,10 @@ export function DealForm({
                   </Button>
                   <Button
                     type="button"
+                    variant="outline"
                     onClick={() => handleStatusChange("lost")}
                     disabled={!!statusAction || deal.status === "lost"}
-                    className="flex-1 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                    className="flex-1 border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:opacity-50"
                   >
                     {statusAction === "lost" ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -427,61 +450,59 @@ export function DealForm({
               </div>
             )}
           </div>
-
-          <div className="border-t border-border/50 bg-popover/80 p-4">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="flex-1 border-border bg-transparent text-muted-foreground hover:bg-muted"
-              >
-                {t("cancel")}
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={saving || !title.trim() || !contactId || !stageId}
-                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {saving ? t("saving") : deal ? t("saveChanges") : t("createDeal")}
-              </Button>
-            </div>
-
-            {deal &&
-              (confirmDelete ? (
-                <div className="mt-3 flex items-center justify-between gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
-                  <span className="text-red-300">{t("deletePrompt")}</span>
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDelete(false)}
-                      disabled={deleting}
-                      className="rounded px-2 py-1 text-muted-foreground hover:bg-muted"
-                    >
-                      {t("cancel")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDelete}
-                      disabled={deleting}
-                      className="rounded bg-red-600 px-2 py-1 font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                    >
-                      {deleting ? t("deleting") : t("confirm")}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(true)}
-                  className="mt-3 flex w-full items-center justify-center gap-1 text-xs text-red-400 hover:text-red-300"
-                >
-                  <Trash2 className="h-3 w-3" />
-                  {t("deleteDeal")}
-                </button>
-              ))}
-          </div>
         </div>
-      </SheetContent>
-    </Sheet>
+
+        <DialogFooter className="mx-0 mb-0 border-border bg-popover/50 px-5 py-4 sm:items-center">
+          {deal &&
+            (confirmDelete ? (
+              <div className="flex flex-1 flex-wrap items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs sm:mr-2">
+                <span className="text-red-300">{t("deletePrompt")}</span>
+                <div className="ml-auto flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    disabled={deleting}
+                    className="rounded px-2 py-1 text-muted-foreground hover:bg-muted"
+                  >
+                    {t("cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="rounded bg-red-600 px-2 py-1 font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {deleting ? t("deleting") : t("confirm")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setConfirmDelete(true)}
+                className="text-red-400 hover:bg-red-500/10 hover:text-red-300 sm:mr-auto"
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                {t("deleteDeal")}
+              </Button>
+            ))}
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="border-border bg-transparent text-muted-foreground hover:bg-muted"
+          >
+            {t("cancel")}
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saving || !title.trim() || !contactId || !stageId}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {saving ? t("saving") : deal ? t("saveChanges") : t("createDeal")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
