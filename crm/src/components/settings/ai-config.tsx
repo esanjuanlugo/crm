@@ -9,7 +9,7 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  Power,
+  Maximize2,
   PenLine,
   Zap,
   Plus,
@@ -36,6 +36,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { SettingsPanelHead } from './settings-panel-head';
 import { AiKnowledgeCard } from './ai-knowledge';
 import { AI_PROVIDER_DEFAULT_MODEL } from '@/lib/ai/defaults';
@@ -62,8 +69,6 @@ const KEY_PLACEHOLDER: Record<AiProvider, string> = {
   anthropic: 'sk-ant-...',
   custom: '',
 };
-
-type AiMode = 'off' | 'draft' | 'auto';
 
 const COPY_ES = {
   summaryTitle: 'Resumen',
@@ -99,15 +104,20 @@ const COPY_ES = {
   ],
   step3Title: '¿Cómo quieres que trabaje?',
   step3Desc:
-    'Elige cuánto participa la IA en tus conversaciones. Puedes cambiarlo cuando quieras.',
+    'Activa lo que necesites. Puedes combinar ambas opciones y cambiarlas cuando quieras.',
   modeOff: 'Apagado',
-  modeOffDesc: 'La IA no participa. Tus conversaciones siguen siendo 100 % manuales.',
   modeDraft: 'Solo borradores',
-  modeDraftDesc:
-    'Tú decides: la IA sugiere una respuesta con el botón «Borrador con IA» y tú la envías.',
-  modeAuto: 'Responde sola',
-  modeAutoDesc:
-    'Contesta los mensajes nuevos y pasa la conversación a una persona cuando no puede ayudar.',
+  modeBoth: 'Borradores y respuesta automática',
+  draftTitle: 'Borradores con IA',
+  draftDesc:
+    'La IA sugiere una respuesta con el botón «Borrador con IA» en la bandeja y tú decides si la envías.',
+  autoTitle: 'Respuesta automática',
+  autoDesc:
+    'Contesta sola los mensajes nuevos y pasa la conversación a una persona cuando no puede ayudar. Activa también los borradores.',
+  expand: 'Ver completo',
+  contextDialogDesc: 'Edita todo el contexto con más espacio. Los cambios se aplican al guardar.',
+  chars: 'caracteres',
+  done: 'Listo',
   limitsTitle: 'Cuándo pasa a una persona',
 };
 
@@ -145,15 +155,20 @@ const COPY_EN: typeof COPY_ES = {
   ],
   step3Title: 'How should it work?',
   step3Desc:
-    'Choose how much the AI takes part in your conversations. You can change it any time.',
+    'Turn on what you need. You can combine both options and change them any time.',
   modeOff: 'Off',
-  modeOffDesc: 'The AI does not take part. Your conversations stay 100% manual.',
   modeDraft: 'Drafts only',
-  modeDraftDesc:
-    'You decide: the AI suggests a reply with the "AI draft" button and you send it.',
-  modeAuto: 'Replies on its own',
-  modeAutoDesc:
-    'Answers new messages and hands the conversation to a person when it cannot help.',
+  modeBoth: 'Drafts and automatic replies',
+  draftTitle: 'AI drafts',
+  draftDesc:
+    'The AI suggests a reply with the "AI draft" button in the inbox and you decide whether to send it.',
+  autoTitle: 'Automatic replies',
+  autoDesc:
+    'Answers new messages on its own and hands the conversation to a person when it cannot help. Also turns on drafts.',
+  expand: 'View full',
+  contextDialogDesc: 'Edit the whole context with more room. Changes apply when you save.',
+  chars: 'characters',
+  done: 'Done',
   limitsTitle: 'When it hands off to a person',
 };
 
@@ -223,6 +238,7 @@ export function AiConfig() {
   // Empty string = leave unassigned (shared queue).
   const [handoffAgentId, setHandoffAgentId] = useState('');
   const [members, setMembers] = useState<AccountMember[]>([]);
+  const [contextOpen, setContextOpen] = useState(false);
 
   // Guard keyed on the account (not a bare boolean) so an in-place
   // account switch — ownership transfer, multi-account membership —
@@ -413,15 +429,20 @@ export function AiConfig() {
   const disabled = !canEdit || saving;
   const L = locale === 'es' ? COPY_ES : COPY_EN;
 
-  const mode: AiMode = !isActive ? 'off' : autoReplyEnabled ? 'auto' : 'draft';
-  const changeMode = (next: AiMode) => {
-    setIsActive(next !== 'off');
-    setAutoReplyEnabled(next === 'auto');
+  // Borradores = asistente activo. La respuesta automatica necesita el asistente:
+  // al encenderla se enciende tambien, y al apagar el asistente se apaga ella.
+  const toggleDraft = (on: boolean) => {
+    setIsActive(on);
+    if (!on) setAutoReplyEnabled(false);
+  };
+  const toggleAuto = (on: boolean) => {
+    setAutoReplyEnabled(on);
+    if (on) setIsActive(true);
   };
 
   const keyReady = hasStoredKey || (keyEdited && apiKey.trim().length > 0);
   const hasContext = systemPrompt.trim().length > 0;
-  const stepsDone = [keyReady, hasContext, mode !== 'off'].filter(Boolean).length;
+  const stepsDone = [keyReady, hasContext, isActive].filter(Boolean).length;
 
   const providerShown =
     provider === 'custom'
@@ -436,12 +457,25 @@ export function AiConfig() {
     { id: 'custom', label: t('providerCustom') },
   ];
 
-  const modeOptions = [
-    { id: 'off' as AiMode, icon: Power, title: L.modeOff, desc: L.modeOffDesc },
-    { id: 'draft' as AiMode, icon: PenLine, title: L.modeDraft, desc: L.modeDraftDesc },
-    { id: 'auto' as AiMode, icon: Zap, title: L.modeAuto, desc: L.modeAutoDesc },
+  const modeTitle = !isActive ? L.modeOff : autoReplyEnabled ? L.modeBoth : L.modeDraft;
+  const toggleOptions = [
+    {
+      id: 'draft',
+      icon: PenLine,
+      title: L.draftTitle,
+      desc: L.draftDesc,
+      on: isActive,
+      toggle: toggleDraft,
+    },
+    {
+      id: 'auto',
+      icon: Zap,
+      title: L.autoTitle,
+      desc: L.autoDesc,
+      on: autoReplyEnabled,
+      toggle: toggleAuto,
+    },
   ];
-  const modeTitle = modeOptions.find((m) => m.id === mode)?.title ?? '';
 
   const addTip = (text: string) =>
     setSystemPrompt((prev) => {
@@ -511,8 +545,8 @@ export function AiConfig() {
                   label={L.rowContext}
                   value={hasContext ? L.defined : L.empty}
                 />
-                <StatusRow ok={mode !== 'off'} label={L.rowMode} value={modeTitle} />
-                {mode === 'auto' && (
+                <StatusRow ok={isActive} label={L.rowMode} value={modeTitle} />
+                {autoReplyEnabled && (
                   <StatusRow
                     ok
                     label={L.rowHandoff}
@@ -716,16 +750,28 @@ export function AiConfig() {
               <CardDescription>{L.step2Desc}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Label htmlFor="ai-prompt">{t('businessContext')}</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="ai-prompt">{t('businessContext')}</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setContextOpen(true)}
+                >
+                  <Maximize2 className="mr-1.5 h-3.5 w-3.5" /> {L.expand}
+                </Button>
+              </div>
               <Textarea
                 id="ai-prompt"
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 placeholder={t('promptPlaceholder')}
-                rows={8}
-                className="min-h-40"
+                className="field-sizing-fixed h-64 resize-none overflow-y-auto"
                 disabled={disabled}
               />
+              <p className="text-right text-xs text-muted-foreground">
+                {systemPrompt.length} {L.chars}
+              </p>
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">{L.tipsLabel}</p>
                 <div className="flex flex-wrap gap-2">
@@ -754,54 +800,61 @@ export function AiConfig() {
               <CardDescription>{L.step3Desc}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div
-                role="radiogroup"
-                aria-label={L.step3Title}
-                className="grid gap-3 @2xl:grid-cols-3"
-              >
-                {modeOptions.map((m) => {
-                  const Icon = m.icon;
-                  const active = mode === m.id;
+              <div className="grid gap-3 @xl:grid-cols-2">
+                {toggleOptions.map((o) => {
+                  const Icon = o.icon;
                   return (
                     <button
-                      key={m.id}
+                      key={o.id}
                       type="button"
-                      role="radio"
-                      aria-checked={active}
+                      role="switch"
+                      aria-checked={o.on}
                       disabled={disabled}
-                      onClick={() => changeMode(m.id)}
+                      onClick={() => o.toggle(!o.on)}
                       className={cn(
-                        'relative flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors disabled:opacity-60',
-                        active
+                        'flex flex-col items-start gap-3 rounded-xl border p-4 text-left transition-colors disabled:opacity-60',
+                        o.on
                           ? 'border-primary bg-primary/10 ring-1 ring-primary/40'
                           : 'border-border hover:bg-muted/50',
                       )}
                     >
-                      <span
-                        className={cn(
-                          'flex h-9 w-9 items-center justify-center rounded-lg',
-                          active
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-muted-foreground',
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
+                      <span className="flex w-full items-center justify-between gap-3">
+                        <span
+                          className={cn(
+                            'flex h-9 w-9 items-center justify-center rounded-lg',
+                            o.on
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground',
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <span
+                          className={cn(
+                            'relative h-5 w-9 shrink-0 rounded-full transition-colors',
+                            o.on ? 'bg-primary' : 'bg-muted-foreground/30',
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all',
+                              o.on ? 'left-[1.125rem]' : 'left-0.5',
+                            )}
+                          />
+                        </span>
                       </span>
                       <span className="text-sm font-semibold text-foreground">
-                        {m.title}
+                        {o.title}
                       </span>
                       <span className="text-xs leading-relaxed text-muted-foreground">
-                        {m.desc}
+                        {o.desc}
                       </span>
-                      {active && (
-                        <Check className="absolute right-3 top-3 h-4 w-4 text-primary" />
-                      )}
                     </button>
                   );
                 })}
               </div>
 
-              {mode === 'auto' && (
+              {autoReplyEnabled && (
                 <div className="space-y-4 rounded-xl border border-border bg-muted/30 p-4">
                   <div>
                     <p className="text-sm font-semibold text-foreground">
@@ -898,6 +951,27 @@ export function AiConfig() {
           </div>
         </div>
       </div>
+      <Dialog open={contextOpen} onOpenChange={setContextOpen}>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-4 sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{t('businessContext')}</DialogTitle>
+            <DialogDescription>{L.contextDialogDesc}</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            placeholder={t('promptPlaceholder')}
+            className="field-sizing-fixed h-[60vh] resize-none overflow-y-auto"
+            disabled={disabled}
+          />
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-muted-foreground">
+              {systemPrompt.length} {L.chars}
+            </span>
+            <Button onClick={() => setContextOpen(false)}>{L.done}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
