@@ -417,7 +417,6 @@ export default function PipelinesPage() {
             stages={stages}
             deals={deals}
             onDealMoved={handleDealMoved}
-            onAddDeal={handleAddDeal}
             onEditDeal={handleEditDeal}
           />
         </>
