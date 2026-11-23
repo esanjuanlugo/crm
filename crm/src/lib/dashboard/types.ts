@@ -34,6 +34,13 @@ export interface PipelineDonutData {
   totalValue: number
 }
 
+/** Datos de la grafica de un embudo concreto (una entrada por embudo). */
+export interface PipelineDonutByPipeline {
+  id: string
+  name: string
+  data: PipelineDonutData
+}
+
 export interface ResponseTimeBucket {
   /** 0 = Mon … 6 = Sun (Monday-first). */
   dow: number

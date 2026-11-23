@@ -15,14 +15,14 @@ import {
   loadActivity,
   loadConversationsSeries,
   loadMetrics,
-  loadPipelineDonut,
+  loadPipelineDonuts,
   loadResponseTime,
 } from '@/lib/dashboard/queries'
 import type {
   ActivityItem,
   ConversationsSeriesPoint,
   MetricsBundle,
-  PipelineDonutData,
+  PipelineDonutByPipeline,
   ResponseTimeSummary,
 } from '@/lib/dashboard/types'
 
@@ -55,7 +55,7 @@ export default function DashboardPage() {
   })
   const [seriesLoading, setSeriesLoading] = useState(true)
 
-  const [pipeline, setPipeline] = useState<PipelineDonutData | null>(null)
+  const [pipelines, setPipelines] = useState<PipelineDonutByPipeline[] | null>(null)
   const [pipelineLoading, setPipelineLoading] = useState(true)
 
   const [responseTime, setResponseTime] = useState<ResponseTimeSummary | null>(null)
@@ -80,8 +80,8 @@ export default function DashboardPage() {
       .catch((err) => console.error('[dashboard] series failed:', err))
       .finally(() => setSeriesLoading(false))
 
-    void loadPipelineDonut(db)
-      .then((p) => setPipeline(p))
+    void loadPipelineDonuts(db)
+      .then((p) => setPipelines(p))
       .catch((err) => console.error('[dashboard] pipeline failed:', err))
       .finally(() => setPipelineLoading(false))
 
@@ -209,7 +209,7 @@ export default function DashboardPage() {
         </div>
         <div className="h-full lg:col-span-2">
           <PipelineDonut
-            data={pipeline}
+            pipelines={pipelines}
             loading={pipelineLoading}
             currency={defaultCurrency}
           />

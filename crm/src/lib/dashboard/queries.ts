@@ -11,6 +11,7 @@ import type {
   ActivityItem,
   ConversationsSeriesPoint,
   MetricsBundle,
+  PipelineDonutByPipeline,
   PipelineDonutData,
   PipelineStageSlice,
   ResponseTimeBucket,
@@ -165,6 +166,53 @@ export async function loadPipelineDonut(db: DB): Promise<PipelineDonutData> {
     stages: slices,
     totalValue: slices.reduce((sum, s) => sum + s.totalValue, 0),
   }
+}
+
+// Igual que loadPipelineDonut pero separado por embudo: cada embudo trae SUS
+// etapas (incluidas las vacias, para poder mostrar el embudo completo).
+export async function loadPipelineDonuts(db: DB): Promise<PipelineDonutByPipeline[]> {
+  const [pipelinesRes, stagesRes, dealsRes] = await Promise.all([
+    db.from('pipelines').select('id, name').order('created_at'),
+    db.from('pipeline_stages').select('id, name, color, pipeline_id, position').order('position'),
+    db.from('deals').select('stage_id, value, status').eq('status', 'open'),
+  ])
+
+  const pipelines = (pipelinesRes.data ?? []) as { id: string; name: string }[]
+  const stages = (stagesRes.data ?? []) as {
+    id: string
+    name: string
+    color: string
+    pipeline_id: string
+  }[]
+  const deals = (dealsRes.data ?? []) as { stage_id: string; value: number | null }[]
+
+  const byStage = new Map<string, { count: number; total: number }>()
+  for (const d of deals) {
+    const row = byStage.get(d.stage_id) ?? { count: 0, total: 0 }
+    row.count += 1
+    row.total += d.value ?? 0
+    byStage.set(d.stage_id, row)
+  }
+
+  return pipelines.map((p) => {
+    const slices: PipelineStageSlice[] = stages
+      .filter((s) => s.pipeline_id === p.id)
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        color: s.color || '#64748b',
+        dealCount: byStage.get(s.id)?.count ?? 0,
+        totalValue: byStage.get(s.id)?.total ?? 0,
+      }))
+    return {
+      id: p.id,
+      name: p.name,
+      data: {
+        stages: slices,
+        totalValue: slices.reduce((sum, s) => sum + s.totalValue, 0),
+      },
+    }
+  })
 }
 
 // --- 4. Tiempo de respuesta por día de la semana ------------------------
