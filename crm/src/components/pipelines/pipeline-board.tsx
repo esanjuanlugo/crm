@@ -54,7 +54,10 @@ export function PipelineBoard({
   }, [sortedStages, deals]);
 
   const grandTotal = useMemo(
-    () => deals.reduce((s, d) => s + Number(d.value || 0), 0),
+    () =>
+      deals
+        .filter((d) => d.status !== "lost")
+        .reduce((s, d) => s + Number(d.value || 0), 0),
     [deals],
   );
 
@@ -114,10 +117,10 @@ export function PipelineBoard({
             stageDeals
               .filter((d) => d.status !== "won" && d.status !== "lost")
               .reduce((s, d) => s + Number(d.value || 0), 0) * probability;
-          const totalValue = stageDeals.reduce(
-            (s, d) => s + Number(d.value || 0),
-            0,
-          );
+          // Las perdidas no cuentan en el valor de la etapa ni en su porcentaje.
+          const totalValue = stageDeals
+            .filter((d) => d.status !== "lost")
+            .reduce((s, d) => s + Number(d.value || 0), 0);
           return (
             <StageColumn
               key={stage.id}
@@ -236,7 +239,7 @@ function StageColumn({
     // Mismo comportamiento responsivo de siempre: en movil cada columna mide
     // 85vw (se asoma la siguiente) y en lg+ se reparten el ancho.
     // El area soltable es la zona de tarjetas, no el encabezado.
-    <div className="flex w-[85vw] min-w-[260px] max-w-[320px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/50 shadow-sm lg:w-auto lg:max-w-none lg:flex-1 lg:basis-[260px] lg:shrink lg:snap-none">
+    <div className="flex w-[85vw] min-w-[260px] max-w-[320px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/50 shadow-sm lg:w-auto lg:min-w-[210px] lg:max-w-none lg:flex-1 lg:basis-[210px] lg:shrink lg:snap-none">
       <div
         className="px-4 pb-3 pt-4"
         style={{

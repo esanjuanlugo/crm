@@ -109,7 +109,7 @@ export function DealCard({ deal, stage, onEdit, isOverlay }: DealCardProps) {
         <span className="truncate text-xs text-muted-foreground">{contactLabel}</span>
       </div>
 
-      <div className="mt-3 flex items-end justify-between gap-2 border-t border-border/50 pt-3">
+      <div className="mt-3 flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5 border-t border-border/50 pt-3">
         <span className="text-base font-bold leading-none text-primary">
           {formatCurrency(deal.value, deal.currency)}
         </span>
