@@ -10,6 +10,8 @@ import {
   Trophy,
   XCircle,
   Info,
+  Percent,
+  Clock,
 } from "lucide-react";
 import {
   Tooltip,
@@ -19,35 +21,38 @@ import {
 } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency } from "@/lib/currency";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { computeStageProbability } from "@/lib/pipeline-probability";
 
 interface PipelineAnalyticsProps {
   stages: PipelineStage[];
   deals: Deal[];
 }
 
-/**
- * Weighted pipeline value: value × per-stage probability.
- * First stage ≈ 10%, stages interpolate up to 90% before the final stage,
- * final stage (Won) = 100%. Lost deals excluded.
- */
-function computeStageProbability(
-  stage: PipelineStage,
-  sortedStages: PipelineStage[],
-): number {
-  const n = sortedStages.length;
-  if (n <= 1) return 1;
-  const index = sortedStages.findIndex((s) => s.id === stage.id);
-  if (index < 0) return 0;
-  if (index === n - 1) return 1;
-  const slots = n - 1;
-  if (slots <= 1) return 0.1;
-  const t = index / (slots - 1);
-  return 0.1 + t * (0.9 - 0.1);
-}
+const COPY_ES = {
+  winRate: "Tasa de éxito",
+  winRateTip:
+    "Porcentaje de oportunidades cerradas que se ganaron: ganadas / (ganadas + perdidas), en todo el historial de este embudo.",
+  overdue: "Cierres vencidos",
+  overdueTip:
+    "Oportunidades abiertas cuya fecha estimada de cierre ya pasó. Conviene revisarlas o mover la fecha.",
+  probabilities: "Probabilidad de cada etapa en este embudo:",
+};
+
+const COPY_EN: typeof COPY_ES = {
+  winRate: "Win rate",
+  winRateTip:
+    "Share of closed deals that were won: won / (won + lost), over the whole history of this pipeline.",
+  overdue: "Overdue closes",
+  overdueTip:
+    "Open deals whose expected close date has already passed. Worth reviewing or moving the date.",
+  probabilities: "Probability of each stage in this pipeline:",
+};
 
 export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
   const t = useTranslations("Pipelines.analytics");
+  const locale = useLocale();
+  const L = locale === "es" ? COPY_ES : COPY_EN;
   const { defaultCurrency } = useAuth();
   const sortedStages = useMemo(
     () => [...stages].sort((a, b) => a.position - b.position),
@@ -83,6 +88,19 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
       (d) => d.status === "lost" && thisMonth(d),
     ).length;
 
+    const wonAll = deals.filter((d) => d.status === "won").length;
+    const lostAll = deals.filter((d) => d.status === "lost").length;
+    const winRate =
+      wonAll + lostAll > 0 ? Math.round((wonAll / (wonAll + lostAll)) * 100) : null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const overdue = openDeals.filter(
+      (d) =>
+        d.expected_close_date &&
+        new Date(d.expected_close_date.slice(0, 10) + "T00:00:00") < today,
+    ).length;
+
     return {
       totalCount,
       totalValue,
@@ -90,12 +108,24 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
       weightedValue,
       wonThisMonth,
       lostThisMonth,
+      winRate,
+      overdue,
     };
   }, [deals, sortedStages]);
 
+  const probText = sortedStages
+    .map(
+      (s) =>
+        s.name +
+        " " +
+        Math.round(computeStageProbability(s, sortedStages) * 100) +
+        " %",
+    )
+    .join(", ");
+
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-card/60 p-4 sm:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-card/60 p-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-8">
         <Metric
           icon={<BarChart3 className="h-4 w-4 text-muted-foreground" />}
           label={t("totalDeals")}
@@ -121,7 +151,7 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
           icon={<TrendingUp className="h-4 w-4 text-purple-400" />}
           label={t("weightedValue")}
           value={formatCurrency(stats.weightedValue, defaultCurrency)}
-          tooltip={t("weightedValueTooltip")}
+          tooltip={t("weightedValueTooltip") + " " + L.probabilities + " " + probText + "."}
           t={t}
         />
         <Metric
@@ -136,6 +166,20 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
           label={t("lostThisMonth")}
           value={String(stats.lostThisMonth)}
           tooltip={t("lostThisMonthTooltip")}
+          t={t}
+        />
+        <Metric
+          icon={<Percent className="h-4 w-4 text-emerald-400" />}
+          label={L.winRate}
+          value={stats.winRate === null ? "-" : stats.winRate + " %"}
+          tooltip={L.winRateTip}
+          t={t}
+        />
+        <Metric
+          icon={<Clock className="h-4 w-4 text-amber-400" />}
+          label={L.overdue}
+          value={String(stats.overdue)}
+          tooltip={L.overdueTip}
           t={t}
         />
       </div>

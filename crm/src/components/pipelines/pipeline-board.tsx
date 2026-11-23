@@ -19,7 +19,8 @@ import { DealCard } from "./deal-card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency } from "@/lib/currency";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { computeStageProbability } from "@/lib/pipeline-probability";
 
 interface PipelineBoardProps {
   stages: PipelineStage[];
@@ -108,6 +109,11 @@ export function PipelineBoard({
       <div className="pipeline-scroll flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 lg:snap-none">
         {sortedStages.map((stage) => {
           const stageDeals = dealsByStage.get(stage.id) ?? [];
+          const probability = computeStageProbability(stage, sortedStages);
+          const weighted =
+            stageDeals
+              .filter((d) => d.status !== "won" && d.status !== "lost")
+              .reduce((s, d) => s + Number(d.value || 0), 0) * probability;
           const totalValue = stageDeals.reduce(
             (s, d) => s + Number(d.value || 0),
             0,
@@ -119,6 +125,8 @@ export function PipelineBoard({
               deals={stageDeals}
               totalValue={totalValue}
               share={grandTotal > 0 ? totalValue / grandTotal : 0}
+              probability={probability}
+              weighted={weighted}
               currency={defaultCurrency}
               onEditDeal={onEditDeal}
             />
@@ -188,11 +196,25 @@ export function PipelineBoard({
   );
 }
 
+const COL_ES = {
+  ofValue: "del valor",
+  prob: "Prob.",
+  weighted: "Ponderado",
+};
+
+const COL_EN: typeof COL_ES = {
+  ofValue: "of value",
+  prob: "Prob.",
+  weighted: "Weighted",
+};
+
 function StageColumn({
   stage,
   deals,
   totalValue,
   share,
+  probability,
+  weighted,
   currency,
   onEditDeal,
 }: {
@@ -200,10 +222,14 @@ function StageColumn({
   deals: Deal[];
   totalValue: number;
   share: number;
+  probability: number;
+  weighted: number;
   currency: string;
   onEditDeal: (deal: Deal) => void;
 }) {
   const t = useTranslations("Pipelines.board");
+  const locale = useLocale();
+  const L = locale === "es" ? COL_ES : COL_EN;
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
 
   return (
@@ -241,15 +267,25 @@ function StageColumn({
         <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
           {formatCurrency(totalValue, currency)}
         </p>
-        <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted/60">
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: Math.round(share * 100) + "%",
-              backgroundColor: stage.color,
-            }}
-          />
+        <div className="mt-2 flex items-center gap-2">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted/60">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: Math.round(share * 100) + "%",
+                backgroundColor: stage.color,
+              }}
+            />
+          </div>
+          <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">
+            {Math.round(share * 100)} %{" "}
+            <span className="font-normal text-muted-foreground">{L.ofValue}</span>
+          </span>
         </div>
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
+          {L.prob} {Math.round(probability * 100)} % {"\u00b7"} {L.weighted}{" "}
+          {formatCurrency(weighted, currency)}
+        </p>
       </div>
 
       <div

@@ -4,7 +4,7 @@ import type { Deal, PipelineStage } from "@/types";
 import { Calendar, Check, X } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 interface DealCardProps {
   deal: Deal;
@@ -27,8 +27,36 @@ function initials(name?: string, fallback?: string) {
   return source.charAt(0).toUpperCase();
 }
 
+function closeDateInfo(deal: Deal, es: boolean) {
+  if (!deal.expected_close_date) return null;
+  // Solo las oportunidades abiertas se marcan como vencidas o proximas.
+  if (deal.status && deal.status !== "open") return null;
+  const due = new Date(deal.expected_close_date.slice(0, 10) + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((due.getTime() - today.getTime()) / 86400000);
+  if (days < 0) {
+    return {
+      tone: "overdue" as const,
+      label: es ? "Vencida hace " + Math.abs(days) + " d" : "Overdue by " + Math.abs(days) + " d",
+    };
+  }
+  if (days === 0) {
+    return { tone: "soon" as const, label: es ? "Vence hoy" : "Due today" };
+  }
+  if (days <= 3) {
+    return {
+      tone: "soon" as const,
+      label: es ? "Vence en " + days + " d" : "Due in " + days + " d",
+    };
+  }
+  return null;
+}
+
 export function DealCard({ deal, stage, onEdit, isOverlay }: DealCardProps) {
   const t = useTranslations("Pipelines.card");
+  const locale = useLocale();
+  const closeInfo = closeDateInfo(deal, locale === "es");
   const contactLabel = deal.contact?.name || deal.contact?.phone || t("noContact");
   const assigneeLabel = deal.assignee?.full_name || null;
 
@@ -87,9 +115,17 @@ export function DealCard({ deal, stage, onEdit, isOverlay }: DealCardProps) {
         </span>
         <div className="flex items-center gap-2">
           {deal.expected_close_date && (
-            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <span
+              title={formatDate(deal.expected_close_date)}
+              className={cn(
+                "flex items-center gap-1 text-[11px]",
+                closeInfo?.tone === "overdue" && "font-semibold text-red-400",
+                closeInfo?.tone === "soon" && "font-semibold text-amber-400",
+                !closeInfo && "text-muted-foreground",
+              )}
+            >
               <Calendar className="h-3 w-3" />
-              {formatDate(deal.expected_close_date)}
+              {closeInfo ? closeInfo.label : formatDate(deal.expected_close_date)}
             </span>
           )}
           {assigneeLabel && (
