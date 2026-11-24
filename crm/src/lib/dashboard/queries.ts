@@ -16,6 +16,7 @@ import type {
   PipelineStageSlice,
   ResponseTimeBucket,
   ResponseTimeSummary,
+  WonDealsSummary,
 } from './types'
 
 // ------------------------------------------------------------
@@ -443,4 +444,72 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
   return items
     .sort((a, b) => (a.at > b.at ? -1 : a.at < b.at ? 1 : 0))
     .slice(0, limit)
+}
+
+// --- Oportunidades ganadas -----------------------------------------------
+// La fecha de cierre se toma de updated_at (el momento en que la oportunidad
+// se marco como ganada); es la misma referencia que usa "Ganadas este mes"
+// en Embudos de ventas.
+export async function loadWonDeals(db: DB): Promise<WonDealsSummary> {
+  const { data, error } = await db
+    .from('deals')
+    .select('id, title, value, currency, created_at, updated_at, contact:contacts(name, phone)')
+    .eq('status', 'won')
+    .order('updated_at', { ascending: false })
+    .limit(1000)
+  if (error) throw error
+
+  type Row = {
+    id: string
+    title: string
+    value: number | null
+    currency: string | null
+    created_at: string
+    updated_at: string | null
+    contact: { name: string | null; phone: string | null } | { name: string | null; phone: string | null }[] | null
+  }
+  const rows = (data ?? []) as unknown as Row[]
+
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+
+  let monthCount = 0
+  let monthValue = 0
+  let prevMonthCount = 0
+  let prevMonthValue = 0
+  let totalValue = 0
+
+  const items = rows.map((r) => {
+    const closedAt = r.updated_at ?? r.created_at
+    const value = Number(r.value ?? 0)
+    const c = Array.isArray(r.contact) ? r.contact[0] : r.contact
+    const when = new Date(closedAt)
+    totalValue += value
+    if (when >= monthStart) {
+      monthCount += 1
+      monthValue += value
+    } else if (when >= prevMonthStart) {
+      prevMonthCount += 1
+      prevMonthValue += value
+    }
+    return {
+      id: r.id,
+      title: r.title,
+      value,
+      currency: r.currency,
+      closedAt,
+      contactName: c?.name || c?.phone || null,
+    }
+  })
+
+  return {
+    monthCount,
+    monthValue,
+    prevMonthCount,
+    prevMonthValue,
+    totalCount: rows.length,
+    totalValue,
+    recent: items.slice(0, 6),
+  }
 }

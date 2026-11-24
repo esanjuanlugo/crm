@@ -72,3 +72,24 @@ export interface ActivityItem {
   /** Optional deep-link for the whole row (not all items have a target). */
   href?: string
 }
+
+/** Una oportunidad ganada reciente (para la lista del Panel). */
+export interface WonDealItem {
+  id: string
+  title: string
+  value: number
+  currency: string | null
+  /** Fecha en que se marco como ganada (aprox.: ultima actualizacion). */
+  closedAt: string
+  contactName: string | null
+}
+
+export interface WonDealsSummary {
+  monthCount: number
+  monthValue: number
+  prevMonthCount: number
+  prevMonthValue: number
+  totalCount: number
+  totalValue: number
+  recent: WonDealItem[]
+}

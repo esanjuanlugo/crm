@@ -17,6 +17,7 @@ import {
   loadMetrics,
   loadPipelineDonuts,
   loadResponseTime,
+  loadWonDeals,
 } from '@/lib/dashboard/queries'
 import type {
   ActivityItem,
@@ -24,6 +25,7 @@ import type {
   MetricsBundle,
   PipelineDonutByPipeline,
   ResponseTimeSummary,
+  WonDealsSummary,
 } from '@/lib/dashboard/types'
 
 import { MetricCard } from '@/components/dashboard/metric-card'
@@ -33,6 +35,7 @@ import { ConversationsChart } from '@/components/dashboard/conversations-chart'
 import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
 import { ResponseTimeChart } from '@/components/dashboard/response-time-chart'
 import { ActivityFeed } from '@/components/dashboard/activity-feed'
+import { WonDeals } from '@/components/dashboard/won-deals'
 
 import { useTranslations } from 'next-intl'
 
@@ -64,6 +67,9 @@ export default function DashboardPage() {
   const [activity, setActivity] = useState<ActivityItem[] | null>(null)
   const [activityLoading, setActivityLoading] = useState(true)
 
+  const [won, setWon] = useState<WonDealsSummary | null>(null)
+  const [wonLoading, setWonLoading] = useState(true)
+
   const loadAll = useCallback(() => {
     const db = createClient()
 
@@ -89,6 +95,11 @@ export default function DashboardPage() {
       .then((r) => setResponseTime(r))
       .catch((err) => console.error('[dashboard] response time failed:', err))
       .finally(() => setResponseTimeLoading(false))
+
+    void loadWonDeals(db)
+      .then((w) => setWon(w))
+      .catch((err) => console.error('[dashboard] won deals failed:', err))
+      .finally(() => setWonLoading(false))
 
     // Fetch up to 50 so the biggest page-size option in the feed
     // (50 rows) is already in memory — switching sizes then becomes
@@ -215,6 +226,9 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* Oportunidades ganadas */}
+      <WonDeals data={won} loading={wonLoading} currency={defaultCurrency} />
 
       {/* Response time */}
       <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
