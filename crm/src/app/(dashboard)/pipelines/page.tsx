@@ -315,12 +315,7 @@ export default function PipelinesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="-mb-2">
-        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("subtitle", { count: deals.length })}
-        </p>
-      </div>
+      <h1 className="mb-4 text-2xl font-bold text-foreground">{t("title")}</h1>
 
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">
