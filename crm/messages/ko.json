@@ -515,6 +515,8 @@
   },
   "Pipelines": {
     "page": {
+      "title": "파이프라인",
+      "subtitle": "영업 기회를 관리하세요. 전체 기회 {count}개.",
       "selectPipeline": "파이프라인 선택",
       "noPipelinesYet": "아직 파이프라인이 없습니다",
       "managePipelines": "파이프라인 설정",

@@ -573,6 +573,8 @@
   },
   "Pipelines": {
     "page": {
+      "title": "Embudos de ventas",
+      "subtitle": "Administra tus oportunidades de venta. {count, plural, one {# oportunidad} other {# oportunidades}} en total.",
       "selectPipeline": "Seleccionar embudo",
       "noPipelinesYet": "Aún no hay embudos",
       "managePipelines": "Configurar embudo",

@@ -515,6 +515,8 @@
   },
   "Pipelines": {
     "page": {
+      "title": "Pipelines",
+      "subtitle": "Manage your sales opportunities. {count, plural, one {# opportunity} other {# opportunities}} in total.",
       "selectPipeline": "Select Pipeline",
       "noPipelinesYet": "No pipelines yet",
       "managePipelines": "Configure Pipeline",

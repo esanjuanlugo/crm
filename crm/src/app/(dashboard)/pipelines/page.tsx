@@ -47,7 +47,6 @@ const SPEC_DEFAULT_STAGES = [
 
 export default function PipelinesPage() {
   const t = useTranslations("Pipelines.page");
-  const tHeader = useTranslations("Header");
   const supabase = createClient();
   const canEditSettings = useCan("edit-settings");
   const canCreateDeals = useCan("send-messages");
@@ -316,9 +315,12 @@ export default function PipelinesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">
-        {tHeader("pipelines")}
-      </h1>
+      <div className="-mb-2">
+        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t("subtitle", { count: deals.length })}
+        </p>
+      </div>
 
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">
