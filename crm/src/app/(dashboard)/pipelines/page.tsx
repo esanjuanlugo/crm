@@ -47,6 +47,7 @@ const SPEC_DEFAULT_STAGES = [
 
 export default function PipelinesPage() {
   const t = useTranslations("Pipelines.page");
+  const tHeader = useTranslations("Header");
   const supabase = createClient();
   const canEditSettings = useCan("edit-settings");
   const canCreateDeals = useCan("send-messages");
@@ -315,6 +316,10 @@ export default function PipelinesPage() {
 
   return (
     <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-foreground">
+        {tHeader("pipelines")}
+      </h1>
+
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-3">

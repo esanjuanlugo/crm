@@ -36,6 +36,7 @@ const PAGES_WITH_OWN_TITLE = new Set([
   "/dashboard",
   "/notifications",
   "/contacts",
+  "/pipelines",
   "/broadcasts",
   "/automations",
   "/agents",
