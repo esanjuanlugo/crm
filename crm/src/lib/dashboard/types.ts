@@ -95,3 +95,11 @@ export interface WonDealsSummary {
   totalValue: number
   recent: WonDealItem[]
 }
+
+/** Un mes del comparativo nuevas / ganadas / perdidas. key = AAAA-MM. */
+export interface DealsComparisonPoint {
+  key: string
+  created: number
+  won: number
+  lost: number
+}

@@ -19,6 +19,7 @@ import {
   loadResponseTime,
   loadWonDeals,
   loadLostDeals,
+  loadDealsComparison,
 } from '@/lib/dashboard/queries'
 import type {
   ActivityItem,
@@ -27,6 +28,7 @@ import type {
   PipelineDonutByPipeline,
   ResponseTimeSummary,
   WonDealsSummary,
+  DealsComparisonPoint,
 } from '@/lib/dashboard/types'
 
 import { MetricCard } from '@/components/dashboard/metric-card'
@@ -37,7 +39,7 @@ import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
 import { ResponseTimeChart } from '@/components/dashboard/response-time-chart'
 import { ActivityFeed } from '@/components/dashboard/activity-feed'
 import { WonDeals } from '@/components/dashboard/won-deals'
-import { LostDeals } from '@/components/dashboard/lost-deals'
+import { WonLostChart } from '@/components/dashboard/won-lost-chart'
 
 import { useTranslations } from 'next-intl'
 
@@ -75,6 +77,9 @@ export default function DashboardPage() {
   const [lost, setLost] = useState<WonDealsSummary | null>(null)
   const [lostLoading, setLostLoading] = useState(true)
 
+  const [comparison, setComparison] = useState<DealsComparisonPoint[] | null>(null)
+  const [comparisonLoading, setComparisonLoading] = useState(true)
+
   const loadAll = useCallback(() => {
     const db = createClient()
 
@@ -110,6 +115,11 @@ export default function DashboardPage() {
       .then((l) => setLost(l))
       .catch((err) => console.error('[dashboard] lost deals failed:', err))
       .finally(() => setLostLoading(false))
+
+    void loadDealsComparison(db)
+      .then((c) => setComparison(c))
+      .catch((err) => console.error('[dashboard] comparison failed:', err))
+      .finally(() => setComparisonLoading(false))
 
     // Fetch up to 50 so the biggest page-size option in the feed
     // (50 rows) is already in memory — switching sizes then becomes
@@ -228,12 +238,18 @@ export default function DashboardPage() {
           />
         </div>
         <div className="h-full lg:col-span-3 [&>section]:h-full">
-          <WonDeals data={won} loading={wonLoading} currency={defaultCurrency} />
+          <WonDeals
+            data={won}
+            loading={wonLoading}
+            lostData={lost}
+            lostLoading={lostLoading}
+            currency={defaultCurrency}
+          />
         </div>
       </div>
 
-      {/* Oportunidades perdidas (historial) */}
-      <LostDeals data={lost} loading={lostLoading} currency={defaultCurrency} />
+      {/* Comparativo: nuevas vs ganadas vs perdidas */}
+      <WonLostChart data={comparison} loading={comparisonLoading} />
 
       {/* Conversaciones a lo largo del tiempo */}
       <ConversationsChart

@@ -17,6 +17,7 @@ import type {
   ResponseTimeBucket,
   ResponseTimeSummary,
   WonDealsSummary,
+  DealsComparisonPoint,
 } from './types'
 
 // ------------------------------------------------------------
@@ -527,10 +528,50 @@ async function loadDealsByStatus(
 }
 
 export function loadWonDeals(db: DB): Promise<WonDealsSummary> {
-  return loadDealsByStatus(db, 'won', 6)
+  return loadDealsByStatus(db, 'won', 50)
 }
 
 // Historial de perdidas: las ultimas 50 (el resumen cuenta todas).
 export function loadLostDeals(db: DB): Promise<WonDealsSummary> {
   return loadDealsByStatus(db, 'lost', 50)
+}
+
+// Comparativo mensual: oportunidades nuevas (por fecha de creacion),
+// ganadas y perdidas (por ultima actualizacion, como el resto del panel).
+export async function loadDealsComparison(
+  db: DB,
+  months = 6,
+): Promise<DealsComparisonPoint[]> {
+  const { data, error } = await db
+    .from('deals')
+    .select('status, created_at, updated_at')
+    .order('created_at', { ascending: false })
+    .limit(5000)
+  if (error) throw error
+
+  const now = new Date()
+  const keyOf = (d: Date) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
+  const buckets = new Map<string, DealsComparisonPoint>()
+  for (let i = months - 1; i >= 0; i--) {
+    const key = keyOf(new Date(now.getFullYear(), now.getMonth() - i, 1))
+    buckets.set(key, { key, created: 0, won: 0, lost: 0 })
+  }
+
+  const rows = (data ?? []) as {
+    status: string | null
+    created_at: string
+    updated_at: string | null
+  }[]
+  for (const r of rows) {
+    const created = buckets.get(keyOf(new Date(r.created_at)))
+    if (created) created.created += 1
+    if (r.status === 'won' || r.status === 'lost') {
+      const closed = buckets.get(keyOf(new Date(r.updated_at ?? r.created_at)))
+      if (closed) {
+        if (r.status === 'won') closed.won += 1
+        else closed.lost += 1
+      }
+    }
+  }
+  return Array.from(buckets.values())
 }
