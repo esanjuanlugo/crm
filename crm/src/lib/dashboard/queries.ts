@@ -451,19 +451,26 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
 // se marco como ganada); es la misma referencia que usa "Ganadas este mes"
 // en Embudos de ventas.
 export async function loadWonDeals(db: DB): Promise<WonDealsSummary> {
-  const { data, error } = await db
-    .from('deals')
-    .select('id, title, value, currency, created_at, updated_at, contact:contacts(name, phone)')
-    .eq('status', 'won')
-    .order('updated_at', { ascending: false })
-    .limit(1000)
+  const [{ data, error }, pipelinesRes] = await Promise.all([
+    db
+      .from('deals')
+      .select('id, title, value, currency, pipeline_id, created_at, updated_at, contact:contacts(name, phone)')
+      .eq('status', 'won')
+      .order('updated_at', { ascending: false })
+      .limit(1000),
+    db.from('pipelines').select('id, name'),
+  ])
   if (error) throw error
+  const pipelineNames = new Map(
+    ((pipelinesRes.data ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name]),
+  )
 
   type Row = {
     id: string
     title: string
     value: number | null
     currency: string | null
+    pipeline_id: string | null
     created_at: string
     updated_at: string | null
     contact: { name: string | null; phone: string | null } | { name: string | null; phone: string | null }[] | null
@@ -500,6 +507,7 @@ export async function loadWonDeals(db: DB): Promise<WonDealsSummary> {
       currency: r.currency,
       closedAt,
       contactName: c?.name || c?.phone || null,
+      pipelineName: pipelineNames.get(r.pipeline_id ?? '') ?? null,
     }
   })
 

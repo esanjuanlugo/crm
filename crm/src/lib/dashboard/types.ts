@@ -82,6 +82,8 @@ export interface WonDealItem {
   /** Fecha en que se marco como ganada (aprox.: ultima actualizacion). */
   closedAt: string
   contactName: string | null
+  /** Nombre del embudo al que pertenece la oportunidad. */
+  pipelineName: string | null
 }
 
 export interface WonDealsSummary {

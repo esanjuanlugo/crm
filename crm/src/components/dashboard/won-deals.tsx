@@ -149,7 +149,14 @@ export function WonDeals({ data, loading, currency }: WonDealsProps) {
                       <Trophy className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{d.title}</p>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <p className="truncate text-sm font-medium text-foreground">{d.title}</p>
+                        {d.pipelineName && (
+                          <span className="max-w-[45%] shrink-0 truncate rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {d.pipelineName}
+                          </span>
+                        )}
+                      </div>
                       <p className="truncate text-xs text-muted-foreground">
                         {d.contactName ?? L.noContact} {'\u00b7'} {relativeDay(d.closedAt, es)}
                       </p>

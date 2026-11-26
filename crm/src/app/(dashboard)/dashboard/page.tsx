@@ -210,13 +210,8 @@ export default function DashboardPage() {
           this, the pipeline card rendered at its natural (shorter)
           height while the line chart drove the row height. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="h-full lg:col-span-3">
-          <ConversationsChart
-            series={series}
-            loading={seriesLoading}
-            range={range}
-            onRangeChange={handleRangeChange}
-          />
+        <div className="h-full lg:col-span-3 [&>section]:h-full">
+          <WonDeals data={won} loading={wonLoading} currency={defaultCurrency} />
         </div>
         <div className="h-full lg:col-span-2">
           <PipelineDonut
@@ -227,8 +222,13 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Oportunidades ganadas */}
-      <WonDeals data={won} loading={wonLoading} currency={defaultCurrency} />
+      {/* Conversaciones a lo largo del tiempo */}
+      <ConversationsChart
+        series={series}
+        loading={seriesLoading}
+        range={range}
+        onRangeChange={handleRangeChange}
+      />
 
       {/* Response time */}
       <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
