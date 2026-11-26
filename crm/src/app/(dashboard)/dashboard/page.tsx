@@ -18,6 +18,7 @@ import {
   loadPipelineDonuts,
   loadResponseTime,
   loadWonDeals,
+  loadLostDeals,
 } from '@/lib/dashboard/queries'
 import type {
   ActivityItem,
@@ -36,6 +37,7 @@ import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
 import { ResponseTimeChart } from '@/components/dashboard/response-time-chart'
 import { ActivityFeed } from '@/components/dashboard/activity-feed'
 import { WonDeals } from '@/components/dashboard/won-deals'
+import { LostDeals } from '@/components/dashboard/lost-deals'
 
 import { useTranslations } from 'next-intl'
 
@@ -70,6 +72,9 @@ export default function DashboardPage() {
   const [won, setWon] = useState<WonDealsSummary | null>(null)
   const [wonLoading, setWonLoading] = useState(true)
 
+  const [lost, setLost] = useState<WonDealsSummary | null>(null)
+  const [lostLoading, setLostLoading] = useState(true)
+
   const loadAll = useCallback(() => {
     const db = createClient()
 
@@ -100,6 +105,11 @@ export default function DashboardPage() {
       .then((w) => setWon(w))
       .catch((err) => console.error('[dashboard] won deals failed:', err))
       .finally(() => setWonLoading(false))
+
+    void loadLostDeals(db)
+      .then((l) => setLost(l))
+      .catch((err) => console.error('[dashboard] lost deals failed:', err))
+      .finally(() => setLostLoading(false))
 
     // Fetch up to 50 so the biggest page-size option in the feed
     // (50 rows) is already in memory — switching sizes then becomes
@@ -210,9 +220,6 @@ export default function DashboardPage() {
           this, the pipeline card rendered at its natural (shorter)
           height while the line chart drove the row height. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="h-full lg:col-span-3 [&>section]:h-full">
-          <WonDeals data={won} loading={wonLoading} currency={defaultCurrency} />
-        </div>
         <div className="h-full lg:col-span-2">
           <PipelineDonut
             pipelines={pipelines}
@@ -220,7 +227,13 @@ export default function DashboardPage() {
             currency={defaultCurrency}
           />
         </div>
+        <div className="h-full lg:col-span-3 [&>section]:h-full">
+          <WonDeals data={won} loading={wonLoading} currency={defaultCurrency} />
+        </div>
       </div>
+
+      {/* Oportunidades perdidas (historial) */}
+      <LostDeals data={lost} loading={lostLoading} currency={defaultCurrency} />
 
       {/* Conversaciones a lo largo del tiempo */}
       <ConversationsChart

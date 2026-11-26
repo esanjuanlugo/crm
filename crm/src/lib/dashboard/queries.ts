@@ -450,12 +450,16 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
 // La fecha de cierre se toma de updated_at (el momento en que la oportunidad
 // se marco como ganada); es la misma referencia que usa "Ganadas este mes"
 // en Embudos de ventas.
-export async function loadWonDeals(db: DB): Promise<WonDealsSummary> {
+async function loadDealsByStatus(
+  db: DB,
+  status: 'won' | 'lost',
+  recentLimit: number,
+): Promise<WonDealsSummary> {
   const [{ data, error }, pipelinesRes] = await Promise.all([
     db
       .from('deals')
       .select('id, title, value, currency, pipeline_id, created_at, updated_at, contact:contacts(name, phone)')
-      .eq('status', 'won')
+      .eq('status', status)
       .order('updated_at', { ascending: false })
       .limit(1000),
     db.from('pipelines').select('id, name'),
@@ -518,6 +522,15 @@ export async function loadWonDeals(db: DB): Promise<WonDealsSummary> {
     prevMonthValue,
     totalCount: rows.length,
     totalValue,
-    recent: items.slice(0, 6),
+    recent: items.slice(0, recentLimit),
   }
+}
+
+export function loadWonDeals(db: DB): Promise<WonDealsSummary> {
+  return loadDealsByStatus(db, 'won', 6)
+}
+
+// Historial de perdidas: las ultimas 50 (el resumen cuenta todas).
+export function loadLostDeals(db: DB): Promise<WonDealsSummary> {
+  return loadDealsByStatus(db, 'lost', 50)
 }
