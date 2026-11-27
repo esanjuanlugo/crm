@@ -6,6 +6,7 @@ import {
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   useDroppable,
@@ -21,6 +22,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency } from "@/lib/currency";
 import { useLocale, useTranslations } from "next-intl";
 import { computeStageProbability } from "@/lib/pipeline-probability";
+import { useDragMode, type DragMode } from "@/hooks/use-media-query";
 
 interface PipelineBoardProps {
   stages: PipelineStage[];
@@ -61,12 +63,26 @@ export function PipelineBoard({
     [deals],
   );
 
+  // Celular: sin arrastre (la etapa se cambia desde el detalle).
+  // Tablet tactil: mantener presionado 250 ms; deslizar hace scroll.
+  // Escritorio: mouse + teclado, como siempre.
+  const dragMode = useDragMode();
+
+  // 5px activation distance avoids clicks being interpreted as drags.
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: { distance: 5 },
+  });
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: { delay: 250, tolerance: 8 },
+  });
+  // Keyboard drag support: focus a card, Space to pick up, arrows to move,
+  // Space to drop, Escape to cancel.
+  const keyboardSensor = useSensor(KeyboardSensor);
+  // useSensors descarta los null; el numero de argumentos no cambia.
   const sensors = useSensors(
-    // 5px activation distance avoids clicks being interpreted as drags.
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    // Keyboard drag support: focus a card, Space to pick up, arrows to move,
-    // Space to drop, Escape to cancel.
-    useSensor(KeyboardSensor),
+    dragMode === "pointer" ? pointerSensor : null,
+    dragMode === "touch" ? touchSensor : null,
+    dragMode !== "none" ? keyboardSensor : null,
   );
 
   const activeDeal = activeDealId
@@ -75,6 +91,10 @@ export function PipelineBoard({
 
   function handleDragStart(event: DragStartEvent) {
     setActiveDealId(String(event.active.id));
+    // Pequena vibracion al levantar la tarjeta con el dedo.
+    if (dragMode === "touch" && typeof navigator !== "undefined") {
+      navigator.vibrate?.(10);
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -132,6 +152,7 @@ export function PipelineBoard({
               weighted={weighted}
               currency={defaultCurrency}
               onEditDeal={onEditDeal}
+              dragMode={dragMode}
             />
           );
         })}
@@ -144,7 +165,13 @@ export function PipelineBoard({
         }}
       >
         {activeDeal ? (
-          <div className="opacity-90">
+          <div
+            className={cn(
+              "opacity-90",
+              // Feedback al levantar con el dedo: un poco mas grande.
+              dragMode === "touch" && "scale-[1.03] rotate-1",
+            )}
+          >
             <DealCard
               deal={activeDeal}
               stage={
@@ -220,6 +247,7 @@ function StageColumn({
   weighted,
   currency,
   onEditDeal,
+  dragMode,
 }: {
   stage: PipelineStage;
   deals: Deal[];
@@ -229,6 +257,7 @@ function StageColumn({
   weighted: number;
   currency: string;
   onEditDeal: (deal: Deal) => void;
+  dragMode: DragMode;
 }) {
   const t = useTranslations("Pipelines.board");
   const locale = useLocale();
@@ -311,6 +340,7 @@ function StageColumn({
               deal={deal}
               stage={stage}
               onEdit={onEditDeal}
+              dragMode={dragMode}
             />
           ))
         )}
@@ -323,13 +353,16 @@ function DraggableDealCard({
   deal,
   stage,
   onEdit,
+  dragMode,
 }: {
   deal: Deal;
   stage: PipelineStage;
   onEdit: (deal: Deal) => void;
+  dragMode: DragMode;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: deal.id,
+    disabled: dragMode === "none",
   });
 
   return (
@@ -337,7 +370,17 @@ function DraggableDealCard({
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      style={{ opacity: isDragging ? 0.3 : 1, touchAction: "none" }}
+      style={{
+        opacity: isDragging ? 0.3 : 1,
+        // Con mouse se bloquea el gesto tactil como antes. En tablet y
+        // celular el dedo debe poder hacer scroll sobre la tarjeta.
+        touchAction: dragMode === "pointer" ? "none" : "manipulation",
+        // Evita la seleccion de texto y el menu del sistema al mantener
+        // presionado en la tablet.
+        ...(dragMode === "touch"
+          ? { WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }
+          : null),
+      }}
     >
       <DealCard deal={deal} stage={stage} onEdit={onEdit} />
     </div>
