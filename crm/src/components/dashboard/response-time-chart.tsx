@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl'
 import type { ResponseTimeSummary } from '@/lib/dashboard/types'
 import { EmptyState } from './empty-state'
 import { Skeleton } from './skeleton'
+import { roundPercents } from '@/lib/dashboard/percent'
 
 const COPY_ES = {
   title: 'Tiempo de primera respuesta',
@@ -201,25 +202,36 @@ export function ResponseTimeChart({
 
                     {r.total > 0 ? (
                       <div className="flex h-7 overflow-hidden rounded-md bg-muted 3xl:h-9">
-                        {bands.map((b, i) => {
-                          const n = r.counts[i]
-                          if (n === 0) return null
-                          const pct = (n / r.total) * 100
-                          return (
-                            <div
-                              key={b.label}
-                              className={'flex items-center justify-center ' + b.color}
-                              style={{ width: pct + '%' }}
-                              title={b.label + ': ' + n + ' ' + L.replies + ' (' + Math.round(pct) + ' %)'}
-                            >
-                              {pct >= 12 && (
-                                <span className="text-[10px] font-semibold tabular-nums text-black/70 3xl:text-xs">
-                                  {Math.round(pct)} %
-                                </span>
-                              )}
-                            </div>
-                          )
-                        })}
+                        {(() => {
+                          // Enteros que suman 100 y nunca 0 en un tramo con respuestas.
+                          const labels = roundPercents(r.counts)
+                          return bands.map((b, i) => {
+                            const n = r.counts[i]
+                            if (n === 0) return null
+                            const pct = (n / r.total) * 100
+                            return (
+                              <div
+                                key={b.label}
+                                className={'@container flex min-w-0 items-center justify-center overflow-hidden ' + b.color}
+                                style={{ width: pct + '%' }}
+                                title={b.label + ': ' + n + ' ' + L.replies + ' (' + labels[i] + ' %)'}
+                              >
+                                {/* Se oculta si el tramo es muy angosto para el texto;
+                                    el porcentaje sigue en el tooltip. */}
+                                {pct >= 5 && (
+                                  <span
+                                    className={
+                                      'whitespace-nowrap font-semibold tabular-nums text-black/70 @max-[1.75rem]:hidden ' +
+                                      (pct < 10 ? 'text-[9px] 3xl:text-[11px]' : 'text-[10px] 3xl:text-xs')
+                                    }
+                                  >
+                                    {labels[i]} %
+                                  </span>
+                                )}
+                              </div>
+                            )
+                          })
+                        })()}
                       </div>
                     ) : (
                       <div className="flex h-7 items-center rounded-md border border-dashed border-border px-2 text-[11px] text-muted-foreground 3xl:h-9">
