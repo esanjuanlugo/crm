@@ -388,6 +388,8 @@ export interface Deal {
   status?: DealStatus;
   created_at: string;
   updated_at?: string;
+  /** When the deal was won/lost (migration 044); null while open. */
+  closed_at?: string | null;
   contact?: Contact;
   stage?: PipelineStage;
   assignee?: Profile;

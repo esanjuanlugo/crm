@@ -5,6 +5,7 @@ import { Calendar, Check, X } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { useLocale, useTranslations } from "next-intl";
+import { intlLocale } from "@/lib/locale";
 
 interface DealCardProps {
   deal: Deal;
@@ -13,8 +14,10 @@ interface DealCardProps {
   isOverlay?: boolean;
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+function formatDate(dateStr: string, locale: string) {
+  // expected_close_date es una fecha sin hora: se lee en hora local para
+  // que "2026-12-05" no se muestre como 4 de diciembre al oeste de UTC.
+  return new Date(dateStr.slice(0, 10) + "T00:00:00").toLocaleDateString(intlLocale(locale), {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -116,7 +119,7 @@ export function DealCard({ deal, stage, onEdit, isOverlay }: DealCardProps) {
         <div className="flex items-center gap-2">
           {deal.expected_close_date && (
             <span
-              title={formatDate(deal.expected_close_date)}
+              title={formatDate(deal.expected_close_date, locale)}
               className={cn(
                 "flex items-center gap-1 text-[11px]",
                 closeInfo?.tone === "overdue" && "font-semibold text-red-400",
@@ -125,7 +128,7 @@ export function DealCard({ deal, stage, onEdit, isOverlay }: DealCardProps) {
               )}
             >
               <Calendar className="h-3 w-3" />
-              {closeInfo ? closeInfo.label : formatDate(deal.expected_close_date)}
+              {closeInfo ? closeInfo.label : formatDate(deal.expected_close_date, locale)}
             </span>
           )}
           {assigneeLabel && (

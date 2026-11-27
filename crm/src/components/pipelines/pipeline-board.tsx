@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -365,11 +365,33 @@ function DraggableDealCard({
     disabled: dragMode === "none",
   });
 
+  // Al soltar una tarjeta (sobre todo tras mantener presionado en la
+  // tablet) el navegador puede disparar un clic que abriria el detalle.
+  // Se ignora ese clic durante un instante despues de arrastrar.
+  const suppressClick = useRef(false);
+  useEffect(() => {
+    if (isDragging) {
+      suppressClick.current = true;
+      return;
+    }
+    if (!suppressClick.current) return;
+    const timer = setTimeout(() => {
+      suppressClick.current = false;
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [isDragging]);
+
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      onClickCapture={(e) => {
+        if (!suppressClick.current) return;
+        suppressClick.current = false;
+        e.preventDefault();
+        e.stopPropagation();
+      }}
       style={{
         opacity: isDragging ? 0.3 : 1,
         // Con mouse se bloquea el gesto tactil como antes. En tablet y

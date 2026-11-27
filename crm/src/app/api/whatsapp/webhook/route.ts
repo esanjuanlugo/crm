@@ -295,10 +295,15 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
 
       const value = change.value
 
-      // Handle status updates
+      // Handle status updates. Resolve the owning account from the
+      // receiving number first: Meta message ids are not unique across
+      // numbers, so status writes must stay inside that account.
       if (value.statuses) {
+        const statusAccountId = await accountIdForPhoneNumber(
+          value.metadata?.phone_number_id
+        )
         for (const status of value.statuses) {
-          await handleStatusUpdate(status)
+          await handleStatusUpdate(status, statusAccountId)
         }
       }
 
@@ -413,24 +418,89 @@ function isValidStatusTransition(current: string, incoming: string): boolean {
   return ii > ci
 }
 
-async function handleStatusUpdate(status: {
-  id: string
-  status: string
-  timestamp: string
-  recipient_id: string
-}) {
-  // 1) Mirror onto messages (legacy behavior) — Meta's status values
-  //    already match the CHECK constraint on messages.status. No
-  //    `.select()`: message_id is NOT unique (migration 009 — Meta ids
-  //    repeat across numbers), so this updates 0..N rows and must not
-  //    assume a single row.
-  const { error: msgErr } = await supabaseAdmin()
-    .from('messages')
-    .update({ status: status.status })
-    .eq('message_id', status.id)
+/** Account that owns a WhatsApp phone_number_id (null if unknown). */
+async function accountIdForPhoneNumber(
+  phoneNumberId: string | undefined
+): Promise<string | null> {
+  if (!phoneNumberId) return null
+  const { data, error } = await supabaseAdmin()
+    .from('whatsapp_config')
+    .select('account_id')
+    .eq('phone_number_id', phoneNumberId)
+    .limit(1)
+  if (error) {
+    console.error('Error resolving account for status update:', error)
+    return null
+  }
+  return (data?.[0]?.account_id as string | undefined) ?? null
+}
 
-  if (msgErr) {
-    console.error('Error updating message status:', msgErr)
+/** Ladder for messages.status (its CHECK constraint, migration 001). */
+const MESSAGE_STATUS_LADDER = ['sending', 'sent', 'delivered', 'read'] as const
+
+/**
+ * Can a message move from `current` to `incoming`? Forward-only, so a
+ * late "delivered" never downgrades a "read" (Meta does not guarantee
+ * status order). `failed` only before delivery; it is terminal.
+ */
+function isValidMessageStatusTransition(current: string, incoming: string): boolean {
+  if (incoming === 'failed') return current === 'sending' || current === 'sent'
+  if (current === 'failed') return false
+  const ladder = MESSAGE_STATUS_LADDER as readonly string[]
+  const ci = ladder.indexOf(current)
+  const ii = ladder.indexOf(incoming)
+  if (ii < 0) return false
+  if (ci < 0) return true
+  return ii > ci
+}
+
+async function handleStatusUpdate(
+  status: {
+    id: string
+    status: string
+    timestamp: string
+    recipient_id: string
+  },
+  accountId: string | null
+) {
+  // 1) Mirror onto messages. message_id is NOT unique (migration 009 —
+  //    Meta ids repeat across numbers), so: scope to the account that
+  //    owns the receiving number, then only move rows forward.
+  type MsgRow = {
+    id: string
+    status: string
+    conversation_id: string
+    conversations: { account_id: string } | { account_id: string }[] | null
+  }
+  let msgRows: MsgRow[] = []
+  if (accountId) {
+    const { data, error: msgFetchErr } = await supabaseAdmin()
+      .from('messages')
+      .select('id, status, conversation_id, conversations!inner(account_id)')
+      .eq('message_id', status.id)
+      .eq('conversations.account_id', accountId)
+    if (msgFetchErr) {
+      console.error('Error fetching messages for status update:', msgFetchErr)
+    }
+    msgRows = (data ?? []) as unknown as MsgRow[]
+  } else {
+    console.warn(
+      'Status update for an unknown phone_number_id; messages not updated:',
+      status.id
+    )
+  }
+
+  const toUpdate = msgRows
+    .filter((m) => isValidMessageStatusTransition(m.status, status.status))
+    .map((m) => m.id)
+  if (toUpdate.length > 0) {
+    const { error: msgErr } = await supabaseAdmin()
+      .from('messages')
+      .update({ status: status.status })
+      .in('id', toUpdate)
+    if (msgErr) {
+      console.error('Error updating message status:', msgErr)
+    }
   }
 
   // Webhook fan-out for this status change happens at the END of this
@@ -472,32 +542,21 @@ async function handleStatusUpdate(status: {
     }
   }
 
-  // 3) Webhook fan-out for messages we store (inbox / API sends).
-  //    Runs last so a slow subscriber can't delay the mirrors above.
-  //    Bounded to one row (message_id isn't unique) purely to resolve
-  //    the owning account for delivery.
-  const { data: msgRow } = await supabaseAdmin()
-    .from('messages')
-    .select('conversation_id, conversations(account_id)')
-    .eq('message_id', status.id)
-    .limit(1)
-    .maybeSingle()
-
-  if (msgRow) {
-    const conv = msgRow.conversations as { account_id: string } | null
-    const accountId = conv?.account_id
-    if (accountId) {
-      await dispatchWebhookEvent(
-        supabaseAdmin(),
-        accountId,
-        'message.status_updated',
-        {
-          whatsapp_message_id: status.id,
-          conversation_id: msgRow.conversation_id,
-          status: status.status,
-        }
-      )
-    }
+  // 3) Webhook fan-out for messages we store (inbox / API sends), to
+  //    the owning account only. Runs last so a slow subscriber can't
+  //    delay the mirrors above.
+  const msgRow = msgRows[0]
+  if (msgRow && accountId) {
+    await dispatchWebhookEvent(
+      supabaseAdmin(),
+      accountId,
+      'message.status_updated',
+      {
+        whatsapp_message_id: status.id,
+        conversation_id: msgRow.conversation_id,
+        status: status.status,
+      }
+    )
   }
 }
 

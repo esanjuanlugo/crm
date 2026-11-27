@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency } from "@/lib/currency";
 import { useLocale, useTranslations } from "next-intl";
 import { computeStageProbability } from "@/lib/pipeline-probability";
+import { dealClosedAt } from "@/lib/dashboard/queries";
 
 interface PipelineAnalyticsProps {
   stages: PipelineStage[];
@@ -69,10 +70,8 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
 
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const thisMonth = (d: Deal) => {
-      const ts = d.updated_at ?? d.created_at;
-      return ts ? new Date(ts) >= monthStart : false;
-    };
+    // Fecha de cierre real (closed_at, migracion 044), no la ultima edicion.
+    const thisMonth = (d: Deal) => new Date(dealClosedAt(d)) >= monthStart;
     const wonThisMonth = deals.filter(
       (d) => d.status === "won" && thisMonth(d),
     ).length;

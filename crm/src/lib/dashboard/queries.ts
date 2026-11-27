@@ -228,7 +228,7 @@ export async function loadResponseTime(db: DB): Promise<ResponseTimeSummary> {
   const fourteenDaysAgo = daysAgoStart(13).toISOString()
   const { data, error } = await db
     .from('messages')
-    .select('conversation_id, sender_type, created_at')
+    .select('conversation_id, sender_type, content_type, created_at')
     .gte('created_at', fourteenDaysAgo)
     .order('conversation_id', { ascending: true })
     .order('created_at', { ascending: true })
@@ -237,6 +237,7 @@ export async function loadResponseTime(db: DB): Promise<ResponseTimeSummary> {
   const rows = (data ?? []) as {
     conversation_id: string
     sender_type: string
+    content_type: string | null
     created_at: string
   }[]
 
@@ -260,6 +261,11 @@ export async function loadResponseTime(db: DB): Promise<ResponseTimeSummary> {
     const ts = new Date(row.created_at)
     if (row.sender_type === 'customer') {
       if (!pendingCustomer) pendingCustomer = ts
+    } else if (row.content_type === 'template') {
+      // Una plantilla (envio masivo o reenganche fuera de la ventana de
+      // 24 h) no es una respuesta al cliente: no genera muestra, pero
+      // cierra la espera para no inflar la siguiente respuesta.
+      pendingCustomer = null
     } else if (pendingCustomer) {
       samples.push({ customerAt: pendingCustomer, responseAt: ts })
       pendingCustomer = null
@@ -465,9 +471,20 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
 }
 
 // --- Oportunidades ganadas -----------------------------------------------
-// La fecha de cierre se toma de updated_at (el momento en que la oportunidad
-// se marco como ganada); es la misma referencia que usa "Ganadas este mes"
-// en Embudos de ventas.
+// La fecha de cierre es closed_at (migracion 044: se marca solo al pasar a
+// ganada/perdida). Editar una oportunidad cerrada ya no la mueve de mes.
+// Si la migracion aun no se aplico, se usa updated_at como antes; por eso
+// se pide '*' en lugar de nombrar la columna.
+
+/** Fecha de cierre de una oportunidad (ver migracion 044). */
+export function dealClosedAt(d: {
+  closed_at?: string | null
+  updated_at?: string | null
+  created_at: string
+}): string {
+  return d.closed_at ?? d.updated_at ?? d.created_at
+}
+
 async function loadDealsByStatus(
   db: DB,
   status: 'won' | 'lost',
@@ -476,7 +493,7 @@ async function loadDealsByStatus(
   const [{ data, error }, pipelinesRes] = await Promise.all([
     db
       .from('deals')
-      .select('id, title, value, currency, pipeline_id, created_at, updated_at, contact:contacts(name, phone)')
+      .select('*, contact:contacts(name, phone)')
       .eq('status', status)
       .order('updated_at', { ascending: false })
       .limit(1000),
@@ -495,9 +512,13 @@ async function loadDealsByStatus(
     pipeline_id: string | null
     created_at: string
     updated_at: string | null
+    closed_at?: string | null
     contact: { name: string | null; phone: string | null } | { name: string | null; phone: string | null }[] | null
   }
-  const rows = (data ?? []) as unknown as Row[]
+  // Mas recientes primero por fecha de cierre real.
+  const rows = ((data ?? []) as unknown as Row[]).sort(
+    (a, b) => new Date(dealClosedAt(b)).getTime() - new Date(dealClosedAt(a)).getTime(),
+  )
 
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -510,7 +531,7 @@ async function loadDealsByStatus(
   let totalValue = 0
 
   const items = rows.map((r) => {
-    const closedAt = r.updated_at ?? r.created_at
+    const closedAt = dealClosedAt(r)
     const value = Number(r.value ?? 0)
     const c = Array.isArray(r.contact) ? r.contact[0] : r.contact
     const when = new Date(closedAt)
@@ -554,14 +575,14 @@ export function loadLostDeals(db: DB): Promise<WonDealsSummary> {
 }
 
 // Comparativo mensual: oportunidades nuevas (por fecha de creacion),
-// ganadas y perdidas (por ultima actualizacion, como el resto del panel).
+// ganadas y perdidas (por fecha de cierre, como el resto del panel).
 export async function loadDealsComparison(
   db: DB,
   months = 6,
 ): Promise<DealsComparisonPoint[]> {
   const { data, error } = await db
     .from('deals')
-    .select('status, created_at, updated_at')
+    .select('*')
     .order('created_at', { ascending: false })
     .limit(5000)
   if (error) throw error
@@ -578,12 +599,13 @@ export async function loadDealsComparison(
     status: string | null
     created_at: string
     updated_at: string | null
+    closed_at?: string | null
   }[]
   for (const r of rows) {
     const created = buckets.get(keyOf(new Date(r.created_at)))
     if (created) created.created += 1
     if (r.status === 'won' || r.status === 'lost') {
-      const closed = buckets.get(keyOf(new Date(r.updated_at ?? r.created_at)))
+      const closed = buckets.get(keyOf(new Date(dealClosedAt(r))))
       if (closed) {
         if (r.status === 'won') closed.won += 1
         else closed.lost += 1
