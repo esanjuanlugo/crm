@@ -8,10 +8,8 @@ import {
   Target,
   BarChart3,
   Trophy,
-  XCircle,
   Info,
   Percent,
-  Clock,
 } from "lucide-react";
 import {
   Tooltip,
@@ -33,9 +31,6 @@ const COPY_ES = {
   winRate: "Tasa de éxito",
   winRateTip:
     "Porcentaje de oportunidades cerradas que se ganaron: ganadas / (ganadas + perdidas), en todo el historial de este embudo.",
-  overdue: "Vencidos",
-  overdueTip:
-    "Oportunidades abiertas cuya fecha estimada de cierre ya pasó. Conviene revisarlas o mover la fecha.",
   probabilities: "Probabilidad de cada etapa en este embudo:",
 };
 
@@ -43,9 +38,6 @@ const COPY_EN: typeof COPY_ES = {
   winRate: "Win rate",
   winRateTip:
     "Share of closed deals that were won: won / (won + lost), over the whole history of this pipeline.",
-  overdue: "Overdue",
-  overdueTip:
-    "Open deals whose expected close date has already passed. Worth reviewing or moving the date.",
   probabilities: "Probability of each stage in this pipeline:",
 };
 
@@ -84,22 +76,11 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
     const wonThisMonth = deals.filter(
       (d) => d.status === "won" && thisMonth(d),
     ).length;
-    const lostThisMonth = deals.filter(
-      (d) => d.status === "lost" && thisMonth(d),
-    ).length;
 
     const wonAll = deals.filter((d) => d.status === "won").length;
     const lostAll = deals.filter((d) => d.status === "lost").length;
     const winRate =
       wonAll + lostAll > 0 ? Math.round((wonAll / (wonAll + lostAll)) * 100) : null;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const overdue = openDeals.filter(
-      (d) =>
-        d.expected_close_date &&
-        new Date(d.expected_close_date.slice(0, 10) + "T00:00:00") < today,
-    ).length;
 
     return {
       totalCount,
@@ -107,9 +88,7 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
       avgValue,
       weightedValue,
       wonThisMonth,
-      lostThisMonth,
       winRate,
-      overdue,
     };
   }, [deals, sortedStages]);
 
@@ -126,8 +105,8 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
   return (
     <TooltipProvider>
       {/* Una sola tarjeta; gap-px sobre bg-border dibuja divisores finos
-          entre celdas en cualquier numero de columnas (2 / 4 / 8). */}
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border/60 md:grid-cols-4 xl:grid-cols-8">
+          entre celdas en cualquier numero de columnas (2 / 3 / 6). */}
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border/60 md:grid-cols-3 xl:grid-cols-6">
         <Metric
           icon={<BarChart3 className="h-4 w-4 text-muted-foreground" />}
           label={t("totalDeals")}
@@ -164,32 +143,10 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
           t={t}
         />
         <Metric
-          icon={<XCircle className="h-4 w-4 text-red-400" />}
-          label={t("lostThisMonth")}
-          value={String(stats.lostThisMonth)}
-          tooltip={t("lostThisMonthTooltip")}
-          t={t}
-        />
-        <Metric
           icon={<Percent className="h-4 w-4 text-emerald-400" />}
           label={L.winRate}
           value={stats.winRate === null ? "-" : stats.winRate + " %"}
           tooltip={L.winRateTip}
-          t={t}
-        />
-        <Metric
-          icon={
-            <Clock
-              className={
-                "h-4 w-4 " +
-                (stats.overdue > 0 ? "text-amber-400" : "text-muted-foreground")
-              }
-            />
-          }
-          label={L.overdue}
-          value={String(stats.overdue)}
-          valueClassName={stats.overdue > 0 ? "text-amber-400" : undefined}
-          tooltip={L.overdueTip}
           t={t}
         />
       </div>
@@ -201,25 +158,22 @@ function Metric({
   icon,
   label,
   value,
-  valueClassName,
   tooltip,
   t,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
-  valueClassName?: string;
   tooltip: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
 }) {
   return (
-    <div className="group min-w-0 bg-card px-4 py-3 xl:px-3 2xl:px-4">
+    <div className="group min-w-0 bg-card px-3 py-3 sm:px-4">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <span className="shrink-0">{icon}</span>
-        <span className="min-w-0 truncate" title={label}>
-          {label}
-        </span>
+        {/* Sin truncar: si no cabe, la etiqueta pasa a una segunda linea. */}
+        <span className="min-w-0 leading-tight">{label}</span>
         <Tooltip>
           <TooltipTrigger
             render={
@@ -237,13 +191,7 @@ function Metric({
           </TooltipContent>
         </Tooltip>
       </div>
-      <p
-        className={
-          "mt-1 truncate text-xl font-semibold tabular-nums tracking-tight xl:text-lg 2xl:text-xl " +
-          (valueClassName ?? "text-foreground")
-        }
-        title={value}
-      >
+      <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight text-foreground sm:text-xl">
         {value}
       </p>
     </div>

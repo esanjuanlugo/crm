@@ -681,8 +681,6 @@
       "weightedValueTooltip": "Ingresos esperados: valor de cada oportunidad abierta × probabilidad de su etapa. La primera etapa es aproximadamente 10%, las siguientes avanzan hasta 90% y Ganada = 100%. Las oportunidades perdidas no se incluyen.",
       "wonThisMonth": "Ganadas (mes)",
       "wonThisMonthTooltip": "Oportunidades marcadas como Ganadas desde el primer día del mes actual.",
-      "lostThisMonth": "Perdidas (mes)",
-      "lostThisMonthTooltip": "Oportunidades marcadas como Perdidas desde el primer día del mes actual.",
       "howCalculated": "Cómo se calcula {label}"
     }
   },
