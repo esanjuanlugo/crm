@@ -135,18 +135,18 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
 
   return (
     <section className="rounded-xl border border-border bg-card">
-      <header className="flex items-center justify-between border-b border-border px-5 py-4">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          {t('title')}
+      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-5">
+        <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-foreground">
+          <span className="truncate">{t('title')}</span>
           {items && items.length > 0 && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
               {items.length}
             </span>
           )}
         </h2>
         <Link
           href="/inbox"
-          className="text-xs font-medium text-primary hover:text-primary/80"
+          className="shrink-0 text-xs font-medium text-primary hover:text-primary/80"
         >
           {t('viewAll')}
         </Link>
@@ -170,7 +170,7 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
         <>
           {/* Filtros por tipo */}
           {presentKinds.length > 1 && (
-            <div className="flex gap-1.5 overflow-x-auto border-b border-border px-5 py-3">
+            <div className="flex min-w-0 scroll-px-4 gap-1.5 overflow-x-auto border-b border-border px-4 py-3 [scrollbar-width:none] sm:scroll-px-5 sm:px-5 [&::-webkit-scrollbar]:hidden">
               <FilterChip
                 active={filter === 'all'}
                 onClick={() => setFilter('all')}
@@ -201,13 +201,13 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
                       <span className="h-px flex-1 bg-border/60" />
                     </div>
                   )}
-                  <ul className="grid xl:grid-cols-2 xl:gap-x-6">
+                  <ul className="grid grid-cols-1 xl:grid-cols-2 xl:gap-x-6">
                     {g.rows.map((it) => {
                       const theme = KIND_THEME[it.kind]
                       const Icon = theme.icon
                       const exact = new Date(it.at).toLocaleString(dateLocale)
                       const row = (
-                        <div className="flex items-center gap-3 px-5 py-3">
+                        <div className="flex min-w-0 items-center gap-3 px-4 py-3 sm:px-5">
                           <span
                             className={cn(
                               'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
@@ -230,8 +230,25 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
                             {it.detail && (
                               <p className="truncate text-xs text-muted-foreground">{it.detail}</p>
                             )}
+                            {/* Celular: etiqueta y hora debajo del texto */}
+                            <div className="mt-1 flex items-center gap-2 md:hidden">
+                              <span
+                                className={cn(
+                                  'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium',
+                                  theme.badge,
+                                )}
+                              >
+                                {L.kinds[it.kind]}
+                              </span>
+                              <span
+                                className="truncate text-[11px] tabular-nums text-muted-foreground"
+                                title={exact}
+                              >
+                                {relativeTime(it.at, t)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex flex-shrink-0 items-center gap-3">
+                          <div className="hidden flex-shrink-0 items-center gap-3 md:flex">
                             <span
                               className={cn(
                                 'hidden rounded-full px-2 py-0.5 text-[10px] font-medium md:inline',
@@ -252,7 +269,7 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
                       return (
                         <li
                           key={it.id}
-                          className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                          className="min-w-0 border-b border-border/50 transition-colors hover:bg-muted/40"
                         >
                           {it.href ? (
                             <Link href={it.href} className="block">
@@ -270,8 +287,8 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
             </div>
           )}
 
-          <footer className="flex items-center justify-between border-t border-border px-5 py-3 text-xs">
-            <span className="text-muted-foreground tabular-nums">
+          <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border px-4 py-3 text-xs sm:px-5">
+            <span className="min-w-0 text-muted-foreground tabular-nums">
               {t('showingOf', {
                 visible: visible.length,
                 totalLoaded,
@@ -289,7 +306,7 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
                     onClick={() => setPageSize(size)}
                     disabled={disabled}
                     className={cn(
-                      'rounded-md px-2 py-1 font-medium tabular-nums transition-colors',
+                      'inline-flex min-h-9 min-w-9 items-center justify-center rounded-md px-2 py-1 font-medium tabular-nums transition-colors sm:min-h-0 sm:min-w-0',
                       pageSize === size
                         ? 'bg-secondary text-secondary-foreground'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground',
