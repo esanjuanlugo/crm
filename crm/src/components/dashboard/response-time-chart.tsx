@@ -24,7 +24,6 @@ const COPY_ES = {
   lastWeek: 'Semana pasada',
   day: 'Día',
   distribution: 'Reparto de las respuestas por tiempo de espera',
-  typicalCol: 'Típico · resp.',
   noReplies: 'Sin respuestas',
   replies: 'respuestas',
   of: 'de',
@@ -52,7 +51,6 @@ const COPY_EN: typeof COPY_ES = {
   lastWeek: 'Last week',
   day: 'Day',
   distribution: 'Share of replies by wait time',
-  typicalCol: 'Typical · replies',
   noReplies: 'No replies',
   replies: 'replies',
   of: 'of',
@@ -128,7 +126,7 @@ export function ResponseTimeChart({
     const mins = sorted(samples.filter((s) => s.dow === dow).map((s) => s.minutes))
     const counts = bands.map(() => 0)
     for (const m of mins) counts[bandOf(m)] += 1
-    return { day: L.days[dow], total: mins.length, median: median(mins), counts }
+    return { day: L.days[dow], total: mins.length, counts }
   })
   const totalCounts = bands.map((_, i) => rows.reduce((a, r) => a + r.counts[i], 0))
 
@@ -188,17 +186,16 @@ export function ResponseTimeChart({
 
             {/* Reparto por dia */}
             <div>
-              <div className="mb-2 grid grid-cols-[2.25rem_minmax(0,1fr)_7.5rem] gap-3 text-[11px] text-muted-foreground sm:grid-cols-[3rem_minmax(0,1fr)_9rem]">
+              <div className="mb-2 grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3 text-[11px] text-muted-foreground sm:grid-cols-[3rem_minmax(0,1fr)]">
                 <span>{L.day}</span>
                 <span>{L.distribution}</span>
-                <span className="text-right">{L.typicalCol}</span>
               </div>
 
               <div className="space-y-2">
                 {rows.map((r) => (
                   <div
                     key={r.day}
-                    className="grid grid-cols-[2.25rem_minmax(0,1fr)_7.5rem] items-center gap-3 sm:grid-cols-[3rem_minmax(0,1fr)_9rem]"
+                    className="grid grid-cols-[2.25rem_minmax(0,1fr)] items-center gap-3 sm:grid-cols-[3rem_minmax(0,1fr)]"
                   >
                     <span className="text-xs text-muted-foreground">{r.day}</span>
 
@@ -229,11 +226,6 @@ export function ResponseTimeChart({
                         {L.noReplies}
                       </div>
                     )}
-
-                    <div className="text-right text-xs tabular-nums">
-                      <span className="font-semibold text-foreground">{fmt(r.median)}</span>
-                      <span className="text-muted-foreground">{' · ' + r.total}</span>
-                    </div>
                   </div>
                 ))}
               </div>
