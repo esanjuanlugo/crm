@@ -49,10 +49,21 @@ export interface ResponseTimeBucket {
   samples: number
 }
 
+export interface ResponseTimeSample {
+  /** 0 = Mon ... 6 = Sun (Monday-first), day the customer wrote. */
+  dow: number
+  /** Minutes until the first reply. */
+  minutes: number
+  /** True when the customer message belongs to the current week. */
+  thisWeek: boolean
+}
+
 export interface ResponseTimeSummary {
   buckets: ResponseTimeBucket[]
   thisWeekAvg: number | null
   lastWeekAvg: number | null
+  /** Every first-response sample of the last 14 days (capped), for median / percentiles. */
+  samples?: ResponseTimeSample[]
 }
 
 export type ActivityKind =
