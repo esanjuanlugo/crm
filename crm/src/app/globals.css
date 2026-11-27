@@ -3,6 +3,9 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Modo claro real de la app: data-mode="light" en <html> (el oscuro es el
+   predeterminado). Usar light:... para los valores de modo claro. */
+@custom-variant light (&:where([data-mode="light"], [data-mode="light"] *));
 
 @theme inline {
   --color-background: var(--background);

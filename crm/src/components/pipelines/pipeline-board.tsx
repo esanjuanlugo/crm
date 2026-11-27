@@ -129,7 +129,7 @@ export function PipelineBoard({
           natural layout. The board can still overflow horizontally on
           lg+ once a pipeline has many stages (columns keep a 260px
           min-width), so a thin scrollbar stays visible on desktop. */}
-      <div className="pipeline-scroll flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 lg:snap-none">
+      <div className="pipeline-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 lg:snap-none">
         {sortedStages.map((stage) => {
           const stageDeals = dealsByStage.get(stage.id) ?? [];
           const probability = computeStageProbability(stage, sortedStages);
@@ -270,10 +270,28 @@ function StageColumn({
     // La columna es un "carril" de fondo muy sutil; el encabezado es un
     // titulo (sin fondo) y solo la zona de tarjetas hace scroll, asi el
     // encabezado queda fijo arriba. El area soltable es la zona de tarjetas.
-    <div className="flex max-h-[calc(100dvh-7rem)] w-[85vw] min-w-[260px] max-w-[320px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border/40 bg-foreground/[0.02] lg:w-auto lg:min-w-[210px] lg:max-w-none lg:flex-1 lg:basis-[210px] lg:shrink lg:snap-none">
-      <div className="sticky top-0 z-10 shrink-0 px-3.5 pb-2.5 pt-3">
+    <div className="flex max-h-[calc(100dvh-7rem)] w-[85vw] min-w-[260px] max-w-[320px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] light:border-slate-200 light:bg-slate-100 lg:w-auto lg:min-w-[210px] lg:max-w-none lg:flex-1 lg:basis-[210px] lg:shrink lg:snap-none">
+      {/* Franja superior con el color de la etapa (identidad de un vistazo) */}
+      <div
+        aria-hidden
+        className="h-[3px] shrink-0"
+        style={{ backgroundColor: stage.color }}
+      />
+
+      {/* Rotulo de la etapa: tinte suave del color de borde a borde, sin
+          bordes ni esquinas propias, hasta la divisoria. */}
+      <div
+        className="sticky top-0 z-10 shrink-0 px-3.5 pb-2.5 pt-3"
+        style={{
+          backgroundColor:
+            "color-mix(in srgb, " + stage.color + " 7%, transparent)",
+        }}
+      >
         <div className="flex items-center justify-between gap-2">
-          <h3 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-foreground">
+          <h3
+            className="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-wide"
+            style={{ color: stage.color }}
+          >
             <span
               className="h-2.5 w-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: stage.color }}
@@ -290,7 +308,7 @@ function StageColumn({
             {deals.length}
           </span>
         </div>
-        <p className="mt-1.5 text-base font-semibold tracking-tight text-foreground/80">
+        <p className="mt-1.5 text-base font-medium tracking-tight text-white/70 light:text-slate-600">
           {formatCurrency(totalValue, currency)}
         </p>
         <div className="mt-1.5 flex items-center gap-2">
@@ -303,12 +321,12 @@ function StageColumn({
               }}
             />
           </div>
-          <span className="shrink-0 text-[11px] font-semibold tabular-nums text-foreground/80">
-            {Math.round(share * 100)} %{" "}
-            <span className="font-normal text-muted-foreground">{L.ofValue}</span>
+          <span className="shrink-0 text-[11px] tabular-nums text-white/50 light:text-slate-500">
+            <span className="font-semibold">{Math.round(share * 100)} %</span>{" "}
+            {L.ofValue}
           </span>
         </div>
-        <p className="mt-1 text-[11px] leading-tight text-muted-foreground">
+        <p className="mt-1 text-[11px] leading-tight text-white/50 light:text-slate-500">
           {L.prob} {Math.round(probability * 100)} % {"\u00b7"} {L.weighted}{" "}
           {formatCurrency(weighted, currency)}
         </p>
@@ -317,7 +335,7 @@ function StageColumn({
       {/* Divisoria con el color de la etapa: separa el titulo de las tarjetas */}
       <div
         aria-hidden
-        className="mx-3.5 h-0.5 shrink-0 rounded-full opacity-70"
+        className="h-0.5 shrink-0 opacity-70"
         style={{ backgroundColor: stage.color }}
       />
 

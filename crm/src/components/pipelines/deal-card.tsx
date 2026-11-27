@@ -76,13 +76,14 @@ export function DealCard({ deal, onEdit, isOverlay }: DealCardProps) {
         onEdit(deal);
       }}
       className={cn(
-        // Fondo solido (bg-card) mas claro que el carril y sombra suave para
-        // que la tarjeta se lea "encima" de la columna. El color de la etapa
-        // queda solo en el encabezado de la columna.
-        "group relative w-full cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-card p-3.5 text-left shadow-[0_1px_3px_rgba(0,0,0,0.25)] transition-all",
+        // Tres niveles: pagina < columna (white/4%) < tarjeta (white/7%, con
+        // borde y sombra). En claro: columna slate-100 y tarjeta blanca. El
+        // color de la etapa queda solo en el encabezado de la columna.
+        "group relative w-full cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] p-3.5 text-left shadow-sm transition-all light:border-slate-200 light:bg-white",
         isOverlay
-          ? "shadow-xl ring-1 ring-primary/40"
-          : "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md",
+          ? // Al arrastrar va encima de otras columnas: fondo opaco.
+            "bg-card shadow-xl ring-1 ring-primary/40"
+          : "hover:-translate-y-0.5 hover:border-primary/40 hover:bg-white/[0.10] hover:shadow-md light:hover:bg-white",
       )}
     >
       <div className="flex items-start justify-between gap-2">
