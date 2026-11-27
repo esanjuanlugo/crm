@@ -57,8 +57,8 @@ describe('formatLastSeen', () => {
   });
 
   it('falls back gracefully on missing/invalid input', () => {
-    expect(formatLastSeen(null, NOW)).toBe('hace un rato');
-    expect(formatLastSeen('nonsense', NOW)).toBe('hace un rato');
+    expect(formatLastSeen(null, NOW)).toBe('hace un momento');
+    expect(formatLastSeen('nonsense', NOW)).toBe('hace un momento');
   });
 });
 
@@ -66,7 +66,7 @@ describe('presenceLabel', () => {
   it('labels each state naturally in Spanish', () => {
     expect(presenceLabel('online', ago(1_000), NOW),
     ).toBe(
-      "'En línea — activo ahora",
+      "En línea — activo ahora",
     );
     expect(presenceLabel('away', ago(1_000), NOW)).toBe('Ausente — inactivo');
     expect(presenceLabel('offline',ago(2 * 60 * 60_000),NOW)).toBe(
