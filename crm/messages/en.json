@@ -613,17 +613,17 @@
       "toastDeleted": "Pipeline deleted"
     },
     "analytics": {
-      "totalDeals": "Total Deals",
+      "totalDeals": "Deals",
       "totalDealsTooltip": "Count of every deal in this pipeline that isn't marked as Lost. Won deals are still included.",
-      "pipelineValue": "Pipeline Value",
+      "pipelineValue": "Pipeline value",
       "pipelineValueTooltip": "Sum of the dollar values of all deals in this pipeline, excluding deals marked as Lost.",
-      "avgDealSize": "Avg Deal Size",
+      "avgDealSize": "Avg ticket",
       "avgDealSizeTooltip": "Pipeline Value divided by Total Deals — the average value of a single non-lost deal.",
-      "weightedValue": "Weighted Value",
+      "weightedValue": "Weighted",
       "weightedValueTooltip": "Expected revenue: each open deal's value × its stage probability. First stage ≈ 10%, stages progress up to 90%, Won = 100%. Lost deals are excluded.",
-      "wonThisMonth": "Won This Month",
+      "wonThisMonth": "Won (month)",
       "wonThisMonthTooltip": "Deals marked as Won since the first day of the current month.",
-      "lostThisMonth": "Lost This Month",
+      "lostThisMonth": "Lost (month)",
       "lostThisMonthTooltip": "Deals marked as Lost since the first day of the current month.",
       "howCalculated": "How {label} is calculated"
     }

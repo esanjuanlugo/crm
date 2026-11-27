@@ -671,17 +671,17 @@
       "toastDeleted": "Embudo eliminado"
     },
     "analytics": {
-      "totalDeals": "Total de oportunidades",
+      "totalDeals": "Oportunidades",
       "totalDealsTooltip": "Cantidad de oportunidades de este embudo que no están marcadas como Perdidas. Las oportunidades ganadas también se incluyen.",
       "pipelineValue": "Valor del embudo",
       "pipelineValueTooltip": "Suma del valor de todas las oportunidades de este embudo, excepto las marcadas como Perdidas.",
-      "avgDealSize": "Tamaño promedio de oportunidad",
+      "avgDealSize": "Ticket promedio",
       "avgDealSizeTooltip": "Valor del embudo dividido entre el total de oportunidades: el valor promedio de una oportunidad que no está perdida.",
-      "weightedValue": "Valor ponderado",
+      "weightedValue": "Ponderado",
       "weightedValueTooltip": "Ingresos esperados: valor de cada oportunidad abierta × probabilidad de su etapa. La primera etapa es aproximadamente 10%, las siguientes avanzan hasta 90% y Ganada = 100%. Las oportunidades perdidas no se incluyen.",
-      "wonThisMonth": "Ganadas este mes",
+      "wonThisMonth": "Ganadas (mes)",
       "wonThisMonthTooltip": "Oportunidades marcadas como Ganadas desde el primer día del mes actual.",
-      "lostThisMonth": "Perdidas este mes",
+      "lostThisMonth": "Perdidas (mes)",
       "lostThisMonthTooltip": "Oportunidades marcadas como Perdidas desde el primer día del mes actual.",
       "howCalculated": "Cómo se calcula {label}"
     }

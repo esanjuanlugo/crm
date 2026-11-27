@@ -33,7 +33,7 @@ const COPY_ES = {
   winRate: "Tasa de éxito",
   winRateTip:
     "Porcentaje de oportunidades cerradas que se ganaron: ganadas / (ganadas + perdidas), en todo el historial de este embudo.",
-  overdue: "Cierres vencidos",
+  overdue: "Vencidos",
   overdueTip:
     "Oportunidades abiertas cuya fecha estimada de cierre ya pasó. Conviene revisarlas o mover la fecha.",
   probabilities: "Probabilidad de cada etapa en este embudo:",
@@ -43,7 +43,7 @@ const COPY_EN: typeof COPY_ES = {
   winRate: "Win rate",
   winRateTip:
     "Share of closed deals that were won: won / (won + lost), over the whole history of this pipeline.",
-  overdue: "Overdue closes",
+  overdue: "Overdue",
   overdueTip:
     "Open deals whose expected close date has already passed. Worth reviewing or moving the date.",
   probabilities: "Probability of each stage in this pipeline:",
@@ -125,7 +125,9 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
 
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-card/60 p-4 sm:grid-cols-3 xl:grid-cols-4 min-[2200px]:grid-cols-8">
+      {/* Una sola tarjeta; gap-px sobre bg-border dibuja divisores finos
+          entre celdas en cualquier numero de columnas (2 / 4 / 8). */}
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border/60 md:grid-cols-4 xl:grid-cols-8">
         <Metric
           icon={<BarChart3 className="h-4 w-4 text-muted-foreground" />}
           label={t("totalDeals")}
@@ -176,9 +178,17 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
           t={t}
         />
         <Metric
-          icon={<Clock className="h-4 w-4 text-amber-400" />}
+          icon={
+            <Clock
+              className={
+                "h-4 w-4 " +
+                (stats.overdue > 0 ? "text-amber-400" : "text-muted-foreground")
+              }
+            />
+          }
           label={L.overdue}
           value={String(stats.overdue)}
+          valueClassName={stats.overdue > 0 ? "text-amber-400" : undefined}
           tooltip={L.overdueTip}
           t={t}
         />
@@ -191,30 +201,32 @@ function Metric({
   icon,
   label,
   value,
+  valueClassName,
   tooltip,
   t,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  valueClassName?: string;
   tooltip: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
 }) {
   return (
-    <div className="rounded-xl border border-border/50 bg-muted/40 p-3 sm:p-4">
-      <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-background/60">
-          {icon}
+    <div className="group min-w-0 bg-card px-4 py-3 xl:px-3 2xl:px-4">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <span className="shrink-0">{icon}</span>
+        <span className="min-w-0 truncate" title={label}>
+          {label}
         </span>
-        <span className="min-w-0 flex-1 break-words leading-tight">{label}</span>
         <Tooltip>
           <TooltipTrigger
             render={
               <button
                 type="button"
                 aria-label={t("howCalculated", { label })}
-                className="shrink-0 text-muted-foreground hover:text-foreground focus:outline-none"
+                className="shrink-0 text-muted-foreground opacity-40 transition-opacity hover:text-foreground group-hover:opacity-100 focus:outline-none focus-visible:opacity-100"
               />
             }
           >
@@ -225,7 +237,13 @@ function Metric({
           </TooltipContent>
         </Tooltip>
       </div>
-      <p className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+      <p
+        className={
+          "mt-1 truncate text-xl font-semibold tabular-nums tracking-tight xl:text-lg 2xl:text-xl " +
+          (valueClassName ?? "text-foreground")
+        }
+        title={value}
+      >
         {value}
       </p>
     </div>
