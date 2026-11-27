@@ -56,7 +56,9 @@ function closeDateInfo(deal: Deal, es: boolean) {
   return null;
 }
 
-export function DealCard({ deal, stage, onEdit, isOverlay }: DealCardProps) {
+// `stage` sigue en las props (lo pasan el tablero y el overlay), pero la
+// tarjeta ya no pinta el color de la etapa: eso queda en el encabezado.
+export function DealCard({ deal, onEdit, isOverlay }: DealCardProps) {
   const t = useTranslations("Pipelines.card");
   const locale = useLocale();
   const closeInfo = closeDateInfo(deal, locale === "es");
@@ -74,19 +76,15 @@ export function DealCard({ deal, stage, onEdit, isOverlay }: DealCardProps) {
         onEdit(deal);
       }}
       className={cn(
-        "group relative w-full cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-card p-3.5 text-left shadow-sm transition-all",
+        // Fondo solido (bg-card) mas claro que el carril y sombra suave para
+        // que la tarjeta se lea "encima" de la columna. El color de la etapa
+        // queda solo en el encabezado de la columna.
+        "group relative w-full cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-card p-3.5 text-left shadow-[0_1px_3px_rgba(0,0,0,0.25)] transition-all",
         isOverlay
           ? "shadow-xl ring-1 ring-primary/40"
           : "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md",
       )}
     >
-      {/* Linea de color de la etapa */}
-      <span
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-0.5"
-        style={{ backgroundColor: stage?.color ?? "#94a3b8" }}
-      />
-
       <div className="flex items-start justify-between gap-2">
         <h4 className="flex-1 break-words text-sm font-semibold leading-snug text-foreground">
           {deal.title}

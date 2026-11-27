@@ -267,17 +267,11 @@ function StageColumn({
   return (
     // Mismo comportamiento responsivo de siempre: en movil cada columna mide
     // 85vw (se asoma la siguiente) y en lg+ se reparten el ancho.
-    // El area soltable es la zona de tarjetas, no el encabezado.
-    <div className="flex w-[85vw] min-w-[260px] max-w-[320px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/50 shadow-sm lg:w-auto lg:min-w-[210px] lg:max-w-none lg:flex-1 lg:basis-[210px] lg:shrink lg:snap-none">
-      <div
-        className="px-4 pb-3 pt-4"
-        style={{
-          background:
-            "linear-gradient(to bottom, color-mix(in srgb, " +
-            stage.color +
-            " 16%, transparent), transparent)",
-        }}
-      >
+    // La columna es un "carril" de fondo muy sutil; el encabezado es un
+    // titulo (sin fondo) y solo la zona de tarjetas hace scroll, asi el
+    // encabezado queda fijo arriba. El area soltable es la zona de tarjetas.
+    <div className="flex max-h-[calc(100dvh-7rem)] w-[85vw] min-w-[260px] max-w-[320px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border/40 bg-foreground/[0.02] lg:w-auto lg:min-w-[210px] lg:max-w-none lg:flex-1 lg:basis-[210px] lg:shrink lg:snap-none">
+      <div className="sticky top-0 z-10 shrink-0 px-3.5 pb-2.5 pt-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-foreground">
             <span
@@ -296,11 +290,11 @@ function StageColumn({
             {deals.length}
           </span>
         </div>
-        <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+        <p className="mt-1.5 text-base font-semibold tracking-tight text-foreground/80">
           {formatCurrency(totalValue, currency)}
         </p>
-        <div className="mt-2 flex items-center gap-2">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted/60">
+        <div className="mt-1.5 flex items-center gap-2">
+          <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted/60">
             <div
               className="h-full rounded-full"
               style={{
@@ -309,21 +303,28 @@ function StageColumn({
               }}
             />
           </div>
-          <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">
+          <span className="shrink-0 text-[11px] font-semibold tabular-nums text-foreground/80">
             {Math.round(share * 100)} %{" "}
             <span className="font-normal text-muted-foreground">{L.ofValue}</span>
           </span>
         </div>
-        <p className="mt-1.5 text-[11px] text-muted-foreground">
+        <p className="mt-1 text-[11px] leading-tight text-muted-foreground">
           {L.prob} {Math.round(probability * 100)} % {"\u00b7"} {L.weighted}{" "}
           {formatCurrency(weighted, currency)}
         </p>
       </div>
 
+      {/* Divisoria con el color de la etapa: separa el titulo de las tarjetas */}
+      <div
+        aria-hidden
+        className="mx-3.5 h-0.5 shrink-0 rounded-full opacity-70"
+        style={{ backgroundColor: stage.color }}
+      />
+
       <div
         ref={setNodeRef}
         className={cn(
-          "mx-2 mb-2 flex min-h-32 flex-1 flex-col gap-2 rounded-xl p-1.5 transition-all",
+          "m-2 flex min-h-32 flex-1 flex-col gap-2 overflow-y-auto rounded-xl p-1.5 transition-all",
           isOver
             ? "bg-primary/5 outline outline-2 outline-dashed outline-primary outline-offset-2"
             : "",
