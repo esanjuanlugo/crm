@@ -12,12 +12,12 @@ import {
   type TemplateSendValues,
 } from '@/components/inbox/template-picker';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -378,19 +378,21 @@ export function ContactDetailView({
 
   return (
     <>
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="bg-popover border-border text-popover-foreground sm:max-w-lg w-full p-0"
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* Modal centrado. Celular: casi toda la pantalla. Escritorio: hasta
+          640px de ancho y 85vh de alto. El encabezado queda fijo y el
+          contenido de cada pestana hace scroll por dentro. */}
+      <DialogContent
+        className="flex h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden border-border bg-popover p-0 text-popover-foreground sm:h-auto sm:max-h-[85vh] sm:max-w-[640px]"
       >
         {loading || !contact ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex h-full min-h-48 items-center justify-center">
             <Loader2 className="size-6 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="flex flex-col h-full">
-            {/* Header */}
-            <SheetHeader className="p-4 border-b border-border/50">
+          <div className="flex h-full min-h-0 flex-col">
+            {/* Header (fijo) */}
+            <DialogHeader className="shrink-0 gap-0 border-b border-border/50 p-4 pr-12">
               <div className="flex items-center gap-3">
                 <Avatar className="size-12 bg-muted border border-border">
                   <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
@@ -398,16 +400,16 @@ export function ContactDetailView({
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <SheetTitle className="text-popover-foreground truncate">
+                  <DialogTitle className="truncate leading-tight text-popover-foreground">
                     {contact.name || t('unnamed')}
-                  </SheetTitle>
-                  <SheetDescription className="text-muted-foreground text-xs mt-0.5">
+                  </DialogTitle>
+                  <DialogDescription className="text-muted-foreground text-xs mt-0.5">
                     {t('contactDetailsDesc')}
-                  </SheetDescription>
+                  </DialogDescription>
                   <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                     <button
                       onClick={copyPhone}
-                      className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+                      className="flex min-w-0 items-center gap-1 hover:text-primary transition-colors cursor-pointer"
                     >
                       <Phone className="size-3" />
                       {contact.phone}
@@ -418,9 +420,9 @@ export function ContactDetailView({
                       )}
                     </button>
                     {contact.email && (
-                      <span className="flex items-center gap-1">
-                        <Mail className="size-3" />
-                        {contact.email}
+                      <span className="flex min-w-0 items-center gap-1">
+                        <Mail className="size-3 shrink-0" />
+                        <span className="truncate">{contact.email}</span>
                       </span>
                     )}
                     {contact.company && (
@@ -447,11 +449,13 @@ export function ContactDetailView({
                   {t('sendTemplateBtn')}
                 </Button>
               </div>
-            </SheetHeader>
+            </DialogHeader>
 
             {/* Tabs */}
             <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-              <TabsList className="bg-muted/50 border-b border-border mx-4 mt-3">
+              {/* Pestanas en una fila; scroll horizontal si no caben. */}
+              <div className="mx-4 mt-3 shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <TabsList className="w-max bg-muted/50 border-b border-border">
                 <TabsTrigger
                   value="details"
                   className="data-active:bg-muted data-active:text-primary text-muted-foreground"
@@ -483,10 +487,13 @@ export function ContactDetailView({
                   {t('tabs.deals')}
                 </TabsTrigger>
               </TabsList>
+              </div>
 
               {/* Details Tab */}
               <TabsContent value="details" className="flex-1 overflow-y-auto px-4 py-3">
                 <div className="space-y-3">
+                  {/* Nombre/Telefono y Correo/Empresa en 2 columnas desde sm */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label className="text-muted-foreground text-xs">{t('name')}</Label>
                     <Input
@@ -521,10 +528,12 @@ export function ContactDetailView({
                       className="bg-muted border-border text-foreground h-8 text-sm"
                     />
                   </div>
+                  </div>
+                  <div className="flex justify-end">
                   <Button
                     onClick={saveDetails}
                     disabled={savingDetails}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground w-full"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     size="sm"
                   >
                     {savingDetails ? (
@@ -534,6 +543,7 @@ export function ContactDetailView({
                     )}
                     {t('saveChangesBtn')}
                   </Button>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -747,8 +757,8 @@ export function ContactDetailView({
             </Tabs>
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
     <TemplatePicker
       open={templatePickerOpen}
       onOpenChange={setTemplatePickerOpen}
