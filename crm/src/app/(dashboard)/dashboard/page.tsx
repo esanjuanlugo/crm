@@ -222,6 +222,9 @@ export default function DashboardPage() {
       {/* Quick actions */}
       <QuickActions />
 
+      {/* Activity feed */}
+      <ActivityFeed items={activity} loading={activityLoading} />
+
       {/* Charts row */}
       {/* items-stretch (the grid default) stretches the two columns to
           match the tallest sibling; adding h-full on each wrapper and
@@ -261,9 +264,6 @@ export default function DashboardPage() {
 
       {/* Response time */}
       <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
-
-      {/* Activity feed */}
-      <ActivityFeed items={activity} loading={activityLoading} />
     </div>
   )
 }
