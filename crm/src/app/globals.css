@@ -23,6 +23,13 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-data-new: var(--data-new);
+  --color-data-out: var(--data-out);
+  --color-data-good: var(--data-good);
+  --color-data-fair: var(--data-fair);
+  --color-data-warn: var(--data-warn);
+  --color-data-slow: var(--data-slow);
+  --color-data-bad: var(--data-bad);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -120,6 +127,15 @@ html[data-mode="dark"] {
   --sidebar-accent: oklch(0.22 0.01 260);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.28 0.01 260);
+  /* Dashboard data palette (muted). Fixed meaning, independent of the
+     accent theme: new/incoming, outgoing, good -> bad. */
+  --data-new: #6ea8f0;
+  --data-out: #a78bfa;
+  --data-good: #34d399;
+  --data-fair: #a3d977;
+  --data-warn: #f2c062;
+  --data-slow: #f39a5b;
+  --data-bad: #f87171;
 }
 
 html[data-mode="light"] {
@@ -149,6 +165,13 @@ html[data-mode="light"] {
   --sidebar-accent: oklch(0.96 0.004 260);
   --sidebar-accent-foreground: oklch(0.25 0.01 260);
   --sidebar-border: oklch(0.922 0.004 260);
+  --data-new: #3d74d6;
+  --data-out: #7c5ce0;
+  --data-good: #0f9f74;
+  --data-fair: #6a9f2c;
+  --data-warn: #c38a14;
+  --data-slow: #d4742d;
+  --data-bad: #d64545;
 }
 
 /* ---- ACCENT: primary color ---- */

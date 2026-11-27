@@ -82,11 +82,11 @@ interface Band {
 }
 
 const BAND_COLORS = [
-  'bg-emerald-500',
-  'bg-lime-500',
-  'bg-amber-500',
-  'bg-orange-500',
-  'bg-rose-500',
+  'bg-data-good/75',
+  'bg-data-fair/75',
+  'bg-data-warn/75',
+  'bg-data-slow/75',
+  'bg-data-bad/75',
 ]
 
 export function ResponseTimeChart({
@@ -145,7 +145,7 @@ export function ResponseTimeChart({
           <span className="rounded-full border border-border bg-muted/30 px-2 py-0.5 text-muted-foreground">
             {L.period}
           </span>
-          <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-medium tabular-nums text-emerald-400">
+          <span className="rounded-full border border-data-good/40 bg-data-good/10 px-2 py-0.5 font-medium tabular-nums text-data-good/80">
             {L.target + ': ' + fmtMin(target)}
           </span>
         </div>
@@ -176,7 +176,7 @@ export function ResponseTimeChart({
                 label={L.withinTarget}
                 value={withinPct == null ? '—' : withinPct + ' %'}
                 hint={within + ' ' + L.of + ' ' + all.length + ' ' + L.withinTargetHint + ' ≤ ' + fmtMin(target)}
-                tone={withinPct == null ? 'text-foreground' : withinPct >= 80 ? 'text-emerald-400' : withinPct >= 50 ? 'text-amber-400' : 'text-rose-400'}
+                tone={withinPct == null ? 'text-foreground' : withinPct >= 80 ? 'text-data-good/80' : withinPct >= 50 ? 'text-data-warn/80' : 'text-data-bad/80'}
               />
               <Tile
                 label={L.average}
@@ -322,9 +322,9 @@ function avg(s: number[]): number | null {
 
 function toneFor(mins: number | null, target: number): string {
   if (mins == null) return 'text-foreground'
-  if (mins <= target) return 'text-emerald-400'
-  if (mins <= target * 3) return 'text-amber-400'
-  return 'text-rose-400'
+  if (mins <= target) return 'text-data-good/80'
+  if (mins <= target * 3) return 'text-data-warn/80'
+  return 'text-data-bad/80'
 }
 
 function trim(x: number): string {

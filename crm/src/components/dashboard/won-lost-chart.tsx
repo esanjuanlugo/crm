@@ -201,9 +201,9 @@ export function WonLostChart({ data, loading }: WonLostChartProps) {
                           key={p.key}
                           className="flex h-full min-w-0 flex-1 items-end justify-center gap-1 rounded-lg transition-colors hover:bg-muted/30 sm:gap-1.5 3xl:gap-2"
                         >
-                          <Bar value={p.created} top={top} color="bg-blue-500" label={L.created} />
-                          <Bar value={p.won} top={top} color="bg-emerald-500" label={L.won} />
-                          <Bar value={p.lost} top={top} color="bg-red-500" label={L.lost} />
+                          <Bar value={p.created} top={top} color="bg-data-new/80" label={L.created} />
+                          <Bar value={p.won} top={top} color="bg-data-good/80" label={L.won} />
+                          <Bar value={p.lost} top={top} color="bg-data-bad/80" label={L.lost} />
                         </div>
                       ))}
                     </div>
@@ -233,14 +233,14 @@ export function WonLostChart({ data, loading }: WonLostChartProps) {
 
             {/* Resumen: columna lateral en pantallas grandes, fila debajo en laptop */}
             <div className="grid grid-cols-2 content-start gap-3 sm:grid-cols-4 xl:grid-cols-1">
-              <Stat dot="bg-blue-500" label={L.created} value={totals.created} hint={avgNew + ' ' + L.perMonth} />
+              <Stat dot="bg-data-new" label={L.created} value={totals.created} hint={avgNew + ' ' + L.perMonth} />
               <Stat
-                dot="bg-emerald-500"
+                dot="bg-data-good"
                 label={L.won}
                 value={totals.won}
                 hint={closeRate !== null ? closeRate + ' % ' + L.ofClosed : undefined}
               />
-              <Stat dot="bg-red-500" label={L.lost} value={totals.lost} />
+              <Stat dot="bg-data-bad" label={L.lost} value={totals.lost} />
               {best && (
                 <Stat
                   label={L.bestMonth}

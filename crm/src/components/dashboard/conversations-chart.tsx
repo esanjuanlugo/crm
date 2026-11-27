@@ -89,8 +89,8 @@ export function ConversationsChart({ series, loading, range, onRangeChange }: Co
       </div>
 
       <footer className="flex items-center gap-4 border-t border-border px-5 py-3 text-xs text-muted-foreground">
-        <LegendDot color="#3b82f6" label={t('incoming')} />
-        <LegendDot color="#7c3aed" label={t('outgoing')} />
+        <LegendDot color="var(--data-new)" label={t('incoming')} />
+        <LegendDot color="var(--data-out)" label={t('outgoing')} />
       </footer>
     </section>
   )
@@ -225,12 +225,12 @@ function LineSvg({
       >
         <defs>
           <linearGradient id="conv-in" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--data-new)" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="var(--data-new)" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="conv-out" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--data-out)" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="var(--data-out)" stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -282,7 +282,7 @@ function LineSvg({
         <path
           d={outgoingPath}
           fill="none"
-          stroke="#7c3aed"
+          stroke="var(--data-out)"
           strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -291,7 +291,7 @@ function LineSvg({
         <path
           d={incomingPath}
           fill="none"
-          stroke="#3b82f6"
+          stroke="var(--data-new)"
           strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -308,8 +308,8 @@ function LineSvg({
               stroke="var(--muted-foreground)"
               strokeDasharray="3 3"
             />
-            <circle cx={hoverX} cy={yFor(data[hover.idx].incoming)} r={3.5} fill="#3b82f6" />
-            <circle cx={hoverX} cy={yFor(data[hover.idx].outgoing)} r={3.5} fill="#7c3aed" />
+            <circle cx={hoverX} cy={yFor(data[hover.idx].incoming)} r={3.5} fill="var(--data-new)" />
+            <circle cx={hoverX} cy={yFor(data[hover.idx].outgoing)} r={3.5} fill="var(--data-out)" />
           </g>
         )}
       </svg>
@@ -325,12 +325,12 @@ function LineSvg({
         >
           <div className="font-medium text-popover-foreground">{longDayLabel(hovered.day)}</div>
           <div className="mt-1 flex flex-col gap-0.5">
-            <span className="flex items-center gap-1.5 text-blue-300">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
+            <span className="flex items-center gap-1.5 text-data-new">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-data-new" />
               {t('tooltipIncoming', { count: hovered.incoming })}
             </span>
-            <span className="flex items-center gap-1.5 text-primary">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+            <span className="flex items-center gap-1.5 text-data-out">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-data-out" />
               {t('tooltipOutgoing', { count: hovered.outgoing })}
             </span>
           </div>
