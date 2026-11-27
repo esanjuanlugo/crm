@@ -29,6 +29,7 @@ import {
 import { resolveTemplateRow } from '@/lib/whatsapp/template-body';
 import type { MessageTemplate } from '@/types';
 import { findOrCreateContact } from '@/lib/api/v1/contacts';
+import { createBroadcastMessageRecorder } from '@/lib/whatsapp/record-broadcast-message';
 
 /** Thrown by createBroadcast on a caller-visible failure; route maps it. */
 export class BroadcastError extends Error {
@@ -58,12 +59,16 @@ export interface CreateBroadcastParams {
 
 interface PlannedRecipient {
   recipientRowId: string;
+  /** Recipient row's contact — used to record the send in the Inbox. */
+  contactId?: string | null;
   phone: string;
   params: string[];
 }
 
 export interface BroadcastPlan {
   broadcastId: string;
+  /** Owning account — scopes the Inbox records written on delivery. */
+  accountId: string;
   templateName: string;
   templateLanguage: string;
   phoneNumberId: string;
@@ -226,12 +231,18 @@ export async function createBroadcast(
   const planned: PlannedRecipient[] = createdRows.map(
     (row: { recipient_id: string; contact_id: string }) => {
       const r = byContact.get(row.contact_id)!;
-      return { recipientRowId: row.recipient_id, phone: r.phone, params: r.params };
+      return {
+        recipientRowId: row.recipient_id,
+        contactId: row.contact_id,
+        phone: r.phone,
+        params: r.params,
+      };
     }
   );
 
   return {
     broadcastId,
+    accountId,
     templateName,
     templateLanguage: resolvedTemplate.language,
     phoneNumberId: config.phone_number_id,
@@ -259,6 +270,15 @@ export async function deliverBroadcast(
   db: SupabaseClient,
   plan: BroadcastPlan
 ): Promise<void> {
+  // Each successful send is also stored as an outbound message in the
+  // contact's conversation (best-effort — never fails the broadcast).
+  const recordInInbox = createBroadcastMessageRecorder(
+    db,
+    plan.accountId,
+    plan.templateName,
+    plan.templateRow
+  );
+
   for (const recipient of plan.planned) {
     const variants = phoneVariants(recipient.phone);
     let sentMessageId: string | null = null;
@@ -296,6 +316,12 @@ export async function deliverBroadcast(
           error_message: null,
         })
         .eq('id', recipient.recipientRowId);
+      await recordInInbox({
+        contactId: recipient.contactId,
+        phone: recipient.phone,
+        params: recipient.params,
+        waMessageId: sentMessageId,
+      });
     } else {
       await db
         .from('broadcast_recipients')

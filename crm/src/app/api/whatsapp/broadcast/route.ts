@@ -4,6 +4,7 @@ import { sendTemplateMessage } from '@/lib/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
 import type { SendTimeParams } from '@/lib/whatsapp/template-send-builder'
 import { resolveTemplateRow } from '@/lib/whatsapp/template-body'
+import { createBroadcastMessageRecorder } from '@/lib/whatsapp/record-broadcast-message'
 import {
   sanitizePhoneForMeta,
   isValidE164,
@@ -64,8 +65,8 @@ export async function POST(request: Request) {
     // explicit that running broadcasts is a write operation and that
     // viewers are read-only.
     //
-    // This endpoint writes NOTHING to the database: it reads the config
-    // and template, then calls Meta directly. So unlike the rest of the
+    // This endpoint used to write nothing to the database (it now also
+    // records each sent template in the Inbox, best-effort). Unlike the rest of the
     // app there was no RLS policy backstopping a missing role check —
     // resolving `account_id` straight off the profile (which only needs
     // 'viewer') was the ONLY gate, and it let a viewer blast a template
@@ -160,6 +161,15 @@ export async function POST(request: Request) {
     }
     const templateRow = resolvedTemplate.row
 
+    // Records each successful send as an outbound message in the
+    // contact's conversation. Never throws — a failure is only logged.
+    const recordInInbox = createBroadcastMessageRecorder(
+      supabase,
+      accountId,
+      template_name,
+      templateRow,
+    )
+
     const results: BroadcastResult[] = []
     let sentCount = 0
     let failedCount = 0
@@ -217,6 +227,12 @@ export async function POST(request: Request) {
           whatsapp_message_id: sentMessageId,
         })
         sentCount++
+        await recordInInbox({
+          phone: sanitized,
+          params: recipient.params ?? [],
+          messageParams: recipient.messageParams,
+          waMessageId: sentMessageId,
+        })
       } else {
         console.error(
           `Failed to send broadcast to ${recipient.phone}:`,

@@ -457,53 +457,44 @@ export async function sendMessageToConversation(
   // and posts it as contentText; every other caller (the public API,
   // most importantly) sends none, and storing null there left the
   // Inbox rendering an empty bubble — issue #483.
+  const templateFields =
+    messageType === 'template'
+      ? outboundTemplateFields(
+          templateRow,
+          templateParams,
+          templateMessageParams,
+          contentText
+        )
+      : null;
+
   const persistedText =
     messageType === 'interactive'
       ? interactivePayload!.body
-      : messageType === 'template'
-        ? templateContentText(
-            templateRow,
-            templateBodyParams(templateParams, templateMessageParams),
-            contentText
-          )
+      : templateFields
+        ? templateFields.contentText
         : (contentText ?? null);
 
-  // Templates with an image / video / document HEADER: persist the media
-  // link so the Inbox can render it like WhatsApp does. Same precedence the
-  // send-builder uses: per-send override first, then the template's URL.
-  const templateHeaderMediaUrl: string | null = (() => {
-    if (messageType !== 'template' || !templateRow) return null;
-    const ht = templateRow.header_type;
-    if (ht !== 'image' && ht !== 'video' && ht !== 'document') return null;
-    const override = (templateMessageParams as { headerMediaUrl?: unknown } | null | undefined)
-      ?.headerMediaUrl;
-    if (typeof override === 'string' && override) return override;
-    return templateRow.header_media_url || null;
-  })();
-
-  const { data: messageRecord, error: msgError } = await db
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_type: 'agent',
-      content_type: messageType,
-      content_text: persistedText,
-      media_url: mediaUrl || templateHeaderMediaUrl || null,
-      template_name: templateName || null,
-      interactive_payload:
+  const { data: messageRecord, error: msgError } = await insertOutboundMessage(
+    db,
+    {
+      conversationId,
+      senderType: 'agent',
+      contentType: messageType,
+      contentText: persistedText,
+      mediaUrl: mediaUrl || templateFields?.headerMediaUrl || null,
+      templateName: templateName || null,
+      interactivePayload:
         messageType === 'interactive' ? interactivePayload : null,
-      message_id: waMessageId,
-      status: 'sent',
-      reply_to_message_id: replyToMessageId || null,
-    })
-    .select()
-    .single();
+      waMessageId,
+      replyToMessageId: replyToMessageId || null,
+    }
+  );
 
-  if (msgError) {
+  if (msgError || !messageRecord) {
     console.error('[send-message] error inserting sent message:', msgError);
     throw new SendMessageError(
       'db_error',
-      `Message sent to Meta but failed to save to DB: ${msgError.message}`,
+      `Message sent to Meta but failed to save to DB: ${msgError?.message ?? 'no row returned'}`,
       500
     );
   }
@@ -513,14 +504,7 @@ export async function sendMessageToConversation(
       ? interactivePayloadPreviewText(interactivePayload!)
       : persistedText || `[${messageType}]`;
 
-  await db
-    .from('conversations')
-    .update({
-      last_message_text: lastMessageText,
-      last_message_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', conversationId);
+  await touchConversationLastMessage(db, conversationId, lastMessageText);
 
   // Pause any active Flow run for this contact — the agent stepping in
   // is the strongest "yield, human is here" signal. Best-effort.
@@ -546,4 +530,107 @@ export async function sendMessageToConversation(
   }
 
   return { messageId: messageRecord.id, whatsappMessageId: waMessageId };
+}
+
+// ------------------------------------------------------------
+// Shared persistence helpers — used by the send core above and by the
+// broadcast paths (record-broadcast-message.ts), so a template sent
+// from a campaign is stored exactly like one sent from the chat.
+// ------------------------------------------------------------
+
+/**
+ * What a sent template persists: the body with its variables already
+ * substituted, and (for an image / video / document HEADER) the media
+ * link so the Inbox can render it like WhatsApp does. Buttons are not
+ * stored — the Inbox re-renders them from the template row via
+ * `template_name`.
+ */
+export function outboundTemplateFields(
+  templateRow: MessageTemplate | null,
+  templateParams?: string[] | null,
+  templateMessageParams?: unknown,
+  contentText?: string | null
+): { contentText: string | null; headerMediaUrl: string | null } {
+  const text = templateContentText(
+    templateRow,
+    templateBodyParams(templateParams, templateMessageParams),
+    contentText
+  );
+
+  // Same precedence the send-builder uses: per-send override first,
+  // then the template's URL.
+  let headerMediaUrl: string | null = null;
+  const ht = templateRow?.header_type;
+  if (templateRow && (ht === 'image' || ht === 'video' || ht === 'document')) {
+    const override = (
+      templateMessageParams as { headerMediaUrl?: unknown } | null | undefined
+    )?.headerMediaUrl;
+    headerMediaUrl =
+      typeof override === 'string' && override
+        ? override
+        : templateRow.header_media_url || null;
+  }
+
+  return { contentText: text, headerMediaUrl };
+}
+
+export interface OutboundMessageRow {
+  conversationId: string;
+  senderType: 'agent' | 'bot';
+  contentType: string;
+  contentText: string | null;
+  mediaUrl?: string | null;
+  templateName?: string | null;
+  interactivePayload?: InteractiveMessagePayload | null;
+  /** Meta's wamid — the status webhook matches delivered/read on it. */
+  waMessageId: string;
+  replyToMessageId?: string | null;
+}
+
+/**
+ * Insert an outbound message. Field names MUST match the messages
+ * schema (see 001_initial_schema.sql). Returns the Supabase result so
+ * each caller decides whether a failure is fatal.
+ */
+export function insertOutboundMessage(db: SupabaseClient, row: OutboundMessageRow) {
+  return db
+    .from('messages')
+    .insert({
+      conversation_id: row.conversationId,
+      sender_type: row.senderType,
+      content_type: row.contentType,
+      content_text: row.contentText,
+      media_url: row.mediaUrl || null,
+      template_name: row.templateName || null,
+      interactive_payload: row.interactivePayload ?? null,
+      message_id: row.waMessageId,
+      status: 'sent',
+      reply_to_message_id: row.replyToMessageId || null,
+    })
+    .select()
+    .single();
+}
+
+/**
+ * Bump the conversation's preview + timestamp so it rises in the Inbox
+ * list. Deliberately leaves `unread_count` alone — an outbound message
+ * is never "unread" for the team.
+ */
+export async function touchConversationLastMessage(
+  db: SupabaseClient,
+  conversationId: string,
+  lastMessageText: string
+): Promise<void> {
+  const now = new Date().toISOString();
+  const { error } = await db
+    .from('conversations')
+    .update({
+      last_message_text: lastMessageText,
+      last_message_at: now,
+      updated_at: now,
+    })
+    .eq('id', conversationId);
+  if (error) {
+    console.error('[send-message] conversation preview update failed:', error.message);
+  }
 }
