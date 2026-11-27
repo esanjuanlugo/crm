@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import type { ComponentType } from 'react'
 import {
   MessageSquare,
   UserPlus,
@@ -10,7 +11,7 @@ import {
   Zap,
   Inbox,
 } from 'lucide-react'
-import type { ComponentType } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import type { ActivityItem, ActivityKind } from '@/lib/dashboard/types'
 import { cn } from '@/lib/utils'
 import { EmptyState } from './empty-state'
@@ -26,40 +27,123 @@ type PageSize = (typeof PAGE_SIZES)[number]
 
 interface KindTheme {
   icon: ComponentType<{ className?: string }>
-  /** Tailwind classes for the round icon badge + label color. */
+  /** Clases de Tailwind para la insignia redonda y la etiqueta. */
   badge: string
 }
 
 const KIND_THEME: Record<ActivityKind, KindTheme> = {
   message: { icon: MessageSquare, badge: 'bg-blue-500/10 text-blue-400' },
   contact: { icon: UserPlus, badge: 'bg-primary/10 text-primary' },
-  deal: { icon: Briefcase, badge: 'bg-primary/10 text-primary' },
+  deal: { icon: Briefcase, badge: 'bg-emerald-500/10 text-emerald-400' },
   broadcast: { icon: Radio, badge: 'bg-amber-500/10 text-amber-400' },
   automation: { icon: Zap, badge: 'bg-rose-500/10 text-rose-400' },
 }
 
-import { useTranslations } from 'next-intl'
+const KIND_ORDER: ActivityKind[] = ['message', 'contact', 'deal', 'broadcast', 'automation']
+
+const COPY_ES = {
+  all: 'Todo',
+  today: 'Hoy',
+  yesterday: 'Ayer',
+  noMatches: 'No hay actividad de este tipo',
+  kinds: {
+    message: 'Mensaje',
+    contact: 'Contacto',
+    deal: 'Oportunidad',
+    broadcast: 'Difusión',
+    automation: 'Automatización',
+  } as Record<ActivityKind, string>,
+}
+
+const COPY_EN: typeof COPY_ES = {
+  all: 'All',
+  today: 'Today',
+  yesterday: 'Yesterday',
+  noMatches: 'No activity of this type',
+  kinds: {
+    message: 'Message',
+    contact: 'Contact',
+    deal: 'Deal',
+    broadcast: 'Broadcast',
+    automation: 'Automation',
+  },
+}
+
+function dayKey(d: Date): number {
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()
+}
 
 export function ActivityFeed({ items, loading }: ActivityFeedProps) {
   const t = useTranslations('Dashboard.activityFeed')
-  // Start at 5 — a quick scan of the most recent events without
-  // dominating vertical real estate. User expands explicitly via the
-  // footer control when they want deeper history.
-  const [pageSize, setPageSize] = useState<PageSize>(5)
+  const locale = useLocale()
+  const es = locale === 'es'
+  const L = es ? COPY_ES : COPY_EN
+  const dateLocale = es ? 'es-MX' : 'en-US'
 
-  const totalLoaded = items?.length ?? 0
-  const visible = items?.slice(0, pageSize) ?? []
-  // A size option is "useful" if picking it would reveal rows the
-  // smaller option doesn't already show. With PAGE_SIZES=[5,10,20,50]:
-  // "10" is useful only once we've loaded ≥6 items, "20" once ≥11, etc.
-  // The smallest option is always enabled.
-  const isSizeUseful = (size: PageSize, i: number) =>
+  // Empieza en 10: en pantallas anchas se reparte en dos columnas de 5.
+  const [pageSize, setPageSize] = useState<PageSize>(10)
+  const [filter, setFilter] = useState<'all' | ActivityKind>('all')
+
+  const all = items ?? []
+  const counts: Record<ActivityKind, number> = {
+    message: 0,
+    contact: 0,
+    deal: 0,
+    broadcast: 0,
+    automation: 0,
+  }
+  for (const it of all) counts[it.kind] += 1
+  const presentKinds = KIND_ORDER.filter((k) => counts[k] > 0)
+
+  const filtered = filter === 'all' ? all : all.filter((it) => it.kind === filter)
+  const totalLoaded = filtered.length
+  const visible = filtered.slice(0, pageSize)
+
+  // Un tamano de pagina solo sirve si muestra filas que el anterior no muestra.
+  const isSizeUseful = (_size: PageSize, i: number) =>
     i === 0 || totalLoaded > PAGE_SIZES[i - 1]
+
+  // Agrupar por dia (la lista ya viene ordenada de mas reciente a mas antigua).
+  const now = new Date()
+  const todayKey = dayKey(now)
+  const yest = new Date(now)
+  yest.setDate(yest.getDate() - 1)
+  const yesterdayKey = dayKey(yest)
+
+  const groups: { key: number; label: string; rows: ActivityItem[] }[] = []
+  for (const it of visible) {
+    const d = new Date(it.at)
+    const key = Number.isNaN(d.getTime()) ? 0 : dayKey(d)
+    let g = groups[groups.length - 1]
+    if (!g || g.key !== key) {
+      g = {
+        key,
+        label:
+          key === todayKey
+            ? L.today
+            : key === yesterdayKey
+              ? L.yesterday
+              : key === 0
+                ? ''
+                : d.toLocaleDateString(dateLocale, { weekday: 'short', day: 'numeric', month: 'short' }),
+        rows: [],
+      }
+      groups.push(g)
+    }
+    g.rows.push(it)
+  }
 
   return (
     <section className="rounded-xl border border-border bg-card">
       <header className="flex items-center justify-between border-b border-border px-5 py-4">
-        <h2 className="text-sm font-semibold text-foreground">{t('title')}</h2>
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          {t('title')}
+          {items && items.length > 0 && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+              {items.length}
+            </span>
+          )}
+        </h2>
         <Link
           href="/inbox"
           className="text-xs font-medium text-primary hover:text-primary/80"
@@ -71,7 +155,7 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
       {loading || !items ? (
         <div className="space-y-2 p-5">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full" />
+            <Skeleton key={i} className="h-12 w-full" />
           ))}
         </div>
       ) : items.length === 0 ? (
@@ -84,48 +168,115 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
         </div>
       ) : (
         <>
-          <ul className="divide-y divide-border">
-            {visible.map((it, i) => {
-              const theme = KIND_THEME[it.kind]
-              const Icon = theme.icon
-              // Alternating row background for scanability. bg-muted/40
-              // keeps the stripe visible in both light and dark modes
-              // (bg-card/40 vanishes against a white card surface in light).
-              const stripe = i % 2 === 0 ? 'bg-transparent' : 'bg-muted/40'
-              const row = (
-                <div className="flex items-center gap-3 px-5 py-2.5">
-                  <span
-                    className={cn(
-                      'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full',
-                      theme.badge,
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                    {it.text}
-                  </span>
-                  <span className="flex-shrink-0 text-xs text-muted-foreground tabular-nums">
-                    {relativeTime(it.at, t)}
-                  </span>
-                </div>
-              )
-              return (
-                <li key={it.id} className={cn(stripe, 'transition-colors hover:bg-muted/40')}>
-                  {it.href ? (
-                    <Link href={it.href} className="block">
-                      {row}
-                    </Link>
-                  ) : (
-                    row
+          {/* Filtros por tipo */}
+          {presentKinds.length > 1 && (
+            <div className="flex gap-1.5 overflow-x-auto border-b border-border px-5 py-3">
+              <FilterChip
+                active={filter === 'all'}
+                onClick={() => setFilter('all')}
+                label={L.all}
+                count={items.length}
+              />
+              {presentKinds.map((k) => (
+                <FilterChip
+                  key={k}
+                  active={filter === k}
+                  onClick={() => setFilter(k)}
+                  label={L.kinds[k]}
+                  count={counts[k]}
+                />
+              ))}
+            </div>
+          )}
+
+          {visible.length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm text-muted-foreground">{L.noMatches}</p>
+          ) : (
+            <div>
+              {groups.map((g) => (
+                <div key={g.key}>
+                  {g.label && (
+                    <div className="flex items-center gap-3 bg-muted/30 px-5 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      <span>{g.label}</span>
+                      <span className="h-px flex-1 bg-border/60" />
+                    </div>
                   )}
-                </li>
-              )
-            })}
-          </ul>
+                  <ul className="grid xl:grid-cols-2 xl:gap-x-6">
+                    {g.rows.map((it) => {
+                      const theme = KIND_THEME[it.kind]
+                      const Icon = theme.icon
+                      const exact = new Date(it.at).toLocaleString(dateLocale)
+                      const row = (
+                        <div className="flex items-center gap-3 px-5 py-3">
+                          <span
+                            className={cn(
+                              'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+                              theme.badge,
+                            )}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm text-foreground">
+                              {it.actor && it.action ? (
+                                <>
+                                  <span className="font-medium">{it.actor}</span>{' '}
+                                  <span className="text-muted-foreground">{it.action}</span>
+                                </>
+                              ) : (
+                                it.text
+                              )}
+                            </p>
+                            {it.detail && (
+                              <p className="truncate text-xs text-muted-foreground">{it.detail}</p>
+                            )}
+                          </div>
+                          <div className="flex flex-shrink-0 items-center gap-3">
+                            <span
+                              className={cn(
+                                'hidden rounded-full px-2 py-0.5 text-[10px] font-medium md:inline',
+                                theme.badge,
+                              )}
+                            >
+                              {L.kinds[it.kind]}
+                            </span>
+                            <span
+                              className="w-16 text-right text-xs tabular-nums text-muted-foreground"
+                              title={exact}
+                            >
+                              {relativeTime(it.at, t)}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                      return (
+                        <li
+                          key={it.id}
+                          className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                        >
+                          {it.href ? (
+                            <Link href={it.href} className="block">
+                              {row}
+                            </Link>
+                          ) : (
+                            row
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+
           <footer className="flex items-center justify-between border-t border-border px-5 py-3 text-xs">
             <span className="text-muted-foreground tabular-nums">
-              {t('showingOf', { visible: visible.length, totalLoaded, plus: totalLoaded === 50 ? '+' : '' })}
+              {t('showingOf', {
+                visible: visible.length,
+                totalLoaded,
+                plus: filter === 'all' && totalLoaded === 50 ? '+' : '',
+              })}
             </span>
             <div className="flex items-center gap-1">
               <span className="mr-1 text-muted-foreground">{t('show')}</span>
@@ -154,6 +305,35 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
         </>
       )}
     </section>
+  )
+}
+
+function FilterChip({
+  active,
+  onClick,
+  label,
+  count,
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  count: number
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+        active
+          ? 'border-primary/40 bg-primary/10 text-primary'
+          : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
+      )}
+    >
+      {label}
+      <span className="tabular-nums opacity-70">{count}</span>
+    </button>
   )
 }
 

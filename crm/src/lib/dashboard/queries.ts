@@ -372,6 +372,11 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
       id: `msg-${m.id}`,
       kind: 'message',
       text: `Nuevo mensaje de ${who}`,
+      actor: who,
+      action: 'envió un mensaje',
+      detail: m.content_text
+        ? m.content_text.replace(/[\n\r\t ]+/g, ' ').trim().slice(0, 140) || undefined
+        : undefined,
       at: m.created_at,
       href: `/inbox?c=${m.conversation_id}`,
     })
@@ -382,6 +387,9 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
       id: `contact-${c.id}`,
       kind: 'contact',
       text: `Nuevo contacto: ${c.name || c.phone}`,
+      actor: c.name || c.phone,
+      action: 'es un contacto nuevo',
+      detail: c.name ? c.phone : undefined,
       at: c.created_at,
       href: '/contacts',
     })
@@ -400,6 +408,8 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
       text: stage?.name
         ? `Negocio "${d.title}" en ${stage.name}`
         : `Negocio "${d.title}" actualizado`,
+      actor: d.title,
+      action: stage?.name ? 'está en ' + stage.name : 'se actualizó',
       at: d.updated_at,
       href: '/pipelines',
     })
@@ -420,6 +430,8 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
       id: `broadcast-${b.id}`,
       kind: 'broadcast',
       text: `Difusión "${b.name}" ${label}`,
+      actor: b.name,
+      action: label,
       at: b.created_at,
       href: '/broadcasts',
     })
@@ -441,6 +453,8 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
       id: `auto-${l.id}`,
       kind: 'automation',
       text: `Automation "${autoName}" ${l.status === 'failed' ? 'falló para' : 'se activó para'} ${who}`,
+      actor: autoName,
+      action: (l.status === 'failed' ? 'falló para ' : 'se activó para ') + who,
       at: l.created_at,
     })
   }

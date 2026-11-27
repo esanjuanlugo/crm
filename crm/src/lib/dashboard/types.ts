@@ -82,6 +82,12 @@ export interface ActivityItem {
   at: string
   /** Optional deep-link for the whole row (not all items have a target). */
   href?: string
+  /** Who or what the row is about (contact name, deal title, broadcast...). */
+  actor?: string
+  /** What happened to the actor ("envio un mensaje", "paso a Negociacion"...). */
+  action?: string
+  /** Secondary line: message preview, phone, etc. */
+  detail?: string
 }
 
 /** Una oportunidad ganada reciente (para la lista del Panel). */
