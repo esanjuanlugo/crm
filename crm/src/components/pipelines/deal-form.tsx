@@ -9,7 +9,6 @@ import type {
   Contact,
   Conversation,
   Deal,
-  DealStatus,
   PipelineStage,
   Profile,
 } from "@/types";
@@ -25,17 +24,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import {
-  Check,
-  X,
-  Trash2,
-  MessageSquare,
-  DollarSign,
-  Loader2,
-  Briefcase,
-} from "lucide-react";
+import { Trash2, MessageSquare, DollarSign, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import {
+  sortStages,
+  stageMoveConfirmation,
+} from "@/lib/pipelines/stage-status";
+import {
+  StageMoveConfirm,
+  type PendingStageMove,
+} from "./stage-move-confirm";
 
 interface DealFormProps {
   open: boolean;
@@ -75,7 +74,9 @@ export function DealForm({
     useState<Conversation | null>(null);
 
   const [saving, setSaving] = useState(false);
-  const [statusAction, setStatusAction] = useState<DealStatus | null>(null);
+  // Guardar un cambio de etapa hacia/desde Ganada o Perdida pide
+  // confirmacion, igual que al arrastrar en el tablero.
+  const [pendingMove, setPendingMove] = useState<PendingStageMove | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -154,13 +155,28 @@ export function DealForm({
     };
   }, [open, contactId, supabase]);
 
-  async function handleSave() {
+  function handleSave() {
     if (!title.trim() || !contactId || !stageId) {
       toast.error(t("toastRequired"));
       return;
     }
+    if (deal && deal.stage_id !== stageId) {
+      const kind = stageMoveConfirmation(
+        stages.find((s) => s.id === deal.stage_id)?.kind,
+        stages.find((s) => s.id === stageId)?.kind,
+      );
+      if (kind) {
+        setPendingMove({ kind, dealTitle: title.trim() });
+        return;
+      }
+    }
+    void saveDeal();
+  }
+
+  async function saveDeal() {
     setSaving(true);
 
+    // Sin status: la etapa lo decide en la base de datos (migracion 045).
     const payload = {
       title: title.trim(),
       value: parseFloat(value) || 0,
@@ -200,7 +216,7 @@ export function DealForm({
       }
       const { error } = await supabase
         .from("deals")
-        .insert({ ...payload, user_id: user.id, account_id: accountId, status: "open" });
+        .insert({ ...payload, user_id: user.id, account_id: accountId });
       if (error) {
         toast.error(t("toastFailedCreate"));
         setSaving(false);
@@ -210,25 +226,6 @@ export function DealForm({
 
     setSaving(false);
     toast.success(deal ? t("toastUpdated") : t("toastCreated"));
-    onOpenChange(false);
-    onSaved();
-  }
-
-  async function handleStatusChange(status: DealStatus) {
-    if (!deal) return;
-    setStatusAction(status);
-    const { error } = await supabase
-      .from("deals")
-      .update({ status })
-      .eq("id", deal.id);
-    setStatusAction(null);
-    if (error) {
-      toast.error(t("toastFailedStatus"));
-      return;
-    }
-    toast.success(
-      status === "won" ? t("toastMarkedWon") : status === "lost" ? t("toastMarkedLost") : t("toastReopened"),
-    );
     onOpenChange(false);
     onSaved();
   }
@@ -337,7 +334,7 @@ export function DealForm({
                   onChange={(e) => setStageId(e.target.value)}
                   className={cn(selectClass, "pl-8")}
                 >
-                  {stages.map((s) => (
+                  {sortStages(stages).map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
                     </option>
@@ -398,57 +395,6 @@ export function DealForm({
                 className="min-h-24 border-border bg-muted/60 text-foreground"
               />
             </div>
-
-            {/* Estado (solo al editar) */}
-            {deal && (
-              <div className="space-y-3 rounded-xl border border-border/60 bg-muted/40 p-4 sm:col-span-2">
-                <p className={labelClass}>{t("status")}</p>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    onClick={() => handleStatusChange("won")}
-                    disabled={!!statusAction || deal.status === "won"}
-                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    {statusAction === "won" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Check className="mr-1 h-4 w-4" />
-                        {t("markAsWon")}
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleStatusChange("lost")}
-                    disabled={!!statusAction || deal.status === "lost"}
-                    className="flex-1 border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:opacity-50"
-                  >
-                    {statusAction === "lost" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <X className="mr-1 h-4 w-4" />
-                        {t("markAsLost")}
-                      </>
-                    )}
-                  </Button>
-                </div>
-                {deal.status && deal.status !== "open" && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => handleStatusChange("open")}
-                    disabled={!!statusAction}
-                    className="w-full text-muted-foreground hover:text-foreground"
-                  >
-                    {t("reopenDeal")}
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
@@ -502,6 +448,16 @@ export function DealForm({
             {saving ? t("saving") : deal ? t("saveChanges") : t("createDeal")}
           </Button>
         </DialogFooter>
+
+        {/* Dentro del contenido: dialogo anidado, no cierra el formulario */}
+        <StageMoveConfirm
+          pending={pendingMove}
+          onCancel={() => setPendingMove(null)}
+          onConfirm={() => {
+            setPendingMove(null);
+            void saveDeal();
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

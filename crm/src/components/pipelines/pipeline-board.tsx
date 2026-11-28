@@ -22,6 +22,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency } from "@/lib/currency";
 import { useLocale, useTranslations } from "next-intl";
 import { computeStageProbability } from "@/lib/pipeline-probability";
+import { isSystemStage, sortStages } from "@/lib/pipelines/stage-status";
 import { useDragMode, type DragMode } from "@/hooks/use-media-query";
 
 interface PipelineBoardProps {
@@ -40,10 +41,8 @@ export function PipelineBoard({
   const { defaultCurrency } = useAuth();
   const [activeDealId, setActiveDealId] = useState<string | null>(null);
 
-  const sortedStages = useMemo(
-    () => [...stages].sort((a, b) => a.position - b.position),
-    [stages],
-  );
+  // Etapas normales por posicion; al final Perdida y Ganada (sistema).
+  const sortedStages = useMemo(() => sortStages(stages), [stages]);
 
   const dealsByStage = useMemo(() => {
     const map = new Map<string, Deal[]>();
@@ -263,6 +262,10 @@ function StageColumn({
   const locale = useLocale();
   const L = locale === "es" ? COL_ES : COL_EN;
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
+  const isSystem = isSystemStage(stage);
+  // En Perdida el monto es el de sus oportunidades (no cuenta en el
+  // valor del embudo, pero el encabezado si muestra cuanto se perdio).
+  const systemTotal = deals.reduce((sum, d) => sum + Number(d.value || 0), 0);
 
   return (
     // Mismo comportamiento responsivo de siempre: en movil cada columna mide
@@ -309,27 +312,32 @@ function StageColumn({
           </span>
         </div>
         <p className="mt-1.5 text-base font-medium tracking-tight text-white/70 light:text-slate-600">
-          {formatCurrency(totalValue, currency)}
+          {formatCurrency(isSystem ? systemTotal : totalValue, currency)}
         </p>
-        <div className="mt-1.5 flex items-center gap-2">
-          <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted/60">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: Math.round(share * 100) + "%",
-                backgroundColor: stage.color,
-              }}
-            />
-          </div>
-          <span className="shrink-0 text-[11px] tabular-nums text-white/50 light:text-slate-500">
-            <span className="font-semibold">{Math.round(share * 100)} %</span>{" "}
-            {L.ofValue}
-          </span>
-        </div>
-        <p className="mt-1 text-[11px] leading-tight text-white/50 light:text-slate-500">
-          {L.prob} {Math.round(probability * 100)} % {"\u00b7"} {L.weighted}{" "}
-          {formatCurrency(weighted, currency)}
-        </p>
+        {/* Ganada y Perdida: solo numero de oportunidades y monto total. */}
+        {!isSystem && (
+          <>
+            <div className="mt-1.5 flex items-center gap-2">
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted/60">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: Math.round(share * 100) + "%",
+                    backgroundColor: stage.color,
+                  }}
+                />
+              </div>
+              <span className="shrink-0 text-[11px] tabular-nums text-white/50 light:text-slate-500">
+                <span className="font-semibold">{Math.round(share * 100)} %</span>{" "}
+                {L.ofValue}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] leading-tight text-white/50 light:text-slate-500">
+              {L.prob} {Math.round(probability * 100)} % {"\u00b7"} {L.weighted}{" "}
+              {formatCurrency(weighted, currency)}
+            </p>
+          </>
+        )}
       </div>
 
       {/* Divisoria con el color de la etapa: separa el titulo de las tarjetas */}

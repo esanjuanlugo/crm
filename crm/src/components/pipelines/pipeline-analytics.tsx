@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency } from "@/lib/currency";
 import { useLocale, useTranslations } from "next-intl";
 import { computeStageProbability } from "@/lib/pipeline-probability";
+import { isSystemStage, sortStages } from "@/lib/pipelines/stage-status";
 import { dealClosedAt } from "@/lib/dashboard/queries";
 
 interface PipelineAnalyticsProps {
@@ -47,10 +48,7 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
   const locale = useLocale();
   const L = locale === "es" ? COPY_ES : COPY_EN;
   const { defaultCurrency } = useAuth();
-  const sortedStages = useMemo(
-    () => [...stages].sort((a, b) => a.position - b.position),
-    [stages],
-  );
+  const sortedStages = useMemo(() => sortStages(stages), [stages]);
 
   const stats = useMemo(() => {
     const active = deals.filter((d) => d.status !== "lost");
@@ -91,7 +89,9 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
     };
   }, [deals, sortedStages]);
 
+  // Solo las etapas normales: Ganada (100 %) y Perdida (0 %) no ponderan.
   const probText = sortedStages
+    .filter((s) => !isSystemStage(s))
     .map(
       (s) =>
         s.name +

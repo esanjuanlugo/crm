@@ -1,7 +1,7 @@
 "use client";
 
 import type { Deal, PipelineStage } from "@/types";
-import { Calendar, Check, X } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { useLocale, useTranslations } from "next-intl";
@@ -90,18 +90,7 @@ export function DealCard({ deal, onEdit, isOverlay }: DealCardProps) {
         <h4 className="flex-1 break-words text-sm font-semibold leading-snug text-foreground">
           {deal.title}
         </h4>
-        {deal.status === "won" && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
-            <Check className="h-3 w-3" />
-            {t("won")}
-          </span>
-        )}
-        {deal.status === "lost" && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-400">
-            <X className="h-3 w-3" />
-            {t("lost")}
-          </span>
-        )}
+        {/* Sin etiqueta Ganada/Perdida: la columna ya dice el estatus. */}
       </div>
 
       <div className="mt-2 flex items-center gap-2">

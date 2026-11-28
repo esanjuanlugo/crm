@@ -36,9 +36,11 @@ import {
   AlertTriangle,
   Check,
   Settings,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { isSystemStage, sortStages } from "@/lib/pipelines/stage-status";
 
 const STAGE_COLORS = [
   "#3b82f6",
@@ -89,7 +91,7 @@ export function PipelineSettings({
   useEffect(() => {
     if (!open) return;
     setName(pipeline.name);
-    setLocalStages([...stages].sort((a, b) => a.position - b.position));
+    setLocalStages(sortStages(stages));
     setShowDeleteConfirm(false);
   }, [open, pipeline, stages]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -98,13 +100,24 @@ export function PipelineSettings({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
+  // Etapas normales (se ordenan) y de sistema (Perdida y Ganada, fijas
+  // al final con candado).
+  const openStages = localStages.filter((s) => !isSystemStage(s));
+  const systemStages = localStages.filter((s) => isSystemStage(s));
+
+  function updateStage(id: string, patch: Partial<PipelineStage>) {
+    setLocalStages((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  }
+
   function handleReorder(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = localStages.findIndex((s) => s.id === active.id);
-    const newIndex = localStages.findIndex((s) => s.id === over.id);
+    // Solo las etapas normales son arrastrables y soltables, asi que
+    // nunca quedan debajo de Perdida/Ganada.
+    const oldIndex = openStages.findIndex((s) => s.id === active.id);
+    const newIndex = openStages.findIndex((s) => s.id === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
-    setLocalStages(arrayMove(localStages, oldIndex, newIndex));
+    setLocalStages([...arrayMove(openStages, oldIndex, newIndex), ...systemStages]);
   }
 
   async function handleSave() {
@@ -113,7 +126,9 @@ export function PipelineSettings({
     // One upsert for all stages — batches N stage writes into a single
     // round-trip. Previous implementation did N sequential UPDATEs which
     // latency-scaled linearly with stage count.
-    const stageRows = localStages.map((s, i) => ({
+    // Posiciones: normales 0..n-1, despues Perdida y Ganada. El color de
+    // las etapas de sistema lo fija la base de datos (migracion 045).
+    const stageRows = [...openStages, ...systemStages].map((s, i) => ({
       id: s.id,
       pipeline_id: s.pipeline_id,
       name: s.name,
@@ -151,7 +166,8 @@ export function PipelineSettings({
         pipeline_id: pipeline.id,
         name: trimmed,
         color: newStageColor,
-        position: localStages.length,
+        // Antes de Perdida/Ganada; al guardar se renumera todo.
+        position: openStages.length,
       })
       .select()
       .single();
@@ -159,12 +175,17 @@ export function PipelineSettings({
       toast.error(t("toastFailedAddStage"));
       return;
     }
-    setLocalStages([...localStages, data as PipelineStage]);
+    setLocalStages([...openStages, data as PipelineStage, ...systemStages]);
     setNewStageName("");
     setNewStageColor(STAGE_COLORS[(localStages.length + 1) % STAGE_COLORS.length]);
   }
 
   async function handleRemoveStage(stageId: string) {
+    // Ganada/Perdida no tienen papelera; la base de datos tambien lo impide.
+    if (isSystemStage(localStages.find((s) => s.id === stageId))) {
+      toast.error(t("toastSystemStage"));
+      return;
+    }
     // Refuse to delete if deals still reference the stage (FK would fail).
     const { count } = await supabase
       .from("deals")
@@ -273,25 +294,17 @@ export function PipelineSettings({
                   onDragEnd={handleReorder}
                 >
                   <SortableContext
-                    items={localStages.map((s) => s.id)}
+                    items={openStages.map((s) => s.id)}
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="space-y-2">
-                      {localStages.map((stage, index) => (
+                      {openStages.map((stage, index) => (
                         <SortableStageRow
                           key={stage.id}
                           stage={stage}
                           index={index}
-                          onNameChange={(v) => {
-                            const updated = [...localStages];
-                            updated[index] = { ...updated[index], name: v };
-                            setLocalStages(updated);
-                          }}
-                          onColorChange={(v) => {
-                            const updated = [...localStages];
-                            updated[index] = { ...updated[index], color: v };
-                            setLocalStages(updated);
-                          }}
+                          onNameChange={(v) => updateStage(stage.id, { name: v })}
+                          onColorChange={(v) => updateStage(stage.id, { color: v })}
                           onRemove={() => handleRemoveStage(stage.id)}
                           colors={STAGE_COLORS}
                           t={t}
@@ -300,6 +313,19 @@ export function PipelineSettings({
                     </div>
                   </SortableContext>
                 </DndContext>
+                {systemStages.length > 0 && (
+                  <div className="space-y-2">
+                    {systemStages.map((stage, i) => (
+                      <SystemStageRow
+                        key={stage.id}
+                        stage={stage}
+                        index={openStages.length + i}
+                        onNameChange={(v) => updateStage(stage.id, { name: v })}
+                        t={t}
+                      />
+                    ))}
+                  </div>
+                )}
 
                 {/* Agregar etapa */}
                 <div className="space-y-3 rounded-xl border border-dashed border-border/70 p-3">
@@ -440,6 +466,52 @@ function SortableStageRow({
       >
         <Trash2 className="h-3.5 w-3.5" />
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Perdida / Ganada: bloqueadas al final. No se arrastran, no cambian de
+ * color ni se borran; solo se puede renombrar el texto.
+ */
+function SystemStageRow({
+  stage,
+  index,
+  onNameChange,
+  t,
+}: {
+  stage: PipelineStage;
+  index: number;
+  onNameChange: (v: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: any;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 p-2 pl-1.5"
+      title={stage.kind === "won" ? t("systemStageWonHint") : t("systemStageLostHint")}
+    >
+      <span
+        className="flex h-8 w-6 items-center justify-center text-muted-foreground/70"
+        aria-label={t("systemStage")}
+      >
+        <Lock className="h-3.5 w-3.5" />
+      </span>
+      <span className="w-4 shrink-0 text-center text-[11px] font-semibold text-muted-foreground">
+        {index + 1}
+      </span>
+      <span
+        className="h-5 w-5 shrink-0 rounded-full border-2 border-white/20 shadow-sm"
+        style={{ backgroundColor: stage.color }}
+      />
+      <Input
+        value={stage.name}
+        onChange={(e) => onNameChange(e.target.value)}
+        className="h-8 flex-1 border-transparent bg-transparent text-sm font-medium text-foreground focus:border-border"
+      />
+      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+        {t("systemStage")}
+      </span>
     </div>
   );
 }

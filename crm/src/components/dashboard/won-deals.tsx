@@ -30,7 +30,7 @@ const COPY_ES = {
     average: 'Ticket promedio',
     recent: 'Últimas ganadas',
     empty: 'Aún no hay oportunidades ganadas',
-    emptyHint: 'Cuando marques una oportunidad como ganada aparecerá aquí.',
+    emptyHint: 'Cuando muevas una oportunidad a Ganada aparecerá aquí.',
   },
   lost: {
     title: 'Oportunidades perdidas',
@@ -40,7 +40,7 @@ const COPY_ES = {
     average: 'Ticket promedio perdido',
     recent: 'Historial de perdidas',
     empty: 'No hay oportunidades perdidas',
-    emptyHint: 'Cuando marques una oportunidad como perdida aparecerá aquí.',
+    emptyHint: 'Cuando muevas una oportunidad a Perdida aparecerá aquí.',
   },
 }
 
@@ -64,7 +64,7 @@ const COPY_EN: typeof COPY_ES = {
     average: 'Average deal size',
     recent: 'Latest wins',
     empty: 'No won deals yet',
-    emptyHint: 'When you mark a deal as won it will show up here.',
+    emptyHint: 'When you move a deal to Won it will show up here.',
   },
   lost: {
     title: 'Lost deals',
@@ -74,7 +74,7 @@ const COPY_EN: typeof COPY_ES = {
     average: 'Average lost deal size',
     recent: 'Lost deals history',
     empty: 'No lost deals',
-    emptyHint: 'When you mark a deal as lost it will show up here.',
+    emptyHint: 'When you move a deal to Lost it will show up here.',
   },
 }
 

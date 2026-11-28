@@ -363,8 +363,15 @@ export interface PipelineStage {
   name: string;
   position: number;
   color: string;
+  /**
+   * open = etapa normal; won/lost = etapas de sistema Ganada/Perdida
+   * (migracion 045). La etapa decide deals.status.
+   */
+  kind?: StageKind;
   created_at: string;
 }
+
+export type StageKind = 'open' | 'won' | 'lost';
 
 export type DealStatus = 'open' | 'won' | 'lost';
 

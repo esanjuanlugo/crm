@@ -30,6 +30,14 @@ import { useCan } from "@/hooks/use-can";
 import { useAuth } from "@/hooks/use-auth";
 import { GatedButton } from "@/components/ui/gated-button";
 import { useTranslations } from "next-intl";
+import {
+  stageMoveConfirmation,
+  statusForStageKind,
+} from "@/lib/pipelines/stage-status";
+import {
+  StageMoveConfirm,
+  type PendingStageMove,
+} from "@/components/pipelines/stage-move-confirm";
 
 // Pipeline creation is admin-class (settings-tier write under
 // the new RLS); deal creation is operational and only requires
@@ -37,12 +45,13 @@ import { useTranslations } from "next-intl";
 // not on different copy.
 
 // Spec-defined seed — name and color per the product spec.
+// "Perdida" y "Ganada" no van aqui: son etapas de sistema que la base
+// de datos crea sola al insertar el embudo (migracion 045).
 const SPEC_DEFAULT_STAGES = [
   { name: "Nuevo prospecto", color: "#3b82f6", position: 0 }, // blue
   { name: "Calificado", color: "#eab308", position: 1 }, // yellow
   { name: "Propuesta enviada", color: "#f97316", position: 2 }, // orange
   { name: "Negociación", color: "#8b5cf6", position: 3 }, // purple
-  { name: "Ganada", color: "#22c55e", position: 4 }, // green
 ];
 
 export default function PipelinesPage() {
@@ -214,11 +223,34 @@ export default function PipelinesPage() {
     setDeals(await loadDeals(selectedPipelineId));
   }, [loadDeals, selectedPipelineId]);
 
-  const handleDealMoved = useCallback(
+  // Movimiento que espera confirmacion (entrar a Ganada/Perdida o salir
+  // de ahi). Mientras tanto la tarjeta sigue en su etapa original.
+  const [pendingMove, setPendingMove] = useState<
+    (PendingStageMove & { dealId: string; newStageId: string }) | null
+  >(null);
+
+  const persistDealMove = useCallback(
     async (dealId: string, newStageId: string) => {
-      // Optimistic update — board already animated; just persist.
+      // La etapa decide el estatus (trigger de la migracion 045); aqui se
+      // repite la regla para que la tarjeta y los KPIs cambien al instante.
+      const kind = stages.find((s) => s.id === newStageId)?.kind;
+      const status = statusForStageKind(kind);
       setDeals((prev) =>
-        prev.map((d) => (d.id === dealId ? { ...d, stage_id: newStageId } : d)),
+        prev.map((d) =>
+          d.id === dealId
+            ? {
+                ...d,
+                stage_id: newStageId,
+                status,
+                closed_at:
+                  status === "open"
+                    ? null
+                    : d.status === status
+                      ? d.closed_at
+                      : new Date().toISOString(),
+              }
+            : d,
+        ),
       );
       const { error } = await supabase
         .from("deals")
@@ -229,7 +261,23 @@ export default function PipelinesPage() {
         refreshDeals();
       }
     },
-    [supabase, refreshDeals, t],
+    [supabase, refreshDeals, stages, t],
+  );
+
+  const handleDealMoved = useCallback(
+    (dealId: string, newStageId: string) => {
+      const deal = deals.find((d) => d.id === dealId);
+      if (!deal) return;
+      const fromKind = stages.find((s) => s.id === deal.stage_id)?.kind;
+      const toKind = stages.find((s) => s.id === newStageId)?.kind;
+      const confirmKind = stageMoveConfirmation(fromKind, toKind);
+      if (confirmKind) {
+        setPendingMove({ kind: confirmKind, dealTitle: deal.title, dealId, newStageId });
+        return;
+      }
+      persistDealMove(dealId, newStageId);
+    },
+    [deals, stages, persistDealMove],
   );
 
   const handleAddDeal = useCallback(
@@ -487,6 +535,18 @@ export default function PipelinesPage() {
         stages={stages}
         defaultStageId={defaultStageId}
         onSaved={refreshDeals}
+      />
+
+      {/* Confirmacion al mover a Ganada/Perdida o sacar de ahi */}
+      <StageMoveConfirm
+        pending={pendingMove}
+        onCancel={() => setPendingMove(null)}
+        onConfirm={() => {
+          if (!pendingMove) return;
+          const { dealId, newStageId } = pendingMove;
+          setPendingMove(null);
+          persistDealMove(dealId, newStageId);
+        }}
       />
     </div>
   );

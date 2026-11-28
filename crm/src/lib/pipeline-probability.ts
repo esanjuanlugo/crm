@@ -2,21 +2,32 @@ import type { PipelineStage } from "@/types";
 
 /**
  * Probabilidad de cierre de una etapa (se usa para el valor ponderado).
- * La primera etapa vale 10 %, las siguientes suben de forma pareja hasta
- * 90 % en la etapa anterior a la ultima, y la ultima (Ganada) vale 100 %.
- * Con 5 etapas: 10 %, 37 %, 63 %, 90 % y 100 %.
+ * Ganada vale 100 % y Perdida 0 % (etapas de sistema, migracion 045).
+ * Las etapas normales suben de forma pareja de 10 % (la primera) a 90 %
+ * (la ultima antes de Perdida/Ganada). Con 4 normales: 10 %, 37 %,
+ * 63 % y 90 %. Una sola etapa normal vale 10 %.
+ *
+ * Sin etapas de sistema (datos anteriores a la 045) la ultima etapa se
+ * trata como Ganada, igual que antes.
  */
 export function computeStageProbability(
-  stage: PipelineStage,
-  sortedStages: PipelineStage[],
+  stage: Pick<PipelineStage, "id" | "kind">,
+  sortedStages: Pick<PipelineStage, "id" | "kind">[],
 ): number {
-  const n = sortedStages.length;
-  if (n <= 1) return 1;
-  const index = sortedStages.findIndex((s) => s.id === stage.id);
+  if (stage.kind === "won") return 1;
+  if (stage.kind === "lost") return 0;
+
+  const hasSystem = sortedStages.some((s) => s.kind === "won" || s.kind === "lost");
+  let open = sortedStages.filter((s) => s.kind !== "won" && s.kind !== "lost");
+  if (!hasSystem) {
+    if (open.length <= 1) return 1;
+    if (open[open.length - 1].id === stage.id) return 1;
+    open = open.slice(0, -1);
+  }
+
+  const index = open.findIndex((s) => s.id === stage.id);
   if (index < 0) return 0;
-  if (index === n - 1) return 1;
-  const slots = n - 1;
-  if (slots <= 1) return 0.1;
-  const t = index / (slots - 1);
+  if (open.length <= 1) return 0.1;
+  const t = index / (open.length - 1);
   return 0.1 + t * (0.9 - 0.1);
 }

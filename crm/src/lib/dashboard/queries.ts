@@ -135,7 +135,8 @@ export async function loadConversationsSeries(
 
 export async function loadPipelineDonut(db: DB): Promise<PipelineDonutData> {
   const [stagesRes, dealsRes] = await Promise.all([
-    db.from('pipeline_stages').select('id, name, color, pipeline_id, position').order('position'),
+    // '*' (no 'kind') so it still works before migration 045 is applied.
+    db.from('pipeline_stages').select('*').order('position'),
     db.from('deals').select('stage_id, value, status').eq('status', 'open'),
   ])
 
@@ -175,7 +176,8 @@ export async function loadPipelineDonut(db: DB): Promise<PipelineDonutData> {
 export async function loadPipelineDonuts(db: DB): Promise<PipelineDonutByPipeline[]> {
   const [pipelinesRes, stagesRes, dealsRes] = await Promise.all([
     db.from('pipelines').select('id, name').order('created_at'),
-    db.from('pipeline_stages').select('id, name, color, pipeline_id, position').order('position'),
+    // '*' (no 'kind') so it still works before migration 045 is applied.
+    db.from('pipeline_stages').select('*').order('position'),
     db.from('deals').select('stage_id, value, status').eq('status', 'open'),
   ])
 
@@ -185,6 +187,7 @@ export async function loadPipelineDonuts(db: DB): Promise<PipelineDonutByPipelin
     name: string
     color: string
     pipeline_id: string
+    kind?: string
   }[]
   const deals = (dealsRes.data ?? []) as { stage_id: string; value: number | null }[]
 
@@ -199,6 +202,8 @@ export async function loadPipelineDonuts(db: DB): Promise<PipelineDonutByPipelin
   return pipelines.map((p) => {
     const slices: PipelineStageSlice[] = stages
       .filter((s) => s.pipeline_id === p.id)
+      // Anillo de oportunidades abiertas: Ganada/Perdida (045) siempre en 0.
+      .filter((s) => s.kind !== 'won' && s.kind !== 'lost')
       .map((s) => ({
         id: s.id,
         name: s.name,
