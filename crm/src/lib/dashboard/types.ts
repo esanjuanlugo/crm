@@ -52,6 +52,8 @@ export interface ResponseTimeBucket {
 export interface ResponseTimeSample {
   /** 0 = Mon ... 6 = Sun (Monday-first), day the customer wrote. */
   dow: number
+  /** Local calendar day (YYYY-MM-DD, browser timezone) the customer wrote. */
+  dayKey: string
   /** Minutes until the first reply. */
   minutes: number
   /** True when the customer message belongs to the current week. */

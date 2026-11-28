@@ -128,6 +128,9 @@
       "ariaLabel": "단계별 파이프라인 금액"
     },
     "responseTimeChart": {
+      "last7Days": "최근 7일",
+      "summary14Days": "최근 14일 요약",
+      "today": "오늘",
       "title": "평균 첫 응답 시간",
       "description": "요일별, 고객의 첫 미응답 메시지에 답변하기까지 걸린 시간(분)",
       "target": "목표 {minutes}분",

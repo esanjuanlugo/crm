@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DOW_SHORT_MON_FIRST,
   daysAgoStart,
+  formatDayLabel,
+  lastNDays,
   lastNDayKeys,
   localDayKey,
   mondayIndex,
@@ -121,5 +123,35 @@ describe("mondayIndex", () => {
     expect(DOW_SHORT_MON_FIRST[mondayIndex(new Date(2026, 4, 24))]).toBe(
       "Sun",
     );
+  });
+});
+
+describe("lastNDays", () => {
+  it("returns n local days ending today, oldest first", () => {
+    const days = lastNDays(7, new Date(2026, 10, 27, 15, 30));
+    expect(days.map((d) => d.key)).toEqual([
+      "2026-11-21",
+      "2026-11-22",
+      "2026-11-23",
+      "2026-11-24",
+      "2026-11-25",
+      "2026-11-26",
+      "2026-11-27",
+    ]);
+    expect(days.filter((d) => d.isToday).map((d) => d.key)).toEqual(["2026-11-27"]);
+  });
+
+  it("crosses month boundaries", () => {
+    const days = lastNDays(3, new Date(2026, 11, 1, 9));
+    expect(days.map((d) => d.key)).toEqual(["2026-11-29", "2026-11-30", "2026-12-01"]);
+  });
+});
+
+describe("formatDayLabel", () => {
+  const fri = new Date(2026, 10, 27);
+  it("formats per locale without commas and capitalised", () => {
+    expect(formatDayLabel(fri, "es")).toBe("Vie 27 nov");
+    expect(formatDayLabel(fri, "en")).toBe("Fri Nov 27");
+    expect(formatDayLabel(fri, "ko")).toBe("11월 27일 (금)");
   });
 });

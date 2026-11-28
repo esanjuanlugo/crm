@@ -288,14 +288,19 @@ export async function loadResponseTime(db: DB): Promise<ResponseTimeSummary> {
   for (let i = 0; i < 7; i++) byDow.set(i, [])
   const thisWeekMins: number[] = []
   const lastWeekMins: number[] = []
-  const sampleList: { dow: number; minutes: number; thisWeek: boolean }[] = []
+  const sampleList: { dow: number; dayKey: string; minutes: number; thisWeek: boolean }[] = []
 
   for (const s of samples) {
     const diffMin = (s.responseAt.getTime() - s.customerAt.getTime()) / 60_000
     if (diffMin < 0) continue
     const dow = mondayIndex(s.customerAt)
     byDow.get(dow)!.push(diffMin)
-    sampleList.push({ dow, minutes: diffMin, thisWeek: s.customerAt >= thisWeekStart })
+    sampleList.push({
+      dow,
+      dayKey: localDayKey(s.customerAt),
+      minutes: diffMin,
+      thisWeek: s.customerAt >= thisWeekStart,
+    })
     if (s.customerAt >= thisWeekStart) {
       thisWeekMins.push(diffMin)
     } else if (s.customerAt >= lastWeekStart && s.customerAt < thisWeekStart) {

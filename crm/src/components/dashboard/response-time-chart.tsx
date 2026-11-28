@@ -1,8 +1,9 @@
 "use client"
 
 import { Clock } from 'lucide-react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import type { ResponseTimeSummary } from '@/lib/dashboard/types'
+import { formatDayLabel, lastNDays } from '@/lib/dashboard/date-utils'
 import { EmptyState } from './empty-state'
 import { Skeleton } from './skeleton'
 import { roundPercents } from '@/lib/dashboard/percent'
@@ -11,7 +12,6 @@ const COPY_ES = {
   title: 'Tiempo de primera respuesta',
   description:
     'Cuánto tardas en contestar el primer mensaje de un cliente. Cada barra reparte tus respuestas del día según lo que tardaron.',
-  period: 'Últimos 14 días',
   target: 'Objetivo',
   typical: 'Tiempo típico',
   typicalHint: 'La mitad de tus respuestas tarda menos que esto',
@@ -31,14 +31,12 @@ const COPY_ES = {
   note: 'El tiempo típico es la mediana: no cambia por una sola respuesta que tardó varios días, por eso es más fiable que el promedio.',
   emptyTitle: 'Aún no hay respuestas registradas',
   emptyHint: 'Este gráfico se completa a medida que respondes a los mensajes de los clientes.',
-  days: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
 }
 
 const COPY_EN: typeof COPY_ES = {
   title: 'First response time',
   description:
     'How long you take to answer a customer’s first message. Each bar splits that day’s replies by how long they took.',
-  period: 'Last 14 days',
   target: 'Target',
   typical: 'Typical time',
   typicalHint: 'Half of your replies take less than this',
@@ -58,7 +56,6 @@ const COPY_EN: typeof COPY_ES = {
   note: 'Typical time is the median: a single reply that took days does not move it, so it is more reliable than the average.',
   emptyTitle: 'No replies recorded yet',
   emptyHint: 'This chart fills in as you reply to customer messages.',
-  days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
 }
 
 interface ResponseTimeChartProps {
@@ -69,7 +66,7 @@ interface ResponseTimeChartProps {
 }
 
 interface Sample {
-  dow: number
+  dayKey: string
   minutes: number
   thisWeek: boolean
 }
@@ -95,6 +92,7 @@ export function ResponseTimeChart({
 }: ResponseTimeChartProps) {
   const locale = useLocale()
   const L = locale === 'es' ? COPY_ES : COPY_EN
+  const t = useTranslations('Dashboard.responseTimeChart')
   const target = thresholdMinutes > 0 ? thresholdMinutes : 5
 
   const samples: Sample[] = data?.samples ?? []
@@ -122,14 +120,16 @@ export function ResponseTimeChart({
       ? L.thisWeek + ' ' + fmt(median(thisWeek)) + ' · ' + L.lastWeek + ' ' + fmt(median(lastWeek))
       : L.typicalHint
 
-  // ---- Por dia ----
-  const rows = Array.from({ length: 7 }, (_, dow) => {
-    const mins = sorted(samples.filter((s) => s.dow === dow).map((s) => s.minutes))
+  // ---- Por dia: ultimos 7 dias con fecha real, terminando hoy ----
+  // dayKey es el dia local (zona horaria del navegador) en que escribio el cliente.
+  const rows = lastNDays(7).map((d) => {
+    const mins = sorted(samples.filter((s) => s.dayKey === d.key).map((s) => s.minutes))
     const counts = bands.map(() => 0)
     for (const m of mins) counts[bandOf(m)] += 1
-    return { day: L.days[dow], total: mins.length, counts }
+    return { key: d.key, day: formatDayLabel(d.date, locale), isToday: d.isToday, total: mins.length, counts }
   })
   const totalCounts = bands.map((_, i) => rows.reduce((a, r) => a + r.counts[i], 0))
+  const rowsTotal = rows.reduce((a, r) => a + r.total, 0)
 
   return (
     <section className="rounded-xl border border-border bg-card">
@@ -142,7 +142,7 @@ export function ResponseTimeChart({
         </div>
         <div className="flex items-center gap-2 text-xs">
           <span className="rounded-full border border-border bg-muted/30 px-2 py-0.5 text-muted-foreground">
-            {L.period}
+            {t('last7Days')}
           </span>
           <span className="rounded-full border border-data-good/40 bg-data-good/10 px-2 py-0.5 font-medium tabular-nums text-data-good/80">
             {L.target + ': ' + fmtMin(target)}
@@ -157,48 +157,60 @@ export function ResponseTimeChart({
           <EmptyState icon={Clock} title={L.emptyTitle} hint={L.emptyHint} />
         ) : (
           <div className="space-y-6">
-            {/* Respuestas clave: cuanto va a tardar una respuesta */}
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <Tile
-                label={L.typical}
-                value={fmt(typical)}
-                hint={typicalHint}
-                tone={toneFor(typical, target)}
-              />
-              <Tile
-                label={L.nineOfTen}
-                value={fmt(p90)}
-                hint={L.nineOfTenHint}
-                tone={toneFor(p90, target * 6)}
-              />
-              <Tile
-                label={L.withinTarget}
-                value={withinPct == null ? '—' : withinPct + ' %'}
-                hint={within + ' ' + L.of + ' ' + all.length + ' ' + L.withinTargetHint + ' ≤ ' + fmtMin(target)}
-                tone={withinPct == null ? 'text-foreground' : withinPct >= 80 ? 'text-data-good/80' : withinPct >= 50 ? 'text-data-warn/80' : 'text-data-bad/80'}
-              />
-              <Tile
-                label={L.average}
-                value={fmt(avgAll)}
-                hint={skewed ? L.averageSkewed : L.lastWeek + ' ' + fmt(avg(lastWeek))}
-                tone="text-foreground"
-              />
+            {/* Respuestas clave: cuanto va a tardar una respuesta (14 dias) */}
+            <div>
+              <p className="mb-2 text-[11px] text-muted-foreground">{t('summary14Days')}</p>
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <Tile
+                  label={L.typical}
+                  value={fmt(typical)}
+                  hint={typicalHint}
+                  tone={toneFor(typical, target)}
+                />
+                <Tile
+                  label={L.nineOfTen}
+                  value={fmt(p90)}
+                  hint={L.nineOfTenHint}
+                  tone={toneFor(p90, target * 6)}
+                />
+                <Tile
+                  label={L.withinTarget}
+                  value={withinPct == null ? '—' : withinPct + ' %'}
+                  hint={within + ' ' + L.of + ' ' + all.length + ' ' + L.withinTargetHint + ' ≤ ' + fmtMin(target)}
+                  tone={withinPct == null ? 'text-foreground' : withinPct >= 80 ? 'text-data-good/80' : withinPct >= 50 ? 'text-data-warn/80' : 'text-data-bad/80'}
+                />
+                <Tile
+                  label={L.average}
+                  value={fmt(avgAll)}
+                  hint={skewed ? L.averageSkewed : L.lastWeek + ' ' + fmt(avg(lastWeek))}
+                  tone="text-foreground"
+                />
+              </div>
             </div>
 
             {/* Reparto por dia */}
             <div>
-              <div className="mb-2 grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3 text-[11px] text-muted-foreground sm:grid-cols-[3rem_minmax(0,1fr)]">
+              <div className="mb-2 grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 text-[11px] text-muted-foreground sm:grid-cols-[7.5rem_minmax(0,1fr)]">
                 <span>{L.day}</span>
-                <span>{L.distribution}</span>
+                <span>{L.distribution + ' · ' + t('last7Days')}</span>
               </div>
 
               <div className="space-y-2">
                 {rows.map((r) => (
                   <div
-                    key={r.day}
-                    className="grid grid-cols-[2.25rem_minmax(0,1fr)] items-center gap-3 sm:grid-cols-[3rem_minmax(0,1fr)]"
+                    key={r.key}
+                    className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-3 sm:grid-cols-[7.5rem_minmax(0,1fr)]"
                   >
-                    <span className="text-xs text-muted-foreground">{r.day}</span>
+                    {/* Hoy: texto mas brillante y etiqueta "Hoy" */}
+                    <span
+                      className={
+                        'text-xs leading-tight ' +
+                        (r.isToday ? 'font-semibold text-foreground' : 'text-muted-foreground')
+                      }
+                    >
+                      {r.day}
+                      {r.isToday && <span className="whitespace-nowrap">{' · ' + t('today')}</span>}
+                    </span>
 
                     {r.total > 0 ? (
                       <div className="flex h-7 overflow-hidden rounded-md bg-muted 3xl:h-9">
@@ -249,7 +261,7 @@ export function ResponseTimeChart({
                     <span className={'h-2.5 w-2.5 rounded-sm ' + b.color} />
                     {b.label}
                     <span className="tabular-nums text-foreground">
-                      {totalCounts[i] + ' (' + Math.round((totalCounts[i] / all.length) * 100) + ' %)'}
+                      {totalCounts[i] + ' (' + (rowsTotal > 0 ? Math.round((totalCounts[i] / rowsTotal) * 100) : 0) + ' %)'}
                     </span>
                   </span>
                 ))}

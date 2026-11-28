@@ -186,6 +186,9 @@
       "ariaLabel": "Valor del embudo por etapa"
     },
     "responseTimeChart": {
+      "last7Days": "Últimos 7 días",
+      "summary14Days": "Resumen de los últimos 14 días",
+      "today": "Hoy",
       "title": "Tiempo promedio de primera respuesta",
       "description": "Minutos que tardas en responder al primer mensaje de un cliente que aún no ha recibido respuesta, por día de la semana",
       "target": "Objetivo: {minutes} min",

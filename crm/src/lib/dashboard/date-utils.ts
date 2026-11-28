@@ -50,3 +50,34 @@ export function mondayIndex(d: Date): number {
 }
 
 export const DOW_SHORT_MON_FIRST = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
+
+/**
+ * Los ultimos `n` dias locales, del mas antiguo a hoy (incluido), con su
+ * clave YYYY-MM-DD. Sirve para filas por fecha real en lugar de por dia
+ * de la semana.
+ */
+export function lastNDays(n: number, now: Date = new Date()): { key: string; date: Date; isToday: boolean }[] {
+  const today = startOfLocalDay(now)
+  const out: { key: string; date: Date; isToday: boolean }[] = []
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    out.push({ key: localDayKey(d), date: d, isToday: i === 0 })
+  }
+  return out
+}
+
+/**
+ * Etiqueta corta de un dia segun el idioma: "Vie 27 nov" (es),
+ * "Fri Nov 27" (en), "11월 27일 (금)" (ko). Sin comas ni puntos de
+ * abreviatura y con la primera letra en mayuscula.
+ */
+export function formatDayLabel(date: Date, locale: string): string {
+  const s = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' })
+    .format(date)
+    .replace(/,/g, '')
+    .replace(/(\p{L})\./gu, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return s.charAt(0).toLocaleUpperCase(locale) + s.slice(1)
+}
