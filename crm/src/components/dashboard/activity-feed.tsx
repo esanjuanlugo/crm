@@ -17,6 +17,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import type { ActivityItem, ActivityKind } from '@/lib/dashboard/types'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/currency'
+import { WON_BADGE } from './won-deals'
 import { EmptyState } from './empty-state'
 import { Skeleton } from './skeleton'
 
@@ -38,17 +39,18 @@ const KIND_THEME: Record<ActivityKind, KindTheme> = {
   message: { icon: MessageSquare, badge: 'bg-blue-500/10 text-blue-400' },
   contact: { icon: UserPlus, badge: 'bg-primary/10 text-primary' },
   deal: { icon: Briefcase, badge: 'bg-emerald-500/10 text-emerald-400' },
-  broadcast: { icon: Radio, badge: 'bg-amber-500/10 text-amber-400' },
+  // Fucsia: el ambar queda reservado para las ganadas.
+  broadcast: { icon: Radio, badge: 'bg-fuchsia-500/10 text-fuchsia-400' },
   automation: { icon: Zap, badge: 'bg-rose-500/10 text-rose-400' },
 }
 
 const KIND_ORDER: ActivityKind[] = ['message', 'contact', 'deal', 'broadcast', 'automation']
 
-// Oportunidades en Ganada/Perdida: mismo verde y rojo suaves que el
-// tablero de embudos (etapas de sistema #22c55e / #ef4444).
+// Ganada: el mismo dorado con trofeo que "Ultimas ganadas" (WonDeals).
+// Perdida: rojo suave, como la etapa Perdida del tablero.
 type DealOutcome = 'won' | 'lost'
 const OUTCOME_THEME: Record<DealOutcome, KindTheme> = {
-  won: { icon: Trophy, badge: 'bg-green-500/10 text-green-400 light:text-green-600' },
+  won: { icon: Trophy, badge: WON_BADGE },
   lost: { icon: X, badge: 'bg-red-500/10 text-red-400 light:text-red-600' },
 }
 

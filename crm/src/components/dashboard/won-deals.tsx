@@ -78,6 +78,9 @@ const COPY_EN: typeof COPY_ES = {
   },
 }
 
+/** Dorado de las ganadas (trofeo): lo reutiliza tambien la Actividad reciente. */
+export const WON_BADGE = 'bg-amber-400/10 text-amber-400'
+
 type Mode = 'won' | 'lost'
 
 interface WonDealsProps {
@@ -244,7 +247,7 @@ export function WonDeals({
                     <span
                       className={cn(
                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                        isWon ? 'bg-amber-400/10 text-amber-400' : 'bg-red-500/10 text-red-400',
+                        isWon ? WON_BADGE : 'bg-red-500/10 text-red-400',
                       )}
                     >
                       <Icon className="h-4 w-4" />
