@@ -12,23 +12,66 @@
 --   * a trigger derives deals.status from the stage kind on every
 --     insert / stage change, so every writer (board, deal form,
 --     automations, imports) gets the same rule.
+--
+-- Safe to re-run: every step is IF NOT EXISTS / CREATE OR REPLACE /
+-- DROP … IF EXISTS, and the data steps only touch rows that are not
+-- already in the target state.
+--
+-- No BEGIN/COMMIT here on purpose: both runners already make a
+-- migration atomic (the VPS script uses psql --single-transaction and
+-- the Supabase Management API runs a multi-statement query as one
+-- implicit transaction). An explicit COMMIT inside the file would end
+-- that transaction early and split the migration from its
+-- schema_migrations record.
 -- ============================================================
+
+-- ---- 0. deals.closed_at (self-contained) --------------------------
+-- Same column, function and backfill as 044, repeated here because a
+-- database can have 044 recorded as applied without its contents (a
+-- version-number clash): this migration must not depend on it.
+ALTER TABLE deals
+  ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ;
+
+CREATE OR REPLACE FUNCTION set_deal_closed_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.status IN ('won', 'lost') THEN
+    IF TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM NEW.status THEN
+      NEW.closed_at := COALESCE(
+        CASE WHEN TG_OP = 'INSERT' THEN NEW.closed_at END,
+        NOW()
+      );
+    END IF;
+  ELSE
+    NEW.closed_at := NULL;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+-- Backfill without touching updated_at (USER = every non-internal
+-- trigger on deals; FK checks stay on).
+ALTER TABLE deals DISABLE TRIGGER USER;
+UPDATE deals
+   SET closed_at = COALESCE(updated_at, created_at)
+ WHERE status IN ('won', 'lost')
+   AND closed_at IS NULL;
+ALTER TABLE deals ENABLE TRIGGER USER;
+
+CREATE INDEX IF NOT EXISTS idx_deals_closed_at
+  ON deals (account_id, closed_at)
+  WHERE closed_at IS NOT NULL;
 
 -- ---- 1. Column + constraints ------------------------------------
 ALTER TABLE pipeline_stages
   ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'open';
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'pipeline_stages_kind_check'
-      AND conrelid = 'pipeline_stages'::regclass
-  ) THEN
-    ALTER TABLE pipeline_stages
-      ADD CONSTRAINT pipeline_stages_kind_check CHECK (kind IN ('open', 'won', 'lost'));
-  END IF;
-END $$;
+ALTER TABLE pipeline_stages
+  DROP CONSTRAINT IF EXISTS pipeline_stages_kind_check;
+ALTER TABLE pipeline_stages
+  ADD CONSTRAINT pipeline_stages_kind_check CHECK (kind IN ('open', 'won', 'lost'));
 
 -- ---- 2. Data: convert / create the system stages -----------------
 -- Existing stages named "Ganada"/"Perdida" (case and accent
