@@ -679,16 +679,16 @@
       "toastDeleted": "Embudo eliminado"
     },
     "analytics": {
-      "totalDeals": "Oportunidades",
-      "totalDealsTooltip": "Cantidad de oportunidades de este embudo que no están marcadas como Perdidas. Las oportunidades ganadas también se incluyen.",
+      "totalDeals": "Oportunidades abiertas",
+      "totalDealsTooltip": "Cantidad de oportunidades en las etapas normales de este embudo (todas menos Ganada y Perdida).",
       "pipelineValue": "Valor del embudo",
-      "pipelineValueTooltip": "Suma del valor de todas las oportunidades de este embudo, excepto las marcadas como Perdidas.",
+      "pipelineValueTooltip": "Suma del valor de las oportunidades abiertas (solo etapas normales). No incluye las ganadas ni las perdidas.",
       "avgDealSize": "Ticket promedio",
-      "avgDealSizeTooltip": "Valor del embudo dividido entre el total de oportunidades: el valor promedio de una oportunidad que no está perdida.",
+      "avgDealSizeTooltip": "Valor promedio de las oportunidades ganadas: suma de la etapa Ganada dividida entre el número de ganadas, en todo el historial de este embudo.",
       "weightedValue": "Ponderado",
-      "weightedValueTooltip": "Ingresos esperados: valor de cada oportunidad abierta × probabilidad de su etapa. La primera etapa es aproximadamente 10%, las siguientes avanzan hasta 90% y Ganada = 100%. Las oportunidades perdidas no se incluyen.",
+      "weightedValueTooltip": "Ingresos esperados: valor de cada oportunidad abierta × probabilidad de su etapa. Las etapas normales van de 10% (la primera) a 90% (la última). No incluye las ganadas ni las perdidas.",
       "wonThisMonth": "Ganadas (mes)",
-      "wonThisMonthTooltip": "Oportunidades marcadas como Ganadas desde el primer día del mes actual.",
+      "wonThisMonthTooltip": "Oportunidades que pasaron a la etapa Ganada desde el primer día del mes actual (según su fecha de cierre).",
       "howCalculated": "Cómo se calcula {label}"
     }
   },

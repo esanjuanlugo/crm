@@ -621,16 +621,16 @@
       "toastDeleted": "Pipeline deleted"
     },
     "analytics": {
-      "totalDeals": "Deals",
-      "totalDealsTooltip": "Count of every deal in this pipeline that isn't marked as Lost. Won deals are still included.",
+      "totalDeals": "Open deals",
+      "totalDealsTooltip": "Number of deals in the ordinary stages of this pipeline (every stage except Won and Lost).",
       "pipelineValue": "Pipeline value",
-      "pipelineValueTooltip": "Sum of the dollar values of all deals in this pipeline, excluding deals marked as Lost.",
+      "pipelineValueTooltip": "Sum of the values of the open deals (ordinary stages only). Won and Lost deals are not included.",
       "avgDealSize": "Avg ticket",
-      "avgDealSizeTooltip": "Pipeline Value divided by Total Deals — the average value of a single non-lost deal.",
+      "avgDealSizeTooltip": "Average value of the won deals: sum of the Won stage values divided by the number of won deals, over the whole history of this pipeline.",
       "weightedValue": "Weighted",
-      "weightedValueTooltip": "Expected revenue: each open deal's value × its stage probability. First stage ≈ 10%, stages progress up to 90%, Won = 100%. Lost deals are excluded.",
+      "weightedValueTooltip": "Expected revenue: each open deal's value × its stage probability. Ordinary stages go from 10% (first) to 90% (last). Won and Lost deals are not included.",
       "wonThisMonth": "Won (month)",
-      "wonThisMonthTooltip": "Deals marked as Won since the first day of the current month.",
+      "wonThisMonthTooltip": "Deals moved to the Won stage since the first day of the current month (by their close date).",
       "howCalculated": "How {label} is calculated"
     }
   },

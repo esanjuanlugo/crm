@@ -365,3 +365,13 @@ html { scroll-behavior: smooth; }
 @media (min-width: 1024px) and (max-height: 560px) {
   .login-root aside > div:last-child { display: none; }
 }
+
+/* Rotulo de etapa en el tablero de embudos: el color de la etapa
+   (--stage, inline) aclarado en oscuro para que resalte sobre el fondo,
+   y oscurecido en claro para mantener contraste sobre el tinte. */
+.stage-title {
+  color: color-mix(in srgb, var(--stage) 65%, white);
+}
+html[data-mode="light"] .stage-title {
+  color: color-mix(in srgb, var(--stage) 80%, black);
+}

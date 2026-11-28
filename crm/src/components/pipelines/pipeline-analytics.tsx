@@ -51,14 +51,26 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
   const sortedStages = useMemo(() => sortStages(stages), [stages]);
 
   const stats = useMemo(() => {
-    const active = deals.filter((d) => d.status !== "lost");
-    const openDeals = active.filter((d) => d.status !== "won");
-
-    const totalCount = active.length;
-    const totalValue = active.reduce((sum, d) => sum + Number(d.value || 0), 0);
-    const avgValue = totalCount > 0 ? totalValue / totalCount : 0;
-
     const stageById = new Map(sortedStages.map((s) => [s.id, s]));
+    // Abiertas = las que estan en etapas normales (no Ganada ni Perdida).
+    // El estatus coincide con la etapa (migracion 045); se revisan ambos
+    // por si la migracion aun no se aplico.
+    const openDeals = deals.filter(
+      (d) =>
+        !isSystemStage(stageById.get(d.stage_id)) &&
+        d.status !== "won" &&
+        d.status !== "lost",
+    );
+    const wonDeals = deals.filter((d) => d.status === "won");
+
+    const totalCount = openDeals.length;
+    const totalValue = openDeals.reduce((sum, d) => sum + Number(d.value || 0), 0);
+    // Ticket promedio: valor promedio de las oportunidades ganadas.
+    const avgValue =
+      wonDeals.length > 0
+        ? wonDeals.reduce((sum, d) => sum + Number(d.value || 0), 0) / wonDeals.length
+        : 0;
+
     const weightedValue = openDeals.reduce((sum, d) => {
       const stage = stageById.get(d.stage_id);
       if (!stage) return sum;
@@ -74,7 +86,7 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
       (d) => d.status === "won" && thisMonth(d),
     ).length;
 
-    const wonAll = deals.filter((d) => d.status === "won").length;
+    const wonAll = wonDeals.length;
     const lostAll = deals.filter((d) => d.status === "lost").length;
     const winRate =
       wonAll + lostAll > 0 ? Math.round((wonAll / (wonAll + lostAll)) * 100) : null;

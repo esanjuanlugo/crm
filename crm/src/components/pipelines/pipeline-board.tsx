@@ -149,6 +149,7 @@ export function PipelineBoard({
               share={grandTotal > 0 ? totalValue / grandTotal : 0}
               probability={probability}
               weighted={weighted}
+              pipelineDealCount={deals.length}
               currency={defaultCurrency}
               onEditDeal={onEditDeal}
               dragMode={dragMode}
@@ -229,12 +230,20 @@ const COL_ES = {
   ofValue: "del valor",
   prob: "Prob.",
   weighted: "Ponderado",
+  ofTotal: "del total",
+  deal: "oportunidad",
+  deals: "oportunidades",
+  avg: "promedio",
 };
 
 const COL_EN: typeof COL_ES = {
   ofValue: "of value",
   prob: "Prob.",
   weighted: "Weighted",
+  ofTotal: "of total",
+  deal: "deal",
+  deals: "deals",
+  avg: "avg",
 };
 
 function StageColumn({
@@ -244,6 +253,7 @@ function StageColumn({
   share,
   probability,
   weighted,
+  pipelineDealCount,
   currency,
   onEditDeal,
   dragMode,
@@ -254,6 +264,7 @@ function StageColumn({
   share: number;
   probability: number;
   weighted: number;
+  pipelineDealCount: number;
   currency: string;
   onEditDeal: (deal: Deal) => void;
   dragMode: DragMode;
@@ -266,6 +277,17 @@ function StageColumn({
   // En Perdida el monto es el de sus oportunidades (no cuenta en el
   // valor del embudo, pero el encabezado si muestra cuanto se perdio).
   const systemTotal = deals.reduce((sum, d) => sum + Number(d.value || 0), 0);
+  // Ganada/Perdida: parte del total de oportunidades del embudo.
+  const countShare = pipelineDealCount > 0 ? deals.length / pipelineDealCount : 0;
+  // Las dos filas de abajo existen en todas las columnas (con el mismo alto
+  // y sin saltos de linea) para que las primeras tarjetas queden alineadas.
+  const barShare = isSystem ? countShare : share;
+  const barLabel = isSystem ? L.ofTotal : L.ofValue;
+  const detail = isSystem
+    ? deals.length + " " + (deals.length === 1 ? L.deal : L.deals) + " · " + L.avg + " " +
+      formatCurrency(deals.length > 0 ? systemTotal / deals.length : 0, currency)
+    : L.prob + " " + Math.round(probability * 100) + " % · " + L.weighted + " " +
+      formatCurrency(weighted, currency);
 
   return (
     // Mismo comportamiento responsivo de siempre: en movil cada columna mide
@@ -291,9 +313,10 @@ function StageColumn({
         }}
       >
         <div className="flex items-center justify-between gap-2">
+          {/* Color de la etapa mas brillante en oscuro (stage-title, globals.css) */}
           <h3
-            className="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-wide"
-            style={{ color: stage.color }}
+            className="stage-title flex min-w-0 items-center gap-2 text-sm font-bold uppercase tracking-wide"
+            style={{ "--stage": stage.color } as React.CSSProperties}
           >
             <span
               className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -302,7 +325,7 @@ function StageColumn({
             <span className="truncate">{stage.name}</span>
           </h3>
           <span
-            className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-foreground"
+            className="shrink-0 rounded-full px-2 py-0.5 text-sm font-bold leading-tight text-foreground"
             style={{
               backgroundColor:
                 "color-mix(in srgb, " + stage.color + " 25%, transparent)",
@@ -314,30 +337,29 @@ function StageColumn({
         <p className="mt-1.5 text-base font-medium tracking-tight text-white/70 light:text-slate-600">
           {formatCurrency(isSystem ? systemTotal : totalValue, currency)}
         </p>
-        {/* Ganada y Perdida: solo numero de oportunidades y monto total. */}
-        {!isSystem && (
-          <>
-            <div className="mt-1.5 flex items-center gap-2">
-              <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted/60">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: Math.round(share * 100) + "%",
-                    backgroundColor: stage.color,
-                  }}
-                />
-              </div>
-              <span className="shrink-0 text-[11px] tabular-nums text-white/50 light:text-slate-500">
-                <span className="font-semibold">{Math.round(share * 100)} %</span>{" "}
-                {L.ofValue}
-              </span>
-            </div>
-            <p className="mt-1 text-[11px] leading-tight text-white/50 light:text-slate-500">
-              {L.prob} {Math.round(probability * 100)} % {"\u00b7"} {L.weighted}{" "}
-              {formatCurrency(weighted, currency)}
-            </p>
-          </>
-        )}
+        {/* Normales: % del valor y Prob. · Ponderado. Ganada y Perdida:
+            % del total de oportunidades (sin probabilidad ni ponderado). */}
+        <div className="mt-1.5 flex items-center gap-2">
+          <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted/60">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: Math.round(barShare * 100) + "%",
+                backgroundColor: stage.color,
+              }}
+            />
+          </div>
+          <span className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-white/50 light:text-slate-500">
+            <span className="font-semibold">{Math.round(barShare * 100)} %</span>{" "}
+            {barLabel}
+          </span>
+        </div>
+        <p
+          className="mt-1 truncate text-[11px] leading-tight text-white/50 light:text-slate-500"
+          title={detail}
+        >
+          {detail}
+        </p>
       </div>
 
       {/* Divisoria con el color de la etapa: separa el titulo de las tarjetas */}
