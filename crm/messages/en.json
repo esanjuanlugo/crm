@@ -98,7 +98,13 @@
       "timeS": "{sec}s ago",
       "timeM": "{min}m ago",
       "timeH": "{hr}h ago",
-      "timeD": "{day}d ago"
+      "timeD": "{day}d ago",
+      "won": "Won",
+      "lost": "Lost",
+      "filterWon": "Won",
+      "filterLost": "Lost",
+      "dealWon": "was won · {amount}",
+      "dealLost": "was lost · {amount}"
     },
     "conversationsChart": {
       "title": "Conversations Over Time",

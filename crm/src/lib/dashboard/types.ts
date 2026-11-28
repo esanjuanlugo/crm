@@ -88,6 +88,14 @@ export interface ActivityItem {
   action?: string
   /** Secondary line: message preview, phone, etc. */
   detail?: string
+  /**
+   * Solo oportunidades: 'won'/'lost' si esta en la etapa Ganada/Perdida
+   * (pipeline_stages.kind, migracion 045); null en etapas normales.
+   */
+  dealOutcome?: 'won' | 'lost' | null
+  /** Solo oportunidades: monto y moneda (para "se gano · MXN 10,000"). */
+  dealValue?: number
+  dealCurrency?: string | null
 }
 
 /** Una oportunidad ganada reciente (para la lista del Panel). */

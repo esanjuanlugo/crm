@@ -156,7 +156,13 @@
       "timeS": "hace {sec}s",
       "timeM": "hace {min} min",
       "timeH": "hace {hr} h",
-      "timeD": "hace {day} días"
+      "timeD": "hace {day} días",
+      "won": "Ganada",
+      "lost": "Perdida",
+      "filterWon": "Ganadas",
+      "filterLost": "Perdidas",
+      "dealWon": "se ganó · {amount}",
+      "dealLost": "se perdió · {amount}"
     },
     "conversationsChart": {
       "title": "Conversaciones a lo largo del tiempo",

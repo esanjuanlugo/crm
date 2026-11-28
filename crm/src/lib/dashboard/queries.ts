@@ -329,6 +329,13 @@ export async function loadResponseTime(db: DB): Promise<ResponseTimeSummary> {
 
 // --- 5. Feed de actividad -----------------------------------------------
 
+/** Resultado de una oportunidad segun el tipo de su etapa (migracion 045). */
+export function dealOutcomeFromStageKind(
+  kind: string | null | undefined,
+): 'won' | 'lost' | null {
+  return kind === 'won' || kind === 'lost' ? kind : null
+}
+
 export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> {
   // Obtener ~10 de cada fuente (suficiente margen después de ordenar y combinar),
   // y después intercalarlos por marca de tiempo. Los límites individuales por tabla
@@ -347,7 +354,7 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
       .limit(10),
     db
       .from('deals')
-      .select('id, title, updated_at, stage:pipeline_stages(name)')
+      .select('id, title, value, currency, updated_at, stage:pipeline_stages(name, kind)')
       .order('updated_at', { ascending: false })
       .limit(10),
     db
@@ -409,11 +416,16 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
   for (const d of (deals.data ?? []) as unknown as Array<{
     id: string
     title: string
+    value: number | null
+    currency: string | null
     updated_at: string
-    stage: { name: string }[] | { name: string } | null
+    stage: { name: string; kind?: string | null }[] | { name: string; kind?: string | null } | null
   }>) {
     const stage = Array.isArray(d.stage) ? d.stage[0] : d.stage
     items.push({
+      dealOutcome: dealOutcomeFromStageKind(stage?.kind),
+      dealValue: Number(d.value ?? 0),
+      dealCurrency: d.currency,
       id: `deal-${d.id}`,
       kind: 'deal',
       text: stage?.name

@@ -10,10 +10,13 @@ import {
   Radio,
   Zap,
   Inbox,
+  Trophy,
+  X,
 } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import type { ActivityItem, ActivityKind } from '@/lib/dashboard/types'
 import { cn } from '@/lib/utils'
+import { formatCurrency } from '@/lib/currency'
 import { EmptyState } from './empty-state'
 import { Skeleton } from './skeleton'
 
@@ -40,6 +43,17 @@ const KIND_THEME: Record<ActivityKind, KindTheme> = {
 }
 
 const KIND_ORDER: ActivityKind[] = ['message', 'contact', 'deal', 'broadcast', 'automation']
+
+// Oportunidades en Ganada/Perdida: mismo verde y rojo suaves que el
+// tablero de embudos (etapas de sistema #22c55e / #ef4444).
+type DealOutcome = 'won' | 'lost'
+const OUTCOME_THEME: Record<DealOutcome, KindTheme> = {
+  won: { icon: Trophy, badge: 'bg-green-500/10 text-green-400 light:text-green-600' },
+  lost: { icon: X, badge: 'bg-red-500/10 text-red-400 light:text-red-600' },
+}
+
+/** Filtro: un tipo de actividad, o solo ganadas / solo perdidas. */
+type FeedFilter = 'all' | ActivityKind | DealOutcome
 
 const COPY_ES = {
   all: 'Todo',
@@ -82,7 +96,7 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
 
   // Empieza en 10: en pantallas anchas se reparte en dos columnas de 5.
   const [pageSize, setPageSize] = useState<PageSize>(10)
-  const [filter, setFilter] = useState<'all' | ActivityKind>('all')
+  const [filter, setFilter] = useState<FeedFilter>('all')
 
   const all = items ?? []
   const counts: Record<ActivityKind, number> = {
@@ -92,10 +106,21 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
     broadcast: 0,
     automation: 0,
   }
-  for (const it of all) counts[it.kind] += 1
+  const outcomeCounts: Record<DealOutcome, number> = { won: 0, lost: 0 }
+  for (const it of all) {
+    counts[it.kind] += 1
+    if (it.kind === 'deal' && it.dealOutcome) outcomeCounts[it.dealOutcome] += 1
+  }
   const presentKinds = KIND_ORDER.filter((k) => counts[k] > 0)
+  // Chips Ganadas / Perdidas solo si hay alguna.
+  const presentOutcomes = (['won', 'lost'] as const).filter((o) => outcomeCounts[o] > 0)
 
-  const filtered = filter === 'all' ? all : all.filter((it) => it.kind === filter)
+  const filtered =
+    filter === 'all'
+      ? all
+      : filter === 'won' || filter === 'lost'
+        ? all.filter((it) => it.kind === 'deal' && it.dealOutcome === filter)
+        : all.filter((it) => it.kind === filter)
   const totalLoaded = filtered.length
   const visible = filtered.slice(0, pageSize)
 
@@ -186,6 +211,15 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
                   count={counts[k]}
                 />
               ))}
+              {presentOutcomes.map((o) => (
+                <FilterChip
+                  key={o}
+                  active={filter === o}
+                  onClick={() => setFilter(o)}
+                  label={o === 'won' ? t('filterWon') : t('filterLost')}
+                  count={outcomeCounts[o]}
+                />
+              ))}
             </div>
           )}
 
@@ -203,8 +237,20 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
                   )}
                   <ul className="grid grid-cols-1 xl:grid-cols-2 xl:gap-x-6">
                     {g.rows.map((it) => {
-                      const theme = KIND_THEME[it.kind]
+                      const outcome = it.kind === 'deal' ? (it.dealOutcome ?? null) : null
+                      const theme = outcome ? OUTCOME_THEME[outcome] : KIND_THEME[it.kind]
                       const Icon = theme.icon
+                      const label = outcome
+                        ? outcome === 'won'
+                          ? t('won')
+                          : t('lost')
+                        : L.kinds[it.kind]
+                      // Ganada/Perdida: "se gano · MXN 10,000" en lugar de "esta en Ganada".
+                      const action = outcome
+                        ? t(outcome === 'won' ? 'dealWon' : 'dealLost', {
+                            amount: formatCurrency(it.dealValue ?? 0, it.dealCurrency || undefined),
+                          })
+                        : it.action
                       const exact = new Date(it.at).toLocaleString(dateLocale)
                       const row = (
                         <div className="flex min-w-0 items-center gap-3 px-4 py-3 sm:px-5">
@@ -218,10 +264,10 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm text-foreground">
-                              {it.actor && it.action ? (
+                              {it.actor && action ? (
                                 <>
                                   <span className="font-medium">{it.actor}</span>{' '}
-                                  <span className="text-muted-foreground">{it.action}</span>
+                                  <span className="text-muted-foreground">{action}</span>
                                 </>
                               ) : (
                                 it.text
@@ -238,10 +284,10 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
                                   theme.badge,
                                 )}
                               >
-                                {L.kinds[it.kind]}
+                                {label}
                               </span>
                               <span
-                                className="truncate text-[11px] tabular-nums text-muted-foreground"
+                                className="truncate whitespace-nowrap text-[11px] tabular-nums text-muted-foreground"
                                 title={exact}
                               >
                                 {relativeTime(it.at, t)}
@@ -255,10 +301,11 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
                                 theme.badge,
                               )}
                             >
-                              {L.kinds[it.kind]}
+                              {label}
                             </span>
+                            {/* Siempre en una linea ("hace 42 min" no se parte) */}
                             <span
-                              className="w-16 text-right text-xs tabular-nums text-muted-foreground"
+                              className="min-w-16 whitespace-nowrap text-right text-xs tabular-nums text-muted-foreground"
                               title={exact}
                             >
                               {relativeTime(it.at, t)}

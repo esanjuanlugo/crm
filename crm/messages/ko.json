@@ -98,7 +98,13 @@
       "timeS": "{sec}초 전",
       "timeM": "{min}분 전",
       "timeH": "{hr}시간 전",
-      "timeD": "{day}일 전"
+      "timeD": "{day}일 전",
+      "won": "성사",
+      "lost": "실패",
+      "filterWon": "성사",
+      "filterLost": "실패",
+      "dealWon": "성사됨 · {amount}",
+      "dealLost": "실패함 · {amount}"
     },
     "conversationsChart": {
       "title": "기간별 대화 추이",
